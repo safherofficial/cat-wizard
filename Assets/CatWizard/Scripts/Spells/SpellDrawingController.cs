@@ -31,6 +31,18 @@ namespace CatWizard.Spells
         private bool isDrawing;
         private Vector2 lastScreenPoint;
 
+        public void Configure(
+            SpellGestureInput input,
+            SpellGestureRecognizer recognizer,
+            SpellTimeDilation dilation,
+            SpellStrokeRenderer renderer)
+        {
+            gestureInput = input;
+            gestureRecognizer = recognizer;
+            timeDilation = dilation;
+            strokeRenderer = renderer;
+        }
+
         private void Awake()
         {
             if (gestureInput == null)
