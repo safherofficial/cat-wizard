@@ -54,9 +54,11 @@ class CatWizard {
       // Read-only QA snapshot; only exposed when the explicit debug query is present.
       window.__CAT_WIZARD_DEBUG__ = {
         player: () => ({ x: this.player.position.x, z: this.player.position.z, health: this.playerHealth }),
+        lastCast: () => this.lastCastTarget || null,
+        effects: () => this.effects.map(e => ({ kind: e.kind, age: e.age, duration: e.duration, target: e.target ? { x: e.target.x, z: e.target.z } : null })),
         wisps: () => this.wisps.map(w => ({
           x: w.group.position.x, z: w.group.position.z, health: w.health,
-          defeated: w.defeated, frozen: w.freeze
+          defeated: w.defeated, frozen: w.freeze, lastHit: w.lastHit || null
         })),
         obstacles: () => this.obstacles.map(o => ({
           x: o.fixed ? o.x : o.group.position.x,
@@ -255,6 +257,7 @@ class CatWizard {
   }
 
   cast(spell,target,confidence) {
+    this.lastCastTarget = { spell, x: target.x, z: target.z };
     this.castCount++;this.lastSpell=SPELLS[spell].name;this.status(this.lastSpell+' cast · '+Math.round(confidence*100)+'% match');this.updateHud();
     if(spell==='Fireball'){
       const orb=new THREE.Mesh(new THREE.SphereGeometry(.2,16,12),new THREE.MeshStandardMaterial({color:'#ff9a5d',emissive:'#ff542c',emissiveIntensity:2.2}));
@@ -297,7 +300,7 @@ class CatWizard {
     this.burst(new THREE.Vector3(pos.x,.4,pos.z),'#d0a47b',8,1.2);
   }
   hitWisp(w,spell,damage,center=null){
-    if(w.defeated)return;w.health-=damage;w.flash=.16;this.burst(new THREE.Vector3(w.group.position.x,1,w.group.position.z),w.color,6,.8);
+    if(w.defeated)return;w.lastHit={spell,damage,center:center?{x:center.x,z:center.y}:null};w.health-=damage;w.flash=.16;this.burst(new THREE.Vector3(w.group.position.x,1,w.group.position.z),w.color,6,.8);
     if(spell==='Frost')w.freeze=1.4;if(spell==='Gravity')this.pullWisp(w,center||new THREE.Vector2(this.player.position.x,this.player.position.z),1.3);
     if(w.health<=0){w.defeated=true;this.wispsDefeated++;const p=w.group.position.clone();this.scene.remove(w.group);this.burst(new THREE.Vector3(p.x,.9,p.z),w.color,28,2.8);this.status('A cursed wisp has been dispersed');}
     this.updateHud();
