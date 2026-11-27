@@ -4,7 +4,7 @@
 
 `Assets/CatWizard/Scenes/SpellLab.unity` is the first gameplay test scene. It contains a single bootstrap object. At runtime the bootstrap constructs the arena, creates the cat player and camera, and wires the gesture spell pipeline, effects, and HUD.
 
-This makes the first prototype scene self-contained and keeps the initial work focused on the magic-casting loop. The environment and spell sprites are placeholders generated at runtime. The cat artwork is the supplied transparent character sprite.
+This makes the first prototype scene self-contained and keeps the initial work focused on the magic-casting loop. The room is lit by a global 2D light and three colored point lights. Arena props and spell sprites are placeholders generated at runtime. The cat artwork is the supplied transparent character sprite.
 
 ## Play loop
 
@@ -25,7 +25,7 @@ This makes the first prototype scene self-contained and keeps the initial work f
 | Spiral | Gravity | A temporary vortex pulls nearby props inward before a release impulse. |
 | Star | Chaos | A larger radial burst damages and throws nearby props. |
 
-Destroyed props emit temporary rigidbody shards. This is intentionally a first-pass feedback loop; the current props do not yet have final bespoke destruction meshes, fracture maps, explosion chains, or persistence.
+Destroyed props emit temporary rigidbody shards. The arena also includes six individually destructible masonry wall segments and two ruin pillars, so destruction is not limited to furniture-sized objects. This is intentionally a first-pass feedback loop; the current props do not yet have final bespoke destruction meshes, fracture maps, explosion chains, or persistence.
 
 ## Input zones
 
