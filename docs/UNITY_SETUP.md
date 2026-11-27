@@ -17,6 +17,7 @@ Open `Assets/CatWizard/Scenes/SpellLab.unity`. It is also registered as the firs
 
 Press Play. The scene bootstrap creates:
 - Top-down orthographic camera with smooth follow.
+- Global and colored point 2D lights.
 - Arena floor, grid, boundary walls, and destructible training props.
 - Cat sprite loaded from `Resources/CatWizard/cat_wizard_game`.
 - Player movement, gesture capture, slow motion, recognition, tracing, spell effects, and HUD.
