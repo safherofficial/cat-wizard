@@ -52,8 +52,13 @@ namespace CatWizard.Spells
             spell = default;
             confidence = 0f;
 
-            if (input == null || input.Count < minimumInputPoints || templates.Count == 0)
+            if (input == null || input.Count < minimumInputPoints)
                 return false;
+
+            // Lazy initialization also allows the Editor validation command to
+            // exercise the recognizer without entering Play Mode.
+            if (templates.Count == 0)
+                BuildTemplates();
 
             if (GetPathLength(input) < minimumStrokeLengthPixels)
                 return false;
