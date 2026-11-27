@@ -366,26 +366,33 @@ namespace CatWizard.Gameplay
             GameObject wisp = new GameObject(wispName);
             wisp.transform.position = position;
 
-            SpriteRenderer aura = wisp.AddComponent<SpriteRenderer>();
-            aura.sprite = CircleSprite;
-            aura.color = new Color(tint.r, tint.g, tint.b, 0.2f);
-            aura.sortingOrder = 8;
+            GameObject aura = new GameObject("Wisp Aura");
+            aura.transform.SetParent(wisp.transform, false);
             aura.transform.localScale = Vector3.one * 1.38f;
+            SpriteRenderer auraRenderer = aura.AddComponent<SpriteRenderer>();
+            auraRenderer.sprite = CircleSprite;
+            auraRenderer.color = new Color(tint.r, tint.g, tint.b, 0.2f);
+            auraRenderer.sortingOrder = 8;
+
+            SpriteRenderer bodyRenderer = wisp.AddComponent<SpriteRenderer>();
+            bodyRenderer.sprite = CircleSprite;
+            bodyRenderer.color = tint;
+            bodyRenderer.sortingOrder = 9;
 
             GameObject core = new GameObject("Wisp Core");
             core.transform.SetParent(wisp.transform, false);
             core.transform.localScale = Vector3.one * 0.76f;
             SpriteRenderer coreRenderer = core.AddComponent<SpriteRenderer>();
             coreRenderer.sprite = CircleSprite;
-            coreRenderer.color = tint;
-            coreRenderer.sortingOrder = 9;
+            coreRenderer.color = Color.Lerp(tint, Color.white, 0.3f);
+            coreRenderer.sortingOrder = 10;
 
             AddWispDetail(wisp.transform, "Left Eye", new Vector2(-0.15f, 0.055f), 0.09f,
-                new Color(0.075f, 0.055f, 0.12f), 10);
+                new Color(0.075f, 0.055f, 0.12f), 11);
             AddWispDetail(wisp.transform, "Right Eye", new Vector2(0.15f, 0.055f), 0.09f,
-                new Color(0.075f, 0.055f, 0.12f), 10);
+                new Color(0.075f, 0.055f, 0.12f), 11);
             AddWispDetail(wisp.transform, "Core Glint", new Vector2(-0.19f, 0.2f), 0.1f,
-                new Color(1f, 1f, 1f, 0.82f), 10);
+                new Color(1f, 1f, 1f, 0.82f), 11);
 
             CircleCollider2D collider = wisp.AddComponent<CircleCollider2D>();
             collider.radius = 0.43f;

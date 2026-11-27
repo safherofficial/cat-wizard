@@ -201,8 +201,11 @@ namespace CatWizard.Enemies
             if (defeated)
                 return;
 
-            CatPlayerHealth playerHealth = collision.collider.GetComponentInParent<CatPlayerHealth>();
-            if (playerHealth != null)
+            CatPlayerHealth playerHealth = collision.gameObject.GetComponentInParent<CatPlayerHealth>();
+            if (playerHealth == null && collision.otherCollider != null)
+                playerHealth = collision.otherCollider.GetComponentInParent<CatPlayerHealth>();
+
+            if (playerHealth != null && body != null)
                 playerHealth.TakeDamage(1, body.position, 4.2f);
         }
 
