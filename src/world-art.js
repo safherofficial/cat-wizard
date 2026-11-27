@@ -329,7 +329,9 @@ export function buildWizardCat(g){
   bowlRim.rotation.x=Math.PI/2;
   bowlRim.position.set(.36,.12,.02);
   pipe.add(bowlRim);
-  const ember=orb(pipe,new THREE.MeshBasicMaterial({color:'#ffad58',toneMapped:false}),[.36,.13,.02],[.052,.018,.052]);
+  const ember=new THREE.Mesh(new THREE.SphereGeometry(.045,12,10),new THREE.MeshBasicMaterial({color:'#ffad58',toneMapped:false}));
+  ember.position.set(.36,.13,.02);
+  pipe.add(ember);
   const smoke=new THREE.Group();
   smoke.position.set(.36,.17,.02);
   pipe.add(smoke);
