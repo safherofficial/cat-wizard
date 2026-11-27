@@ -19,6 +19,10 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 - Three pursuing cursed wisps with safe initial spacing, player health, temporary invulnerability and arena respawn.
 - Responsive browser HUD and fullscreen mode.
 
+## Blender character source
+
+A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The resulting GLB is not part of the browser build until it is reviewed and added under `public/assets/`.
+
 ## Run locally
 
 ```bash
