@@ -245,7 +245,7 @@ namespace CatWizard.Gameplay
 
             CameraFollow2D follow = camera.GetComponent<CameraFollow2D>();
             if (follow != null)
-                follow.Configure(cat.transform, new Vector2(2.5f, 1.1f));
+                follow.SetTarget(cat.transform);
 
             return controller;
         }
