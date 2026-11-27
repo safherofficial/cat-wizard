@@ -39,12 +39,12 @@ class CatWizard {
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0),-.05);
     this.renderer = new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.25));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = .92;
+    this.renderer.toneMappingExposure = .98;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.glowTexture=createGlowTexture();
 
     this.clock = new THREE.Timer();
