@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
 using CatWizard.Gameplay;
 using CatWizard.Player;
@@ -34,6 +35,7 @@ namespace CatWizard.Gameplay
                 Screen.orientation = ScreenOrientation.LandscapeLeft;
 
             CreateRuntimeSprites();
+            CreateLighting();
             Camera camera = CreateCamera();
             BuildArena();
 
@@ -55,6 +57,57 @@ namespace CatWizard.Gameplay
             crateSprite = CreateCrateSprite(64);
             barrelSprite = CreateBarrelSprite(64);
             vaseSprite = CreateVaseSprite(64);
+        }
+
+        private void CreateLighting()
+        {
+            // The 2D Renderer uses a global light to illuminate Sprite-Lit materials.
+            GameObject globalObject = new GameObject("Global Ambient 2D Light");
+            Light2D globalLight = globalObject.AddComponent<Light2D>();
+            globalLight.lightType = Light2D.LightType.Global;
+            globalLight.color = new Color(0.74f, 0.81f, 0.95f, 1f);
+            globalLight.intensity = 0.72f;
+
+            CreatePointLight(
+                "Warm Training Hall Light",
+                new Vector2(-6.3f, 2.2f),
+                new Color(1f, 0.62f, 0.34f, 1f),
+                1.15f,
+                5.8f);
+
+            CreatePointLight(
+                "Arcane Blue Light",
+                new Vector2(6.5f, 1.8f),
+                new Color(0.34f, 0.72f, 1f, 1f),
+                1.1f,
+                5.6f);
+
+            CreatePointLight(
+                "Violet Ruin Light",
+                new Vector2(0f, -4.4f),
+                new Color(0.68f, 0.42f, 1f, 1f),
+                0.7f,
+                4.2f);
+        }
+
+        private static void CreatePointLight(
+            string lightName,
+            Vector2 position,
+            Color tint,
+            float intensity,
+            float radius)
+        {
+            GameObject lightObject = new GameObject(lightName);
+            lightObject.transform.position = new Vector3(position.x, position.y, -0.5f);
+
+            Light2D light = lightObject.AddComponent<Light2D>();
+            light.lightType = Light2D.LightType.Point;
+            light.color = tint;
+            light.intensity = intensity;
+            light.pointLightInnerRadius = radius * 0.28f;
+            light.pointLightOuterRadius = radius;
+            light.falloffIntensity = 0.65f;
+            light.shadowsEnabled = false;
         }
 
         private Camera CreateCamera()
