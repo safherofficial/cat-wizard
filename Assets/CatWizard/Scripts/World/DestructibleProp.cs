@@ -17,6 +17,7 @@ namespace CatWizard.World
         private RigidbodyConstraints2D originalConstraints;
         private Color originalColor;
         private Coroutine freezeRoutine;
+        private bool isFrozen;
         private bool destroyed;
 
         public void Configure(float health, Color tint)
@@ -120,7 +121,12 @@ namespace CatWizard.World
             if (freezeRoutine != null)
                 StopCoroutine(freezeRoutine);
 
-            originalConstraints = body.constraints;
+            // Preserve the body's original constraints only on the first freeze.
+            // Repeated Frost hits refresh duration without making the freeze permanent.
+            if (!isFrozen)
+                originalConstraints = body.constraints;
+
+            isFrozen = true;
             body.linearVelocity = Vector2.zero;
             body.constraints = RigidbodyConstraints2D.FreezeAll;
 
@@ -136,6 +142,8 @@ namespace CatWizard.World
 
             if (body != null)
                 body.constraints = originalConstraints;
+
+            isFrozen = false;
 
             if (spriteRenderer != null)
                 spriteRenderer.color = originalColor;
