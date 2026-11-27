@@ -41,7 +41,7 @@ After the first successful Unity import, use:
 
 `Cat Wizard > Validate Gesture Recognizer`
 
-The command creates a temporary recognizer object and verifies that all five template paths are still recognized after scale, rotation, translation, and small deterministic noise. It also checks that a straight-line stroke is rejected.
+The command creates a temporary recognizer object and verifies all five template paths in forward and reverse directions after scale, rotation, translation, and small deterministic noise. It also checks that a straight-line stroke is rejected.
 
 This command tests the geometry recognizer only. It does not substitute for testing mouse, touch, stylus, time dilation, physics, or rendering in Play Mode.
 
