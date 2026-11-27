@@ -25,9 +25,10 @@ class CatWizard {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = .92;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
-    this.clock = new THREE.Clock();
+    this.clock = new THREE.Timer();
+    this.clock.connect(document);
     this.keys = new Set();
     this.props = [];
     this.obstacles = [];
@@ -285,6 +286,7 @@ class CatWizard {
   frame(){
     // Preserve elapsed time on low-refresh devices while keeping simulation
     // steps small enough for stable movement, impacts, and enemy contact.
+    this.clock.update();
     const frameDelta=Math.min(this.clock.getDelta(),.25);
     const stepCount=Math.max(1,Math.ceil(frameDelta/.05));
     const realStep=frameDelta/stepCount;
@@ -306,7 +308,7 @@ class CatWizard {
     this.updateCamera(frameDelta);
     this.renderer.render(this.scene,this.camera);
   }
-  dispose(){this.renderer.setAnimationLoop(null);this.resizeObserver.disconnect();this.renderer.dispose();}
+  dispose(){this.renderer.setAnimationLoop(null);this.resizeObserver.disconnect();this.clock.dispose();this.renderer.dispose();}
 }
 
 function boot(){
