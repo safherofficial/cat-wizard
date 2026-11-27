@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildMeadowArena, animateMeadow } from './meadow-art.js';
 
 export function buildLighting(g){
   g.scene.background=new THREE.Color('#83d1ed');g.scene.fog=new THREE.Fog('#b9e2e8',42,92);
@@ -60,42 +61,8 @@ function entrance(scene){
   const plaque=new THREE.Mesh(new THREE.BoxGeometry(2.2,.7,.13),new THREE.MeshStandardMaterial({color:'#73b9ad',roughness:.4,metalness:.18}));plaque.position.set(0,3.45,.36);g.add(plaque);
   const star=new THREE.Mesh(new THREE.OctahedronGeometry(.26),new THREE.MeshStandardMaterial({color:'#ffdf9a',emissive:'#d58b39',emissiveIntensity:.8}));star.position.set(0,3.49,.47);g.add(star);
 }
-export function buildArena(g){
-  const sea=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:'#55b9cf',roughness:.32,metalness:.12}));
-  sea.rotation.x=-Math.PI/2;sea.position.y=-1.57;g.scene.add(sea);
-  for(let i=0;i<18;i++){
-    const wave=new THREE.Mesh(new THREE.TorusGeometry(1.1+i*.36,.018,5,60),new THREE.MeshBasicMaterial({color:i%2?'#8be2e4':'#c3edf0',transparent:true,opacity:.22,depthWrite:false}));
-    wave.rotation.x=Math.PI/2;wave.position.set((i%6-2.5)*5,-1.55,Math.floor(i/6)*10-10);wave.scale.set(1.5,.7,1);g.scene.add(wave);
-  }
-  const island=new THREE.Mesh(new THREE.CylinderGeometry(15.8,16.8,1.35,18),new THREE.MeshStandardMaterial({color:'#5d8a82',roughness:.88,flatShading:true}));
-  island.position.y=-.82;island.receiveShadow=true;island.castShadow=true;g.scene.add(island);
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,15),new THREE.MeshStandardMaterial({map:makeFloorTexture(g.renderer),roughness:.96}));
-  floor.rotation.x=-Math.PI/2;floor.position.y=-.08;floor.receiveShadow=true;g.scene.add(floor);
-  const wallMat=new THREE.MeshStandardMaterial({color:'#d8c49e',roughness:.92,flatShading:true}),capMat=new THREE.MeshStandardMaterial({color:'#d2b17c',roughness:.62,metalness:.16}),accent=new THREE.MeshStandardMaterial({color:'#77a99c',roughness:.7,flatShading:true});
-  [[0,-7.78,26.8,.46],[0,7.78,26.8,.46],[-13.38,0,.46,15.9],[13.38,0,.46,15.9]].forEach(([x,z,sx,sz])=>{const w=new THREE.Mesh(new THREE.BoxGeometry(sx,.72,sz),wallMat);w.position.set(x,.26,z);w.castShadow=true;w.receiveShadow=true;g.scene.add(w);const c=new THREE.Mesh(new THREE.BoxGeometry(sx*1.12,.13,sz*1.03),capMat);c.position.set(x,.68,z);c.castShadow=true;g.scene.add(c);const a=new THREE.Mesh(new THREE.BoxGeometry(sx*1.16,.11,sz*1.06),accent);a.position.set(x,.08,z);g.scene.add(a);});
-  const plaza=new THREE.Mesh(new THREE.CylinderGeometry(4.55,4.72,.24,48),new THREE.MeshStandardMaterial({color:'#e4cda1',roughness:.88,flatShading:true}));plaza.position.y=.035;plaza.receiveShadow=true;plaza.castShadow=true;g.scene.add(plaza);
-  const gold=new THREE.MeshStandardMaterial({color:'#d8a85f',metalness:.58,roughness:.32,emissive:'#8b552b',emissiveIntensity:.2}),mint=new THREE.MeshStandardMaterial({color:'#68cfc1',metalness:.3,roughness:.25,emissive:'#1f8e93',emissiveIntensity:.4});
-  [[3.62,.075,gold],[3.22,.035,mint],[2.76,.045,gold],[1.3,.04,mint]].forEach(([r,t,m])=>{const ring=new THREE.Mesh(new THREE.TorusGeometry(r,t,10,120),m);ring.rotation.x=Math.PI/2;ring.position.y=.2;g.scene.add(ring);});
-  for(let i=0;i<12;i++){const a=i*Math.PI/6,rune=new THREE.Mesh(new THREE.OctahedronGeometry(.2),new THREE.MeshStandardMaterial({color:'#fff1cf',emissive:'#64cfc4',emissiveIntensity:.7,flatShading:true}));rune.position.set(Math.cos(a)*3.95,.36,Math.sin(a)*3.95);rune.scale.set(.72,.42,1.15);g.scene.add(rune);}
-  const coreGroup=new THREE.Group();coreGroup.position.set(0,3.55,0);g.scene.add(coreGroup);
-  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(.86,2),new THREE.MeshPhysicalMaterial({color:'#9ee8e3',emissive:'#2babb5',emissiveIntensity:.32,roughness:.16,metalness:.16,transmission:.12,thickness:.7,clearcoat:1}));core.castShadow=true;coreGroup.add(core);
-  const inner=new THREE.Mesh(new THREE.OctahedronGeometry(.52,1),new THREE.MeshStandardMaterial({color:'#fff1c8',emissive:'#e4a95c',emissiveIntensity:.62,roughness:.2,metalness:.25}));coreGroup.add(inner);
-  const orbitA=new THREE.Mesh(new THREE.TorusGeometry(1.47,.038,10,100),new THREE.MeshBasicMaterial({color:'#fff0b5'}));orbitA.rotation.set(.85,.35,.3);coreGroup.add(orbitA);
-  const orbitB=new THREE.Mesh(new THREE.TorusGeometry(1.83,.026,8,100),new THREE.MeshBasicMaterial({color:'#80e5dc'}));orbitB.rotation.set(1.32,-.4,.15);coreGroup.add(orbitB);
-  const orbitC=new THREE.Mesh(new THREE.TorusGeometry(1.12,.022,8,100),new THREE.MeshBasicMaterial({color:'#f9a7a4'}));orbitC.rotation.set(.2,.8,1.1);coreGroup.add(orbitC);
-  coreGroup.add(new THREE.PointLight('#78e9e1',6.5,13,2));g.magicCore=coreGroup;g.magicOrbits=[orbitA,orbitB,orbitC];
-  const stone=new THREE.MeshStandardMaterial({color:'#d7c6a5',roughness:.9,flatShading:true}),pale=new THREE.MeshStandardMaterial({color:'#f0dfbd',roughness:.82,flatShading:true});
-  [[-11.5,-6.25],[11.5,-6.25],[-11.5,6.25],[11.5,6.25]].forEach(([x,z])=>{const p=new THREE.Group();p.position.set(x,0,z);g.scene.add(p);g.obstacles.push({x,z,radius:.78,fixed:true});
-    const base=new THREE.Mesh(new THREE.CylinderGeometry(.68,.76,.32,8),stone);base.position.y=.16;base.castShadow=true;p.add(base);
-    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.4,.52,2.4,8),pale);shaft.position.y=1.48;shaft.castShadow=true;shaft.receiveShadow=true;p.add(shaft);
-    const cap=new THREE.Mesh(new THREE.CylinderGeometry(.68,.52,.3,8),stone);cap.position.y=2.82;p.add(cap);
-    const jewel=new THREE.Mesh(new THREE.OctahedronGeometry(.24),new THREE.MeshStandardMaterial({color:'#8ce4d9',emissive:'#3ebeb5',emissiveIntensity:.38}));jewel.position.y=3.1;p.add(jewel);});
-  [[-11.4,-3.1],[11.3,-3.5],[-11.3,4.2],[11.4,4]].forEach(([x,z],i)=>palm(g.scene,x,z,i));
-  [[-8.6,5.35],[8.65,5.3],[-8.7,-5.25],[8.6,-5.25]].forEach(([x,z],i)=>planter(g.scene,x,z,i));
-  entrance(g.scene);cloud(g.scene,-10,10,-16,.95);cloud(g.scene,-3,12,-20,1.35);cloud(g.scene,8,11,-17,1.05);cloud(g.scene,15,8,0,.8);
-  const props=[['crate',-8,-3.1,1.1,1.1,2.6],['crate',-7,-4.5,1.1,1.1,2.6],['barrel',-4.3,3.5,.78,1.15,2.1],['vase',-2,5.2,.72,1,1.6],['stone',4,4.8,1.4,1.35,3.5],['crate',7.1,3.8,1.15,1.1,2.6],['barrel',8.5,1.8,.78,1.15,2.1],['stone',9,-4.5,1.3,1.35,3.5],['vase',4.1,-4.8,.72,1,1.6],['crate',-4.8,-5.2,1.15,1.1,2.6],['stone',-10,1.2,1.2,1.4,3.5],['barrel',1,5.5,.78,1.15,2.1],['crate',6.4,-1.2,1.15,1.1,2.6],['vase',-1.5,-5.5,.72,1,1.6]];
-  props.forEach(p=>g.addProp(...p));
-}
+export function buildArena(game){ buildMeadowArena(game); }
+
 export function buildWizardCat(g){
   const player=new THREE.Group();player.position.set(0,0,-3.4);g.scene.add(player);g.addShadow(player,.9,.42,.25);
   const cat=new THREE.Group();player.add(cat);g.catRoot=cat;
@@ -153,7 +120,4 @@ export function buildWisps(g){
     return {group,body,aura,light,halo,home:new THREE.Vector2(x,z),health:5,color,phase:THREE.MathUtils.randFloat(0,Math.PI*2),freeze:0,cooldown:0,velocity:new THREE.Vector2(),defeated:false,flash:0};
   });
 }
-export function animateWorld(g,dt){
-  if(g.player){const p=g.player.position;const target=new THREE.Vector3(p.x*.16,14.3,p.z+14),look=new THREE.Vector3(p.x,0,p.z-1.7),a=1-Math.exp(-dt*2.8);g.camera.position.lerp(target,a);g.cameraLook.lerp(look,a);g.camera.lookAt(g.cameraLook);}
-  if(g.magicCore){g.magicCore.rotation.y+=dt*.24;g.magicCore.rotation.x=Math.sin(g.worldTime*.35)*.09;g.magicCore.position.y=3.55+Math.sin(g.worldTime*1.6)*.13;g.magicOrbits[0].rotation.z+=dt*.55;g.magicOrbits[1].rotation.y-=dt*.42;g.magicOrbits[2].rotation.x+=dt*.36;}
-}
+export function animateWorld(game,dt){ animateMeadow(game,dt); }
