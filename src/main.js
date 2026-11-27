@@ -1,8 +1,4 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, buildWisps as buildArtWisps, animateWorld } from './world-art.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
 import './style.css';
@@ -24,17 +20,13 @@ class CatWizard {
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0),-.05);
     this.renderer = new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.5));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.25));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = .92;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene,this.camera));
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1200,900),.14,.46,.9);
-    this.composer.addPass(this.bloomPass);
-    this.composer.addPass(new OutputPass());
+
     this.clock = new THREE.Clock();
     this.keys = new Set();
     this.props = [];
@@ -141,7 +133,7 @@ class CatWizard {
 
   resize() {
     const r=this.canvas.parentElement.getBoundingClientRect(),w=Math.max(320,r.width),h=Math.max(260,r.height);
-    this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);this.composer.setSize(w,h);
+    this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);
   }
 
   screenToWorld(p) {
@@ -312,9 +304,9 @@ class CatWizard {
     }
     if(this.playerInvul>0&&this.respawn===0)this.player.visible=Math.floor((1.15-this.playerInvul)*18)%2===0;else if(!this.respawn)this.player.visible=true;
     this.updateCamera(frameDelta);
-    this.composer.render();
+    this.renderer.render(this.scene,this.camera);
   }
-  dispose(){this.renderer.setAnimationLoop(null);this.resizeObserver.disconnect();this.composer.dispose();this.renderer.dispose();}
+  dispose(){this.renderer.setAnimationLoop(null);this.resizeObserver.disconnect();this.renderer.dispose();}
 }
 
 function boot(){

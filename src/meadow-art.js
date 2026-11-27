@@ -103,9 +103,9 @@ function makeBladeGeometry(){
 }
 
 function addGrass(game){
-  const random=seeded(48821),count=30000;
+  const random=seeded(48821),count=9000;
   const geometry=makeBladeGeometry();
-  const material=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,side:THREE.DoubleSide});
+  const material=new THREE.MeshLambertMaterial({color:'#ffffff',side:THREE.DoubleSide});
   material.onBeforeCompile=shader=>{
     shader.uniforms.uMeadowTime={value:0};
     shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform float uMeadowTime;');
@@ -147,10 +147,10 @@ function addGrass(game){
 
 function addFlowers(game){
   const random=seeded(7788),count=980;
-  const stemGeometry=new THREE.CylinderGeometry(.012,.018,.23,5);
+  const stemGeometry=new THREE.CylinderGeometry(.012,.018,.23,4);
   const stemMaterial=new THREE.MeshStandardMaterial({color:'#4c8952',roughness:1});
   const stems=new THREE.InstancedMesh(stemGeometry,stemMaterial,count);
-  const petalGeometry=new THREE.SphereGeometry(.052,6,5);
+  const petalGeometry=new THREE.SphereGeometry(.052,5,4);
   petalGeometry.scale(1.25,.72,1);
   const petalMaterial=new THREE.MeshStandardMaterial({color:'#fff',roughness:.82,flatShading:true});
   const petals=new THREE.InstancedMesh(petalGeometry,petalMaterial,count*5);
@@ -201,7 +201,7 @@ function addTree(game,x,z,scale=1,phase=0){
   branch(group,[-.03,1.75,0],[-.22,2.95,-.75],.14,barkLight);
 
   const crown=new THREE.Group();crown.position.y=2.65;group.add(crown);
-  const leafGeo=new THREE.IcosahedronGeometry(.32,1);
+  const leafGeo=new THREE.IcosahedronGeometry(.32,0);
   const leafMat=new THREE.MeshStandardMaterial({color:'#fff',roughness:.92,flatShading:true});
   const leafMesh=new THREE.InstancedMesh(leafGeo,leafMat,138);
   const r=seeded(Math.floor((x+30)*999+(z+30)*31+phase*1000));

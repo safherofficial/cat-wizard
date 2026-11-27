@@ -5,7 +5,7 @@ export function buildLighting(g){
   g.scene.background=new THREE.Color('#83d1ed');g.scene.fog=new THREE.Fog('#b9e2e8',42,92);
   g.scene.add(new THREE.HemisphereLight('#e5fbff','#6f8d62',1.25));
   const sun=new THREE.DirectionalLight('#fff0cf',2.05);sun.position.set(-12,24,10);sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:.5,far:60});
+  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:.5,far:60});
   sun.shadow.bias=-.00018;sun.shadow.normalBias=.025;g.scene.add(sun);
   const fill=new THREE.DirectionalLight('#b7e9ff',.38);fill.position.set(13,10,-12);g.scene.add(fill);
   [[-9,-4,'#ffb36b'],[0,-5,'#79e5df'],[9,3,'#9b8cff'],[-8,5,'#f08ca4'],[8,-5,'#9ce5a2']].forEach(([x,z,c])=>{
