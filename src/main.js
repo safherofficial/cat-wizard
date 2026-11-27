@@ -351,9 +351,25 @@ class CatWizard {
   }
 
   frame(){
-    const real=Math.min(this.clock.getDelta(),.05);
-    if(this.restore){this.restore.elapsed+=real;const t=clamp(this.restore.elapsed/this.restore.duration,0,1);this.timeScale=this.restore.from+(1-this.restore.from)*t;if(t>=1){this.timeScale=1;this.restore=null;}}
-    const dt=real*this.timeScale;this.worldTime+=dt;this.updatePlayer(dt,real);this.updateProps(dt);this.updateWisps(dt);this.updateEffects(dt);
+    // Preserve elapsed time on low-refresh devices while keeping simulation
+    // steps small enough for stable movement, impacts, and enemy contact.
+    const frameDelta=Math.min(this.clock.getDelta(),.25);
+    const stepCount=Math.max(1,Math.ceil(frameDelta/.05));
+    const realStep=frameDelta/stepCount;
+    for(let i=0;i<stepCount;i++){
+      if(this.restore){
+        this.restore.elapsed+=realStep;
+        const t=clamp(this.restore.elapsed/this.restore.duration,0,1);
+        this.timeScale=this.restore.from+(1-this.restore.from)*t;
+        if(t>=1){this.timeScale=1;this.restore=null;}
+      }
+      const dt=realStep*this.timeScale;
+      this.worldTime+=dt;
+      this.updatePlayer(dt,realStep);
+      this.updateProps(dt);
+      this.updateWisps(dt);
+      this.updateEffects(dt);
+    }
     if(this.playerInvul>0&&this.respawn===0)this.player.visible=Math.floor((1.15-this.playerInvul)*18)%2===0;else if(!this.respawn)this.player.visible=true;
     this.renderer.render(this.scene,this.camera);
   }

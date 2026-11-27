@@ -40,6 +40,10 @@ The deployable site is written to `dist/`.
 
 The arena is assembled from Three.js geometry and a generated stone-floor texture. Player movement resolves against the destructible props and fixed ruin pillars; broken props stop blocking the player. The wisps begin far enough from the spawn point to avoid immediate unavoidable contact damage. It includes a spell seal, boundary masonry, ruined pillars, destructible crates, barrels, vases and stone blocks, three pursuing cursed wisps, player health, invulnerability, respawn, spell trails, impact rings and debris. The original full-body cat art (grey fur, pipe, pink bowtie and tail) is chroma-keyed to a transparent alpha background and served from `public/assets/cat-wizard.webp`.
 
+## Runtime timing
+
+- The animation loop subdivides larger frame deltas into small simulation steps, preserving elapsed gameplay time on slower-refresh devices while keeping motion and impact updates stable.
+
 ## Deployment
 
 Every push to `main`, or a manual run of **Cat Wizard Web**, runs `npm install`, `npm test`, `npm run build`, verifies the generated static files and publishes `dist/` through GitHub Pages.
