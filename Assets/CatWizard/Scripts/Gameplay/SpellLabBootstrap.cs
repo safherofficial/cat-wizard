@@ -209,7 +209,7 @@ namespace CatWizard.Gameplay
             body.angularDrag = 1.8f;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-            body.constraints = RigidbodyConstraints2D.FreezeRotation;
+            body.constraints = RigidbodyConstraints2D.None;
 
             DestructibleProp destructible = prop.AddComponent<DestructibleProp>();
             destructible.Configure(health, tint);
