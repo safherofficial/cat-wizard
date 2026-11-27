@@ -362,6 +362,13 @@ class CatWizard {
 
 function boot(){
   const game=new CatWizard(document.getElementById('game-canvas'));
+  if(new URLSearchParams(location.search).get('debug')==='1'){
+    window.__CAT_WIZARD_DEBUG__=()=>({
+      player:{x:game.player.position.x,z:game.player.position.z,health:game.playerHealth,invulnerability:game.playerInvul,respawn:game.respawn,moveX:game.playerMove.x,moveZ:game.playerMove.y},
+      wisps:game.wisps.map(w=>({x:w.group.position.x,z:w.group.position.z,health:w.health,freeze:w.freeze,cooldown:w.cooldown,defeated:w.defeated,distance:Math.hypot(game.player.position.x-w.group.position.x,game.player.position.z-w.group.position.z)})),
+      world:{time:game.worldTime,timeScale:game.timeScale,casts:game.castCount,defeated:game.wispsDefeated}
+    });
+  }
   window.addEventListener('beforeunload',()=>game.dispose(),{once:true});
   document.getElementById('fullscreen-button').addEventListener('click',()=>{const el=document.getElementById('game-shell');if(!document.fullscreenElement)el.requestFullscreen?.();else document.exitFullscreen?.();});
   setTimeout(()=>document.getElementById('loading-screen').classList.add('loaded'),500);
