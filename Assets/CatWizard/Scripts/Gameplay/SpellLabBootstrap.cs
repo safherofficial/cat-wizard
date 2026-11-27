@@ -619,7 +619,7 @@ namespace CatWizard.Gameplay
             texture.filterMode = FilterMode.Point;
             texture.wrapMode = TextureWrapMode.Clamp;
             texture.SetPixels32(pixels);
-            texture.Apply(false, true);
+            texture.Apply();
             return Sprite.Create(texture, new Rect(0, 0, width, height),
                 new Vector2(0.5f, 0.5f), tileSize);
         }
@@ -664,7 +664,7 @@ namespace CatWizard.Gameplay
             texture.name = "CatWizard Carved Stone";
             texture.filterMode = FilterMode.Point;
             texture.SetPixels32(pixels);
-            texture.Apply(false, true);
+            texture.Apply();
             return Sprite.Create(texture, new Rect(0, 0, size, size),
                 new Vector2(0.5f, 0.5f), size);
         }
@@ -790,7 +790,6 @@ namespace CatWizard.Gameplay
             Color32 border = new Color32(75, 43, 29, 255);
             Color32 plank = new Color32(205, 137, 77, 255);
             Color32 plankDark = new Color32(164, 99, 52, 255);
-            Color32 highlight = new Color32(238, 183, 118, 255);
 
             for (int y = 0; y < size; y++)
             {
