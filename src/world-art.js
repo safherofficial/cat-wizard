@@ -2,14 +2,30 @@ import * as THREE from 'three';
 import { buildMeadowArena, animateMeadow } from './meadow-art.js';
 
 export function buildLighting(g){
-  g.scene.background=new THREE.Color('#83d1ed');g.scene.fog=new THREE.Fog('#b9e2e8',42,92);
-  g.scene.add(new THREE.HemisphereLight('#e5fbff','#6f8d62',1.25));
-  const sun=new THREE.DirectionalLight('#fff0cf',2.05);sun.position.set(-12,24,10);sun.castShadow=true;
-  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:.5,far:60});
-  sun.shadow.bias=-.00018;sun.shadow.normalBias=.025;g.scene.add(sun);
-  const fill=new THREE.DirectionalLight('#b7e9ff',.38);fill.position.set(13,10,-12);g.scene.add(fill);
-  [[-9,-4,'#ffb36b'],[0,-5,'#79e5df'],[9,3,'#9b8cff'],[-8,5,'#f08ca4'],[8,-5,'#9ce5a2']].forEach(([x,z,c])=>{
-    const l=new THREE.PointLight(c,2.8,8,2);l.position.set(x,3.1,z);g.scene.add(l);
+  g.scene.background=new THREE.Color('#a9d8e5');
+  g.scene.fog=new THREE.Fog('#d7e8dc',40,90);
+  g.scene.add(new THREE.HemisphereLight('#f6fbf1','#718b66',1.48));
+
+  const sun=new THREE.DirectionalLight('#ffe5bd',2.25);
+  sun.position.set(-12,24,10);
+  sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);
+  Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:.5,far:60});
+  sun.shadow.bias=-.00016;
+  sun.shadow.normalBias=.022;
+  g.scene.add(sun);
+
+  const fill=new THREE.DirectionalLight('#b8e4f2',.52);
+  fill.position.set(13,10,-12);
+  g.scene.add(fill);
+  const rim=new THREE.DirectionalLight('#f3c98e',.42);
+  rim.position.set(2,8,-18);
+  g.scene.add(rim);
+
+  [[-9,-4,'#ffca91'],[0,-5,'#8de1d2'],[9,3,'#aa9af0'],[-8,5,'#f2a6b6'],[8,-5,'#b4e5ac']].forEach(([x,z,c])=>{
+    const light=new THREE.PointLight(c,1.9,8,2);
+    light.position.set(x,3.1,z);
+    g.scene.add(light);
   });
 }
 function makeFloorTexture(renderer){
