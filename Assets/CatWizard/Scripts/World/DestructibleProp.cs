@@ -90,7 +90,11 @@ namespace CatWizard.World
             }
 
             if (body != null && !body.constraints.HasFlag(RigidbodyConstraints2D.FreezeAll))
-                body.AddForce(away * impulse, ForceMode2D.Impulse);
+                {
+                    body.AddForce(away * impulse, ForceMode2D.Impulse);
+                    if (impulse > 0f)
+                        body.AddTorque(Random.Range(-1f, 1f) * impulse * 2.2f, ForceMode2D.Impulse);
+                }
 
             currentHitPoints -= damage;
             if (currentHitPoints <= 0f)
@@ -116,7 +120,7 @@ namespace CatWizard.World
                 StopCoroutine(freezeRoutine);
 
             originalConstraints = body.constraints;
-            body.velocity = Vector2.zero;
+            body.linearVelocity = Vector2.zero;
             body.constraints = RigidbodyConstraints2D.FreezeAll;
 
             if (spriteRenderer != null)
