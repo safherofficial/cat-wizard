@@ -68,7 +68,9 @@ Assets/
         DestructibleProp.cs
   Editor/
     CatWizardProjectSetup.cs
+    CatWizardWebGLSettings.cs
     GestureRecognizerValidation.cs
+  WebGLTemplates/CatWizardWeb/index.html
   Resources/CatWizard/cat_wizard_game.png
 Packages/manifest.json
 ProjectSettings/
@@ -79,6 +81,7 @@ docs/
   VERTICAL_SLICE.md
   UNITY_SETUP.md
   SPELL_LAB.md
+  WEBGL.md
 ```
 
 ## Current status and verification
@@ -100,6 +103,10 @@ The Spell Lab scene and its runtime arena/spell systems are now in the repositor
 9. Inspect Build Settings to confirm SpellLab is the first enabled scene.
 
 More detail is in [docs/UNITY_SETUP.md](docs/UNITY_SETUP.md) and [docs/SPELL_LAB.md](docs/SPELL_LAB.md).
+
+## WebGL browser build
+
+A responsive browser shell and automated Unity WebGL build/deployment workflow are included. The build targets the exact editor revision pinned in the project and publishes to GitHub Pages after the Unity license and Pages settings are configured. Setup instructions and required GitHub secrets are documented in [docs/WEBGL.md](docs/WEBGL.md).
 
 ## Security
 
