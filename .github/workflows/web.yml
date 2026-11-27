@@ -1,0 +1,55 @@
+name: Cat Wizard Web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cat-wizard-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Test and build Three.js game
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run gesture tests
+        run: npm test
+      - name: Build browser game
+        run: npm run build
+      - name: Verify static output
+        run: |
+          test -s dist/index.html
+          test -s dist/assets/cat-wizard.png
+          find dist/assets -maxdepth 1 -type f | grep -Eq '\.js$'
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    name: Publish browser game
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy Three.js game
+        id: deployment
+        uses: actions/deploy-pages@v4

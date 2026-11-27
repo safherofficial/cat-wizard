@@ -1,113 +1,64 @@
 # Cat Wizard
 
-A top-down 2D action prototype starring the grey cat wizard from the supplied character reference.
+**A little magic. A lot of attitude.**
 
-The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchscreen, or pen; the game recognizes the stroke and dispatches the corresponding spell. The world enters slow motion while the gesture is being drawn and returns to normal speed after the stroke resolves.
+Cat Wizard is a top-down fantasy action prototype starring a distinguished grey cat wizard. Its defining mechanic is gesture-cast magic: draw one continuous symbol with the mouse, touchscreen, or pen; the world slows while the stroke is being drawn; release to cast.
 
-## Current milestone
+## Current build — Three.js browser edition
 
-**Vertical Slice 01 — Spell Lab**
+The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
-- A runtime-built top-down stone hall with individually shaded floor tiles, an engraved central spell seal, corner runes, carved masonry props, ground shadows, global 2D light, and colored point lights.
-- Original cat character sprite imported as a transparent Unity Sprite.
-- Desktop movement with WASD / arrow keys.
-- Tablet and phone movement with a left-side virtual thumb zone.
-- Spell drawing with mouse, finger, or stylus.
-- The right side of the touch display is reserved for gesture casting, allowing movement and spell drawing at the same time.
-- Template-based one-stroke recognition for five symbols.
-- Gesture capture and recognition use screen-space input, independent of scaled world time.
-- World time is slowed while the stroke is active (initial target: 0.15x).
-- Time returns smoothly to normal after release, including rejected gestures.
-- A live LineRenderer tracing view follows the pointer.
-- Five first-pass spells interact with real 2D physics props:
-  - Circle → Fireball projectile and impact burst.
-  - Lightning → jagged lightning line and strike damage.
-  - Triangle → Frost burst that freezes props.
-  - Spiral → Gravity vortex that pulls props inward.
-  - Star → Chaos area blast.
-- Destructible crates, barrels, ceramic vases, stone blocks, masonry wall segments, and ruin pillars break into physics shards.
-- Three cursed wisps patrol the hall, pursue the cat, and deal contact damage.
-- All five spells can damage the wisps; Frost freezes them and Gravity pulls them into the vortex.
-- Cat health, temporary invulnerability, and automatic arena respawn make enemy contact part of the test loop.
-- Runtime HUD displays controls, glyph legend, time-dilation state, cat health, wisp defeats, and last recognized spell.
+- A dark stone training hall with a central spell seal, boundary walls, ruined pillars, destructible props and colored lights.
+- Original cat artwork loaded as a transparent sprite.
+- Desktop movement with WASD or arrow keys.
+- Touch movement on the left side and independent spell drawing on the right side.
+- Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
+- World time slows to 15% during drawing and eases back over 250 ms after release.
+- Fireball, Thunderbolt, Frost, Gravity and Chaos effects.
+- Destructible crates, barrels, vases and stone props with knockback and debris.
+- Three pursuing cursed wisps, player health, temporary invulnerability and arena respawn.
+- Responsive browser HUD and fullscreen mode.
 
-## Technology baseline
+## Run locally
 
-- Unity 6.3 LTS (pinned editor revision: 6000.3.29f1).
-- Universal Render Pipeline 17.3.0.
-- Input System 1.20.1.
-- C# and Unity 2D physics.
-
-An Editor setup script creates and assigns a URP asset on first import. The URP asset uses Unity's built-in 2D Renderer, which is the base for future Light2D and shadow-caster work.
-
-## Repository layout
-
-```text
-Assets/
-  CatWizard/
-    Scenes/SpellLab.unity
-    Scripts/
-      Gameplay/
-        SpellLabBootstrap.cs
-        SpellCombatController.cs
-      Player/
-        CatPlayerController.cs
-        CatPlayerHealth.cs
-      Enemies/CursedWisp.cs
-      Spells/
-        SpellType.cs
-        SpellGestureInput.cs
-        SpellGestureRecognizer.cs
-        SpellTimeDilation.cs
-        SpellStrokeRenderer.cs
-        SpellDrawingController.cs
-        SpellGestureDebugProbe.cs
-      UI/SpellLabHud.cs
-      World/
-        CameraFollow2D.cs
-        DestructibleProp.cs
-  Editor/
-    CatWizardProjectSetup.cs
-    CatWizardWebGLSettings.cs
-    GestureRecognizerValidation.cs
-  WebGLTemplates/CatWizardWeb/index.html
-  Resources/CatWizard/cat_wizard_game.png
-Packages/manifest.json
-ProjectSettings/
-  ProjectVersion.txt
-  ProjectSettings.asset
-  EditorBuildSettings.asset
-docs/
-  VERTICAL_SLICE.md
-  UNITY_SETUP.md
-  SPELL_LAB.md
-  WEBGL.md
+```bash
+npm install
+npm run dev
 ```
 
-## Current status and verification
+## Verify and build
 
-The Spell Lab scene and its runtime arena/spell systems are now in the repository. The scene is configured as the first build scene. The source has received a static review and the recognizer algorithm was independently exercised against translated, scaled, rotated, and mildly noisy versions of its five template paths. An Editor menu command also provides those checks inside Unity.
+```bash
+npm test
+npm run build
+npm run preview
+```
 
-**The Unity Editor has not yet been run in this environment.** Unity compilation, asset import, actual mouse/touch/stylus playtesting, rendering verification, and player builds remain pending. Treat this as a first playable-scene implementation awaiting Unity Editor validation, not as a verified release build.
+Vite writes the deployable static site into `dist/`.
 
-## Open and test
+## Browser deployment
 
-1. Install Unity 6.3 LTS revision 6000.3.29f1 through Unity Hub.
-2. Open the repository root in Unity Hub.
-3. Allow Package Manager to resolve the manifest and let the Editor finish importing assets.
-4. Open `Assets/CatWizard/Scenes/SpellLab.unity` and press Play.
-5. For desktop, move with WASD / arrow keys and draw with the left mouse button.
-6. On phone or tablet, use the left side to move and draw spells on the right side.
-7. Try the five symbols shown in the HUD. Watch the Console for the debug probe's recognized spell and confidence.
-8. In the Editor menu, run `Cat Wizard > Validate Gesture Recognizer` to check all five gestures in forward and reverse directions, with transformations, plus straight-line rejection.
-9. Inspect Build Settings to confirm SpellLab is the first enabled scene.
+GitHub Actions runs gesture tests, builds the static site and publishes it to GitHub Pages on every push to `main`. Enable **Settings → Pages → Build and deployment → Source → GitHub Actions** on the repository for the first publication.
 
-More detail is in [docs/UNITY_SETUP.md](docs/UNITY_SETUP.md) and [docs/SPELL_LAB.md](docs/SPELL_LAB.md).
+Expected URL: https://safherofficial.github.io/cat-wizard/
 
-## WebGL browser build
+## Repository structure
 
-A responsive browser shell and automated Unity WebGL build/deployment workflow are included. The build targets the exact editor revision pinned in the project and publishes to GitHub Pages after the Unity license and Pages settings are configured. Setup instructions and required GitHub secrets are documented in [docs/WEBGL.md](docs/WEBGL.md).
+```text
+src/
+  main.js           Three.js scene, controls, combat and runtime loop
+  gesture.js        one-stroke recognizer and spell templates
+  style.css         responsive browser shell and HUD
+public/assets/
+  cat-wizard.png    original character artwork
+tests/
+  gesture.test.js   gesture classification checks
+docs/
+  THREEJS.md        development, gameplay and deployment notes
+.github/workflows/
+  web.yml           tests, build and GitHub Pages deployment
+```
 
-## Security
+## Verification boundary
 
-Never commit personal access tokens, API keys, or other credentials. Use the connected Git provider integration or local credential storage instead.
+The project includes executable Node tests and a Vite production build workflow. Passing those checks validates gesture logic and static bundling; it does not replace a real browser playtest for graphics, controls, device performance or balancing.
