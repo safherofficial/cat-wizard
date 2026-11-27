@@ -64,73 +64,290 @@ function entrance(scene){
 export function buildArena(game){ buildMeadowArena(game); }
 
 export function buildWizardCat(g){
-  const player=new THREE.Group();player.position.set(0,0,5.2);g.scene.add(player);g.addShadow(player,.9,.42,.25);
-  const cat=new THREE.Group();player.add(cat);g.catRoot=cat;
-  const fur=new THREE.MeshStandardMaterial({color:'#858f98',roughness:.82,flatShading:true}),furLight=new THREE.MeshStandardMaterial({color:'#b9c3c4',roughness:.8,flatShading:true});
-  const pink=new THREE.MeshStandardMaterial({color:'#ef91b2',roughness:.4,flatShading:true}),robe=new THREE.MeshStandardMaterial({color:'#385c78',roughness:.82,flatShading:true});
-  const robeLight=new THREE.MeshStandardMaterial({color:'#648ba0',roughness:.8,flatShading:true}),gold=new THREE.MeshStandardMaterial({color:'#e5b969',roughness:.4,metalness:.35});
-  const dark=new THREE.MeshStandardMaterial({color:'#25313a',roughness:.4}),white=new THREE.MeshStandardMaterial({color:'#fff4db',roughness:.35});
-  const eye=new THREE.MeshStandardMaterial({color:'#293e42',roughness:.18}),innerEar=new THREE.MeshStandardMaterial({color:'#d88e98',roughness:.65,flatShading:true});
-  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.4,.66,.92,9,1),robe);torso.position.y=.58;torso.castShadow=true;cat.add(torso);
-  const panel=new THREE.Mesh(new THREE.ConeGeometry(.54,.62,8,1,true),robeLight);panel.position.set(0,.62,.05);panel.scale.set(.72,1,.26);cat.add(panel);
-  const hem=new THREE.Mesh(new THREE.TorusGeometry(.61,.055,7,24),gold);hem.rotation.x=Math.PI/2;hem.position.y=.16;cat.add(hem);
-  const cape=new THREE.Group();cape.position.set(0,1.04,-.3);cat.add(cape);
-  const capeMat=new THREE.MeshStandardMaterial({color:'#293e62',roughness:.82,flatShading:true,side:THREE.DoubleSide});
-  const capeVertices=new Float32Array([
-    -.31,0,0,  .31,0,0,  -.56,-.92,-.22,
-     .31,0,0,  .56,-.92,-.22, -.56,-.92,-.22,
-    -.31,0,0,  -.56,-.92,-.22, -.2,-1.08,-.32,
-     .31,0,0,  .2,-1.08,-.32, .56,-.92,-.22
-  ]);
-  const capeGeometry=new THREE.BufferGeometry();
-  capeGeometry.setAttribute('position',new THREE.BufferAttribute(capeVertices,3));
-  capeGeometry.computeVertexNormals();
-  const capeMesh=new THREE.Mesh(capeGeometry,capeMat);capeMesh.castShadow=true;cape.add(capeMesh);
-  const capeTrim=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-.55,-.92,-.23),new THREE.Vector3(-.2,-1.07,-.33),
-    new THREE.Vector3(.2,-1.07,-.33),new THREE.Vector3(.55,-.92,-.23)
-  ]),18,.025,5,false),gold);cape.add(capeTrim);
+  const player=new THREE.Group();
+  player.position.set(0,0,5.2);
+  g.scene.add(player);
+  g.addShadow(player,.98,.44,.28);
+
+  const cat=new THREE.Group();
+  player.add(cat);
+  g.catRoot=cat;
+
+  const fur=new THREE.MeshStandardMaterial({color:'#8999a5',roughness:.72});
+  const furLight=new THREE.MeshStandardMaterial({color:'#d2d9d4',roughness:.68});
+  const furShade=new THREE.MeshStandardMaterial({color:'#657782',roughness:.82});
+  const innerEar=new THREE.MeshStandardMaterial({color:'#d98d9b',roughness:.72});
+  const robe=new THREE.MeshStandardMaterial({color:'#344b78',roughness:.74});
+  const robeLight=new THREE.MeshStandardMaterial({color:'#5878a0',roughness:.68});
+  const capeMat=new THREE.MeshStandardMaterial({color:'#202e55',roughness:.82,side:THREE.DoubleSide});
+  const capeLining=new THREE.MeshStandardMaterial({color:'#76558e',roughness:.82,side:THREE.DoubleSide});
+  const gold=new THREE.MeshStandardMaterial({color:'#e4bd79',metalness:.48,roughness:.34});
+  const goldLight=new THREE.MeshStandardMaterial({color:'#ffe2a4',metalness:.32,roughness:.3,emissive:'#8b5924',emissiveIntensity:.12});
+  const pink=new THREE.MeshStandardMaterial({color:'#e99ab8',roughness:.42});
+  const pinkLight=new THREE.MeshStandardMaterial({color:'#f5c2d0',roughness:.48});
+  const dark=new THREE.MeshStandardMaterial({color:'#283440',roughness:.6});
+  const wood=new THREE.MeshStandardMaterial({color:'#805238',roughness:.48});
+  const woodLight=new THREE.MeshStandardMaterial({color:'#ba8151',roughness:.38});
+  const eyeWhite=new THREE.MeshStandardMaterial({color:'#fff6e6',roughness:.24});
+  const iris=new THREE.MeshStandardMaterial({color:'#55bda7',roughness:.22,metalness:.08,emissive:'#1b786d',emissiveIntensity:.12});
+  const pupil=new THREE.MeshStandardMaterial({color:'#172d35',roughness:.18});
+  const noseMat=new THREE.MeshStandardMaterial({color:'#c77e8e',roughness:.38});
+  const unitSphere=new THREE.SphereGeometry(1,24,18);
+
+  function orb(parent,material,position,scale,geometry=unitSphere){
+    const mesh=new THREE.Mesh(geometry,material);
+    mesh.position.set(position[0],position[1],position[2]);
+    mesh.scale.set(scale[0],scale[1],scale[2]);
+    parent.add(mesh);
+    return mesh;
+  }
+  function tube(parent,points,radius,material,segments=32){
+    const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
+    const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,segments,radius,8,false),material);
+    parent.add(mesh);
+    return mesh;
+  }
+
+  // A shaped, layered robe gives the silhouette more volume than a primitive cylinder.
+  const torso=new THREE.Group();
+  cat.add(torso);
+  const robeProfile=[
+    new THREE.Vector2(0,0),new THREE.Vector2(.43,.025),new THREE.Vector2(.56,.12),
+    new THREE.Vector2(.58,.25),new THREE.Vector2(.51,.48),new THREE.Vector2(.42,.82),
+    new THREE.Vector2(.35,1.08),new THREE.Vector2(.29,1.15),new THREE.Vector2(0,1.15)
+  ];
+  const robeBody=new THREE.Mesh(new THREE.LatheGeometry(robeProfile,32),robe);
+  robeBody.position.y=.12;
+  robeBody.castShadow=true;
+  robeBody.receiveShadow=true;
+  torso.add(robeBody);
+
+  const hem=new THREE.Mesh(new THREE.TorusGeometry(.555,.036,10,56),gold);
+  hem.rotation.x=Math.PI/2;
+  hem.position.y=.27;
+  torso.add(hem);
+  const hemInner=new THREE.Mesh(new THREE.TorusGeometry(.515,.014,8,56),goldLight);
+  hemInner.rotation.x=Math.PI/2;
+  hemInner.position.y=.31;
+  torso.add(hemInner);
+
+  const mantle=orb(torso,robeLight,[0,1.03,-.015],[.52,.19,.38]);
+  mantle.rotation.x=-.08;
+  const collar=new THREE.Mesh(new THREE.TorusGeometry(.31,.075,10,48),robeLight);
+  collar.rotation.x=Math.PI/2;
+  collar.position.set(0,1.13,.02);
+  torso.add(collar);
+
+  // The cloak has a curved hem, a violet lining and a fine gold edge.
+  const cape=new THREE.Group();
+  cape.position.set(0,1.03,-.31);
+  cat.add(cape);
+  const capeShape=new THREE.Shape();
+  capeShape.moveTo(-.32,.08);
+  capeShape.bezierCurveTo(-.54,-.12,-.5,-.63,-.69,-1.02);
+  capeShape.quadraticCurveTo(0,-1.2,.69,-1.02);
+  capeShape.bezierCurveTo(.5,-.63,.54,-.12,.32,.08);
+  capeShape.closePath();
+  const capeMesh=new THREE.Mesh(new THREE.ShapeGeometry(capeShape,18),capeMat);
+  capeMesh.castShadow=true;
+  cape.add(capeMesh);
+  const liningShape=new THREE.Shape();
+  liningShape.moveTo(-.22,-.04);
+  liningShape.bezierCurveTo(-.38,-.34,-.36,-.73,-.5,-.99);
+  liningShape.quadraticCurveTo(0,-1.08,.5,-.99);
+  liningShape.bezierCurveTo(.36,-.73,.38,-.34,.22,-.04);
+  liningShape.closePath();
+  const lining=new THREE.Mesh(new THREE.ShapeGeometry(liningShape,14),capeLining);
+  lining.position.z=.006;
+  cape.add(lining);
+  tube(cape,[[-.67,-1.01,.012],[-.36,-1.13,.012],[0,-1.16,.012],[.36,-1.13,.012],[.67,-1.01,.012]],.025,gold);
+  tube(cape,[[-.32,.05,.014],[0,-.12,.014],[.32,.05,.014]],.018,goldLight);
+
+  // Waist details and the little illuminated star at the centre of the robe.
+  const belt=new THREE.Mesh(new THREE.TorusGeometry(.435,.038,9,48),woodLight);
+  belt.rotation.x=Math.PI/2;
+  belt.position.y=.72;
+  torso.add(belt);
+  const clasp=new THREE.Mesh(new THREE.DodecahedronGeometry(.105,1),goldLight);
+  clasp.position.set(0,.72,.432);
+  torso.add(clasp);
+  orb(torso,iris,[0,.72,.52],[.052,.052,.025]);
+  orb(torso,gold,[0,.88,.395],[.035,.035,.025]);
+  orb(torso,gold,[0,.96,.377],[.022,.022,.018]);
+
+  // Small boots and articulated sleeves remain separate for the walk cycle.
   const legPivots=[],armPivots=[];
   for(const s of [-1,1]){
-    const legPivot=new THREE.Group();legPivot.position.set(s*.24,.34,.04);cat.add(legPivot);
-    const leg=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.42,6),fur);leg.position.y=-.12;leg.castShadow=true;legPivot.add(leg);
-    const boot=new THREE.Mesh(new THREE.SphereGeometry(.17,8,6),dark);boot.scale.set(1,.58,1.25);boot.position.set(0,-.25,.12);legPivot.add(boot);
+    const legPivot=new THREE.Group();
+    legPivot.position.set(s*.23,.31,.06);
+    cat.add(legPivot);
+    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.22,4,10),fur);
+    leg.position.y=-.12;
+    leg.castShadow=true;
+    legPivot.add(leg);
+    const boot=new THREE.Mesh(new THREE.SphereGeometry(.18,16,12),dark);
+    boot.scale.set(1,.62,1.25);
+    boot.position.set(0,-.27,.1);
+    legPivot.add(boot);
+    for(let toe=0;toe<3;toe++){
+      orb(legPivot,furLight,[((toe-1)*.075),-.27,.235],[.028,.027,.035]);
+    }
     legPivots.push(legPivot);
 
-    const armPivot=new THREE.Group();armPivot.position.set(s*.43,1.04,.04);cat.add(armPivot);
-    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.115,.48,4,7),robe);arm.position.set(s*.055,-.055,.035);arm.rotation.z=s*-.34;arm.castShadow=true;armPivot.add(arm);
-    const paw=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),furLight);paw.position.set(s*.13,-.29,.22);armPivot.add(paw);
+    const armPivot=new THREE.Group();
+    armPivot.position.set(s*.43,1.04,.02);
+    cat.add(armPivot);
+    const sleeve=new THREE.Mesh(new THREE.CapsuleGeometry(.115,.38,5,10),robe);
+    sleeve.position.set(s*.04,-.075,.015);
+    sleeve.rotation.z=s*-.32;
+    sleeve.castShadow=true;
+    armPivot.add(sleeve);
+    const cuff=new THREE.Mesh(new THREE.TorusGeometry(.12,.022,8,24),gold);
+    cuff.position.set(s*.11,-.26,.055);
+    cuff.rotation.x=Math.PI/2;
+    armPivot.add(cuff);
+    const paw=orb(armPivot,furLight,[s*.14,-.31,.11],[.145,.13,.145]);
+    paw.castShadow=true;
+    for(let toe=0;toe<3;toe++)orb(armPivot,fur,[s*.14+(toe-1)*.055,-.36,.23],[.035,.035,.045]);
     armPivots.push(armPivot);
   }
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.53,12,10),fur);head.scale.set(1.02,.86,.88);head.position.set(0,1.47,.05);head.castShadow=true;cat.add(head);
+
+  // Expressive feline face: warm muzzle, bright eyes, shaped brows and whiskers.
+  const head=new THREE.Group();
+  head.position.set(0,1.53,.04);
+  cat.add(head);
+  const skull=orb(head,fur,[0,0,0],[.54,.48,.47]);
+  skull.castShadow=true;
   for(const s of [-1,1]){
-    const ear=new THREE.Mesh(new THREE.ConeGeometry(.23,.55,4),fur);ear.position.set(s*.34,1.91,.02);ear.rotation.z=s*-.16;cat.add(ear);
-    const inner=new THREE.Mesh(new THREE.ConeGeometry(.105,.32,4),innerEar);inner.position.set(s*.34,1.91,.13);inner.rotation.z=s*-.16;cat.add(inner);
-    const cheek=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),furLight);cheek.position.set(s*.18,1.34,.43);cheek.scale.set(1,.76,.58);cat.add(cheek);
-    const ew=new THREE.Mesh(new THREE.SphereGeometry(.1,10,8),white);ew.position.set(s*.2,1.57,.48);ew.scale.set(1,1.12,.5);cat.add(ew);
-    const pupil=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),eye);pupil.position.set(s*.2,1.565,.535);cat.add(pupil);
-    const whisker=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(s*.22,1.34,.57),new THREE.Vector3(s*.52,1.39,.56),new THREE.Vector3(s*.67,1.37,.52)]),new THREE.LineBasicMaterial({color:'#e6e1d4'}));cat.add(whisker);
-    const wing=new THREE.Mesh(new THREE.SphereGeometry(.16,7,6),pink);wing.position.set(s*.14,1.08,.59);wing.scale.set(1,.68,.38);cat.add(wing);
+    const ear=new THREE.Mesh(new THREE.ConeGeometry(.235,.61,14,5),fur);
+    ear.position.set(s*.34,.39,-.015);
+    ear.rotation.z=s*-.17;
+    ear.castShadow=true;
+    head.add(ear);
+    const inner=new THREE.Mesh(new THREE.ConeGeometry(.135,.4,12,4),innerEar);
+    inner.position.set(s*.34,.39,.105);
+    inner.rotation.z=s*-.17;
+    head.add(inner);
+    orb(head,furLight,[s*.22,-.18,.34],[.23,.17,.22]);
+    orb(head,eyeWhite,[s*.205,.055,.407],[.145,.185,.09]);
+    orb(head,iris,[s*.205,.048,.482],[.085,.125,.043]);
+    orb(head,pupil,[s*.205,.048,.514],[.031,.095,.022]);
+    orb(head,eyeWhite,[s*.178,.105,.532],[.027,.034,.014]);
+    tube(head,[[s*.09,.23,.39],[s*.2,.265,.415],[s*.32,.23,.38]],.025,furShade,12);
+    tube(head,[[s*.27,-.18,.49],[s*.47,-.15,.49],[s*.63,-.12,.43]],.009,furLight,14);
+    tube(head,[[s*.28,-.25,.48],[s*.49,-.27,.46],[s*.62,-.3,.4]],.008,furLight,14);
+    tube(head,[[s*.28,-.1,.48],[s*.48,-.06,.45],[s*.61,-.04,.39]],.008,furLight,14);
   }
-  const muzzle=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),white);muzzle.scale.set(1.3,.72,.72);muzzle.position.set(0,1.33,.54);cat.add(muzzle);
-  const nose=new THREE.Mesh(new THREE.SphereGeometry(.065,7,6),innerEar);nose.position.set(0,1.42,.67);cat.add(nose);
-  const knot=new THREE.Mesh(new THREE.SphereGeometry(.085,8,6),gold);knot.position.set(0,1.08,.65);cat.add(knot);
-  const hatGroup=new THREE.Group();hatGroup.position.y=1.92;cat.add(hatGroup);
-  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.1,10),robe);hatGroup.add(brim);
-  const hat=new THREE.Mesh(new THREE.ConeGeometry(.43,.88,8),new THREE.MeshStandardMaterial({color:'#594b8d',roughness:.72,flatShading:true}));hat.position.set(0,.45,0);hat.rotation.z=-.1;hat.castShadow=true;hatGroup.add(hat);
-  const band=new THREE.Mesh(new THREE.TorusGeometry(.44,.045,7,24),gold);band.rotation.x=Math.PI/2;band.position.y=.1;hatGroup.add(band);
-  const star=new THREE.Mesh(new THREE.OctahedronGeometry(.13),new THREE.MeshStandardMaterial({color:'#ffe5a0',emissive:'#d99d47',emissiveIntensity:.9}));star.position.set(.27,.64,.12);hatGroup.add(star);
-  const pipe=new THREE.Group();pipe.position.set(.58,.78,.42);pipe.rotation.x=Math.PI/2.8;pipe.rotation.z=-.22;cat.add(pipe);
-  const pipeMat=new THREE.MeshStandardMaterial({color:'#70452e',roughness:.5}),stem=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.47,7),pipeMat);stem.rotation.x=Math.PI/2;stem.position.z=.15;pipe.add(stem);
-  const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.22,7),pipeMat);bowl.position.set(0,.01,.42);pipe.add(bowl);
-  const ember=new THREE.Mesh(new THREE.SphereGeometry(.045,7,6),new THREE.MeshBasicMaterial({color:'#ffad58',toneMapped:false}));ember.position.set(0,.13,.42);pipe.add(ember);
-  const smoke=new THREE.Group();smoke.position.set(0,.18,.43);pipe.add(smoke);
-  const smokeMat=new THREE.MeshBasicMaterial({color:'#f8f2dd',transparent:true,opacity:.28,depthWrite:false});
-  for(let i=0;i<3;i++){const puff=new THREE.Mesh(new THREE.IcosahedronGeometry(.045+i*.012,1),smokeMat);puff.position.set(Math.sin(i*2)*.055,i*.12,0);smoke.add(puff);}
-  const tailPivot=new THREE.Group();tailPivot.position.set(0,.48,-.46);cat.add(tailPivot);
-  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(-.25,.18,-.22),new THREE.Vector3(-.37,.48,-.36),new THREE.Vector3(-.12,.7,-.42)]);
-  const tail=new THREE.Mesh(new THREE.TubeGeometry(curve,18,.095,7,false),fur);tail.castShadow=true;tailPivot.add(tail);
-  const tailTip=new THREE.Mesh(new THREE.SphereGeometry(.12,7,6),furLight);tailTip.position.set(-.12,.7,-.42);tailPivot.add(tailTip);
+  orb(head,eyeWhite,[0,-.205,.43],[.19,.12,.17]);
+  orb(head,furLight,[0,-.18,.39],[.105,.12,.13]);
+  const nose=orb(head,noseMat,[0,-.105,.538],[.075,.052,.045]);
+  nose.scale.y=.68;
+  tube(head,[[0,-.145,.56],[0,-.225,.57],[-.075,-.255,.54]],.012,furShade,12);
+  tube(head,[[0,-.225,.57],[.075,-.255,.54]],.012,furShade,12);
+
+  // The pink bow remains the character's signature accent.
+  orb(cat,pink,[-.14,1.14,.49],[.15,.105,.075]).rotation.z=-.28;
+  orb(cat,pink,[.14,1.14,.49],[.15,.105,.075]).rotation.z=.28;
+  const bowKnot=orb(cat,pinkLight,[0,1.14,.56],[.075,.075,.05]);
+  bowKnot.rotation.z=.2;
+
+  // A broad felt brim and a gently bent crown make the hat read as a crafted object.
+  const hatGroup=new THREE.Group();
+  hatGroup.position.y=2.0;
+  cat.add(hatGroup);
+  const hatFelt=new THREE.MeshStandardMaterial({color:'#51467f',roughness:.86});
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.66,.66,.12,40,1),robe);
+  brim.castShadow=true;
+  brim.receiveShadow=true;
+  hatGroup.add(brim);
+  const brimEdge=new THREE.Mesh(new THREE.TorusGeometry(.645,.035,10,56),gold);
+  brimEdge.rotation.x=Math.PI/2;
+  brimEdge.position.y=-.035;
+  hatGroup.add(brimEdge);
+  const crownGeo=new THREE.ConeGeometry(.43,.94,28,8);
+  const crownPos=crownGeo.attributes.position;
+  for(let i=0;i<crownPos.count;i++){
+    const y=crownPos.getY(i);
+    const h=THREE.MathUtils.clamp((y+.47)/.94,0,1);
+    crownPos.setX(i,crownPos.getX(i)+.23*h*h);
+    crownPos.setZ(i,crownPos.getZ(i)+.055*h*h);
+    crownPos.setY(i,y);
+  }
+  crownGeo.computeVertexNormals();
+  const crown=new THREE.Mesh(crownGeo,hatFelt);
+  crown.position.y=.48;
+  crown.castShadow=true;
+  hatGroup.add(crown);
+  const hatBand=new THREE.Mesh(new THREE.TorusGeometry(.435,.045,10,48),gold);
+  hatBand.rotation.x=Math.PI/2;
+  hatBand.position.y=.075;
+  hatGroup.add(hatBand);
+  const buckle=new THREE.Mesh(new THREE.BoxGeometry(.14,.12,.035),goldLight);
+  buckle.position.set(.36,.09,.19);
+  hatGroup.add(buckle);
+  orb(hatGroup,robeLight,[.36,.09,.214],[.035,.035,.018]);
+  for(let i=0;i<9;i++){
+    const a=i/9*TAU;
+    orb(hatGroup,goldLight,[Math.cos(a)*.56,-.01,Math.sin(a)*.56],[.018,.018,.018]);
+  }
+  const hatStar=new THREE.Mesh(new THREE.OctahedronGeometry(.14,1),goldLight);
+  hatStar.position.set(.25,.72,.15);
+  hatStar.rotation.set(.3,.2,.4);
+  hatGroup.add(hatStar);
+  tube(hatGroup,[[.28,.72,.15],[.39,.88,.17],[.48,1.02,.16]],.018,goldLight,18);
+  orb(hatGroup,goldLight,[.49,1.04,.16],[.045,.045,.045]);
+
+  // The tiny wooden pipe gives the wizard a memorable, slightly eccentric profile.
+  const pipe=new THREE.Group();
+  pipe.position.set(.47,-.095,.405);
+  head.add(pipe);
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.032,.04,.39,12),wood);
+  stem.rotation.z=-Math.PI/2;
+  stem.position.set(.14,-.025,.02);
+  pipe.add(stem);
+  const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.095,.135,.2,14),woodLight);
+  bowl.position.set(.36,.015,.02);
+  bowl.castShadow=true;
+  pipe.add(bowl);
+  const bowlRim=new THREE.Mesh(new THREE.TorusGeometry(.093,.018,8,24),gold);
+  bowlRim.rotation.x=Math.PI/2;
+  bowlRim.position.set(.36,.12,.02);
+  pipe.add(bowlRim);
+  const ember=orb(pipe,new THREE.MeshBasicMaterial({color:'#ffad58',toneMapped:false}),[.36,.13,.02],[.052,.018,.052]);
+  const smoke=new THREE.Group();
+  smoke.position.set(.36,.17,.02);
+  pipe.add(smoke);
+  const smokeMat=new THREE.MeshBasicMaterial({color:'#fff4dc',transparent:true,opacity:.32,depthWrite:false});
+  for(let i=0;i<4;i++){
+    const puff=new THREE.Mesh(new THREE.IcosahedronGeometry(.04+i*.012,1),smokeMat);
+    puff.position.set(Math.sin(i*1.7)*.035,i*.105,0);
+    smoke.add(puff);
+  }
+
+  // A full, tapered tail balances the silhouette and moves independently.
+  const tailPivot=new THREE.Group();
+  tailPivot.position.set(0,.48,-.47);
+  cat.add(tailPivot);
+  const tailCurve=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0,0,0),new THREE.Vector3(-.2,.12,-.18),
+    new THREE.Vector3(-.38,.35,-.3),new THREE.Vector3(-.36,.62,-.38),
+    new THREE.Vector3(-.12,.77,-.4)
+  ]);
+  const tail=new THREE.Mesh(new THREE.TubeGeometry(tailCurve,28,.105,10,false),fur);
+  tail.castShadow=true;
+  tailPivot.add(tail);
+  orb(tailPivot,furLight,[-.12,.77,-.4],[.12,.12,.12]);
+
+  const pendantRing=new THREE.Mesh(new THREE.TorusGeometry(.075,.018,8,24),gold);
+  pendantRing.position.set(0,.86,.46);
+  cat.add(pendantRing);
+  const pendant=new THREE.Mesh(new THREE.OctahedronGeometry(.075,1),iris);
+  pendant.position.set(0,.86,.49);
+  cat.add(pendant);
+  const aura=new THREE.PointLight('#f6d69d',.5,3.8,2);
+  aura.position.set(0,1.35,.2);
+  cat.add(aura);
+
   g.tail=tailPivot;
   g.catRig={torso,head,hat:hatGroup,cape,pipe,ember,smoke,tail:tailPivot,legPivots,armPivots};
   return player;
