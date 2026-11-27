@@ -137,6 +137,26 @@ namespace CatWizard.Gameplay
                 new Color(0.46f, 0.54f, 0.64f), 4.5f, false);
             CreateProp("Stone Block B", new Vector2(7f, 4.8f), new Vector2(1.2f, 1.2f), crateSprite,
                 new Color(0.5f, 0.57f, 0.68f), 4.5f, false);
+
+            // A breakable masonry barricade makes the environment itself a target.
+            for (int i = 0; i < 6; i++)
+            {
+                float x = -3.75f + i * 1.5f;
+                CreateProp(
+                    "Breakable Ruin Wall " + (i + 1),
+                    new Vector2(x, 1.85f),
+                    new Vector2(1.42f, 0.82f),
+                    crateSprite,
+                    new Color(0.47f, 0.56f, 0.68f),
+                    4.2f,
+                    false);
+            }
+
+            // Short pillars add destructible cover with different silhouettes.
+            CreateProp("Ruin Pillar A", new Vector2(-9.7f, 4.25f), new Vector2(0.9f, 1.7f), crateSprite,
+                new Color(0.52f, 0.59f, 0.68f), 4.5f, false);
+            CreateProp("Ruin Pillar B", new Vector2(9.7f, -4.4f), new Vector2(0.9f, 1.7f), crateSprite,
+                new Color(0.46f, 0.53f, 0.64f), 4.5f, false);
         }
 
         private void CreateGridLines()
