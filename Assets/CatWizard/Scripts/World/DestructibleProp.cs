@@ -170,8 +170,8 @@ namespace CatWizard.World
 
                 var shardBody = shard.AddComponent<Rigidbody2D>();
                 shardBody.gravityScale = 0f;
-                shardBody.drag = 1.1f;
-                shardBody.angularDrag = 1.4f;
+                shardBody.linearDamping = 1.1f;
+                shardBody.angularDamping = 1.4f;
                 shardBody.AddForce(
                     (Random.insideUnitCircle.normalized + impulseDirection * 0.35f) *
                     Random.Range(2.5f, 6.5f),
