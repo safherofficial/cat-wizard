@@ -35,7 +35,7 @@ The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchsc
 - Input System 1.20.1.
 - C# and Unity 2D physics.
 
-An Editor setup script creates and assigns a URP asset on first import. The URP asset uses Unity's built-in Universal Renderer; the dedicated 2D Renderer and Light2D visual pass can be introduced with the later lighting pass.
+An Editor setup script creates and assigns a URP asset on first import. The URP asset uses Unity's built-in 2D Renderer, which is the base for future Light2D and shadow-caster work.
 
 ## Repository layout
 
