@@ -25,6 +25,9 @@ namespace CatWizard.Spells
         [SerializeField, Range(0f, 0.5f)]
         private float minimumScoreMargin = 0.035f;
 
+        [SerializeField, Range(1f, 2f)]
+        private float minimumPathCurvatureRatio = 1.12f;
+
         private readonly List<GestureTemplate> templates = new List<GestureTemplate>();
 
         private readonly struct GestureTemplate
@@ -60,7 +63,13 @@ namespace CatWizard.Spells
             if (templates.Count == 0)
                 BuildTemplates();
 
-            if (GetPathLength(input) < minimumStrokeLengthPixels)
+            float pathLength = GetPathLength(input);
+            if (pathLength < minimumStrokeLengthPixels)
+                return false;
+
+            float chordLength = Vector2.Distance(input[0], input[input.Count - 1]);
+            float curvatureRatio = pathLength / Mathf.Max(chordLength, 0.001f);
+            if (curvatureRatio < minimumPathCurvatureRatio)
                 return false;
 
             List<Vector2> candidate = NormalizePath(input);
