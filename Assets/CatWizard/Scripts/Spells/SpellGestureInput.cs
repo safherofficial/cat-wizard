@@ -178,6 +178,12 @@ namespace CatWizard.Spells
                 CancelStroke();
         }
 
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+                CancelStroke();
+        }
+
         private void OnDisable()
         {
             CancelStroke();
