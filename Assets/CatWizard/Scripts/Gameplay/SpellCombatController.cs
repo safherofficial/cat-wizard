@@ -315,12 +315,16 @@ namespace CatWizard.Gameplay
             if (effectMaterial != null)
                 return effectMaterial;
 
-            Shader shader = Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
             if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Sprites/Default");
 
             if (shader != null)
                 effectMaterial = new Material(shader);
+            else
+                Debug.LogError("[Cat Wizard] No compatible shader was found for spell effects.", this);
 
             return effectMaterial;
         }
