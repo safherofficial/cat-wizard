@@ -30,7 +30,7 @@ The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchsc
 
 ## Technology baseline
 
-- Unity 6.3 LTS (pinned editor revision: 6000.3.27f2).
+- Unity 6.3 LTS (pinned editor revision: 6000.3.29f1).
 - Universal Render Pipeline 17.3.0.
 - Input System 1.20.1.
 - C# and Unity 2D physics.
@@ -83,7 +83,7 @@ The Spell Lab scene and its runtime arena/spell systems are now in the repositor
 
 ## Open and test
 
-1. Install Unity 6.3 LTS revision 6000.3.27f2 through Unity Hub.
+1. Install Unity 6.3 LTS revision 6000.3.29f1 through Unity Hub.
 2. Open the repository root in Unity Hub.
 3. Allow Package Manager to resolve the manifest and let the Editor finish importing assets.
 4. Open `Assets/CatWizard/Scenes/SpellLab.unity` and press Play.
