@@ -333,8 +333,7 @@ namespace CatWizard.Spells
                 new Vector2(-5f, 15f),
                 new Vector2(-35f, -105f),
                 new Vector2(60f, 5f),
-                new Vector2(10f, 5f),
-                new Vector2(15f, 110f)
+                new Vector2(10f, 5f)
             };
         }
 
