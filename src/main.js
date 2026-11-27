@@ -27,12 +27,12 @@ class CatWizard {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.28;
+    this.renderer.toneMappingExposure = .92;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene,this.camera));
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1200,900),.42,.62,.76);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1200,900),.14,.46,.9);
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
     this.clock = new THREE.Clock();

@@ -20,3 +20,41 @@
 @media(max-width:860px){.app-shell{width:calc(100% - 22px)}.main-layout{display:flex;flex-direction:column;min-height:initial;padding:12px 0}.game-frame{min-height:min(70svh,620px)}.side-panel{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}.intro-block,.last-cast,.aside-foot{grid-column:1/-1}}
 @media(max-width:560px){.topbar{height:66px}.brand-sigil{width:32px;height:32px}.brand-name{font-size:15px}.brand-tagline{font-size:8px}.topbar-right{gap:8px}.build-chip{display:none}.fullscreen-button{padding:8px 9px;font-size:8px}.game-frame{min-height:min(68svh,570px)}.world-label{display:none}.game-topline{padding:13px}.hud-left{left:10px;top:70px}.hud-card{min-width:100px;padding:8px 9px}.game-bottomline{padding:0 10px;min-height:39px}.status-indicator p{max-width:220px;font-size:8px}.side-panel{grid-template-columns:1fr;padding:17px 15px 13px}.intro-block,.last-cast,.aside-foot{grid-column:auto}h1{font-size:33px}.footer{min-height:36px;height:auto;font-size:7px}.footer span:nth-child(2){display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Sunlit courtyard interface palette */
+:root{color:#31434c;background:#d9edf0;--gold:#bd874a;--muted:#71858a;--line:rgba(82,113,107,.2)}
+html,body{background:#d9edf0}
+body{background:radial-gradient(ellipse at 42% -20%,rgba(255,255,255,.9),transparent 54%),linear-gradient(180deg,#c7eaf0 0%,#e4e6d5 48%,#e8d9bd 100%)}
+.brand{color:#344a50}.brand-sigil{background:#fff9e9;color:#b98147;border-color:#b68b5f}
+.brand-tagline{color:#71858a}
+.build-chip{color:#397f64;border-color:#5f9d793a;background:#ffffff8a}
+.fullscreen-button{border-color:#ba8b5260;background:#fff9ec;color:#93683c}
+.fullscreen-button:hover{background:#fff1d6}
+.game-frame{border-color:#b9a17c;background:#8bcddc;box-shadow:0 22px 65px #456c6840}
+.game-topline{background:linear-gradient(#274c4d8a,transparent)}
+.game-topline strong{color:#fff9e9;text-shadow:0 1px 5px #284a4d75}
+.eyebrow,.world-label{color:#f9f1dd;text-shadow:0 1px 4px #33565b65}
+.eyebrow.gold{color:#ffe1a3}
+.hud-card{border-color:#fff9e4a3;background:#f8f2dfd9;box-shadow:0 5px 16px #416b6630}
+.hud-label{color:#6b807f}.hud-card strong{color:#344f52}
+.health-track{background:#567f7129}
+.game-bottomline{background:linear-gradient(0deg,#294b4ac9,transparent)}
+.status-indicator p,.cast-counter{color:#fff9e9;text-shadow:0 1px 4px #28494d}
+.cast-counter strong{color:#ffe1a3}
+.game-footnote{color:#607b78}
+.loading-screen{background:radial-gradient(ellipse at center,#fbf3d9ef,#b8e4e9f7 70%)}
+.loading-mark{color:#ba874f}.loading-title{color:#34575b}.loading-meter{background:#598c8235}
+.loading-meter span{background:linear-gradient(90deg,#65b9ae,#c99859)}.loading-caption{color:#66817f}
+.side-panel{border-color:#b7c8b7;background:linear-gradient(160deg,#fff8e9f5,#e6eedfef);box-shadow:0 14px 40px #628b7540}
+h1{color:#304c51}h1 em{color:#b88048}
+.intro-copy{color:#6c8280}
+.section-heading h2{color:#46605f}
+.section-heading span,.last-cast strong,.aside-foot span{color:#b88048}
+kbd{border-color:#849d8a6b;background:#fffdf4;color:#405c5c}
+.control-row span,.control-section>p{color:#758b87}
+.gesture-guide strong{color:#435b5b}.gesture-guide small{color:#7a8e88}
+.mouse-icon,.touch-icon{border-color:#c09a6b66;color:#ae7c48;background:#fff8e4}
+.control-section .slow-note{border-color:#7dbab04e;background:#d6f0e970;color:#468a83}
+.spell-item{border-color:#b6c8b077;background:#fffdf3aa}
+.spell-item strong{color:#47615f}.spell-item small{color:#82958d}
+.footer{color:#68817e}.footer span:first-child{color:#b17e4b}
