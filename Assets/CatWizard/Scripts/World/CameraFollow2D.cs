@@ -38,7 +38,7 @@ namespace CatWizard.World
                 ref velocity,
                 Mathf.Max(0.001f, smoothTime),
                 Mathf.Infinity,
-                Time.unscaledDeltaTime);
+                Time.deltaTime);
         }
     }
 }
