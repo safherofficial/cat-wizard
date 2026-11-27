@@ -205,8 +205,8 @@ namespace CatWizard.Gameplay
             Rigidbody2D body = prop.AddComponent<Rigidbody2D>();
             body.gravityScale = 0f;
             body.mass = Mathf.Max(0.4f, size.x * size.y);
-            body.drag = 1.25f;
-            body.angularDrag = 1.8f;
+            body.linearDamping = 1.25f;
+            body.angularDamping = 1.8f;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             body.constraints = RigidbodyConstraints2D.None;
@@ -235,8 +235,8 @@ namespace CatWizard.Gameplay
             Rigidbody2D body = cat.AddComponent<Rigidbody2D>();
             body.gravityScale = 0f;
             body.mass = 3f;
-            body.drag = 6f;
-            body.angularDrag = 8f;
+            body.linearDamping = 6f;
+            body.angularDamping = 8f;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
 
