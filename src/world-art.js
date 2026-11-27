@@ -61,6 +61,12 @@ function entrance(scene){
   const star=new THREE.Mesh(new THREE.OctahedronGeometry(.26),new THREE.MeshStandardMaterial({color:'#ffdf9a',emissive:'#d58b39',emissiveIntensity:.8}));star.position.set(0,3.49,.47);g.add(star);
 }
 export function buildArena(g){
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:'#55b9cf',roughness:.32,metalness:.12}));
+  sea.rotation.x=-Math.PI/2;sea.position.y=-1.57;g.scene.add(sea);
+  for(let i=0;i<18;i++){
+    const wave=new THREE.Mesh(new THREE.TorusGeometry(1.1+i*.36,.018,5,60),new THREE.MeshBasicMaterial({color:i%2?'#8be2e4':'#c3edf0',transparent:true,opacity:.22,depthWrite:false}));
+    wave.rotation.x=Math.PI/2;wave.position.set((i%6-2.5)*5,-1.55,Math.floor(i/6)*10-10);wave.scale.set(1.5,.7,1);g.scene.add(wave);
+  }
   const island=new THREE.Mesh(new THREE.CylinderGeometry(15.8,16.8,1.35,18),new THREE.MeshStandardMaterial({color:'#5d8a82',roughness:.88,flatShading:true}));
   island.position.y=-.82;island.receiveShadow=true;island.castShadow=true;g.scene.add(island);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,15),new THREE.MeshStandardMaterial({map:makeFloorTexture(g.renderer),roughness:.96}));
@@ -148,6 +154,6 @@ export function buildWisps(g){
   });
 }
 export function animateWorld(g,dt){
-  if(g.player){const p=g.player.position;const target=new THREE.Vector3(p.x*.22,19.5,p.z+18.8),look=new THREE.Vector3(p.x,0,p.z-2.15),a=1-Math.exp(-dt*2.8);g.camera.position.lerp(target,a);g.cameraLook.lerp(look,a);g.camera.lookAt(g.cameraLook);}
+  if(g.player){const p=g.player.position;const target=new THREE.Vector3(p.x*.16,14.3,p.z+14),look=new THREE.Vector3(p.x,0,p.z-1.7),a=1-Math.exp(-dt*2.8);g.camera.position.lerp(target,a);g.cameraLook.lerp(look,a);g.camera.lookAt(g.cameraLook);}
   if(g.magicCore){g.magicCore.rotation.y+=dt*.24;g.magicCore.rotation.x=Math.sin(g.worldTime*.35)*.09;g.magicCore.position.y=3.55+Math.sin(g.worldTime*1.6)*.13;g.magicOrbits[0].rotation.z+=dt*.55;g.magicOrbits[1].rotation.y-=dt*.42;g.magicOrbits[2].rotation.x+=dt*.36;}
 }

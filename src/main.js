@@ -17,7 +17,7 @@ class CatWizard {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#83d1ed');
     this.scene.fog = new THREE.Fog('#b9e2e8',42,92);
-    this.camera = new THREE.PerspectiveCamera(46,1,.1,120);
+    this.camera = new THREE.PerspectiveCamera(42,1,.1,120);
     this.camera.position.set(0,20,20);
     this.cameraLook = new THREE.Vector3(0,0,-2);
     this.camera.lookAt(this.cameraLook);
