@@ -94,6 +94,12 @@ namespace CatWizard.Spells
                 ApplyTimeScale(normalTimeScale);
         }
 
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+                RestoreImmediately();
+        }
+
         private void OnDisable()
         {
             RestoreImmediately();
