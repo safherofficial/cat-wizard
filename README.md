@@ -90,7 +90,7 @@ The Spell Lab scene and its runtime arena/spell systems are now in the repositor
 5. For desktop, move with WASD / arrow keys and draw with the left mouse button.
 6. On phone or tablet, use the left side to move and draw spells on the right side.
 7. Try the five symbols shown in the HUD. Watch the Console for the debug probe's recognized spell and confidence.
-8. In the Editor menu, run `Cat Wizard > Validate Gesture Recognizer` to check the five transformed gestures and the unrecognized straight-line case.
+8. In the Editor menu, run `Cat Wizard > Validate Gesture Recognizer` to check all five gestures in forward and reverse directions, with transformations, plus straight-line rejection.
 9. Inspect Build Settings to confirm SpellLab is the first enabled scene.
 
 More detail is in [docs/UNITY_SETUP.md](docs/UNITY_SETUP.md) and [docs/SPELL_LAB.md](docs/SPELL_LAB.md).
