@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using CatWizard.Player;
 using CatWizard.Spells;
 using CatWizard.World;
@@ -314,6 +315,13 @@ namespace CatWizard.Gameplay
         {
             if (effectMaterial != null)
                 return effectMaterial;
+
+            RenderPipelineAsset activePipeline = GraphicsSettings.currentRenderPipeline;
+            if (activePipeline != null && activePipeline.defaultLineMaterial != null)
+            {
+                effectMaterial = new Material(activePipeline.defaultLineMaterial);
+                return effectMaterial;
+            }
 
             Shader shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
             if (shader == null)
