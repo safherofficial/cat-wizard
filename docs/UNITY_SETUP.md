@@ -2,7 +2,7 @@
 
 ## Required Editor and packages
 
-Open this repository with Unity 6.3 LTS revision 6000.3.27f2. Package Manager resolves:
+Open this repository with Unity 6.3 LTS revision 6000.3.29f1. Package Manager resolves:
 
 - Input System 1.20.1.
 - Universal Render Pipeline 17.3.0.
