@@ -178,6 +178,7 @@ class CatWizard {
     window.addEventListener('blur',()=>{this.keys.clear();this.touchMove.set(0,0);this.movePointer=null;if(this.spellPointer!==null)this.endGesture();});
     this.canvas.addEventListener('contextmenu',e=>e.preventDefault());
     this.canvas.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'&&e.button!==0)return;
       const rect=this.canvas.getBoundingClientRect(),x=e.clientX-rect.left;
       if(e.pointerType==='touch'&&x<rect.width*.32&&this.movePointer===null){
         this.movePointer=e.pointerId;this.moveOrigin={x:e.clientX,y:e.clientY};this.touchMove.set(0,0);this.canvas.setPointerCapture(e.pointerId);e.preventDefault();return;

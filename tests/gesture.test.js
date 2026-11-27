@@ -10,3 +10,14 @@ Chaos:Array.from({length:11},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2===0?11
 };
 test('recognizes all five one-stroke spell templates',()=>{for(const [name,points] of Object.entries(samples)){const r=recognizeGesture(points);assert.equal(r?.spell,name,name+' should be recognized');assert.ok(r.confidence>=.62);}});
 test('rejects short strokes and straight lines',()=>{assert.equal(recognizeGesture([{x:0,y:0},{x:4,y:0},{x:8,y:0}]),null);const line=Array.from({length:30},(_,i)=>({x:i*6,y:i*2}));assert.equal(recognizeGesture(line),null);});
+
+test('recognizes reversed, rotated and scaled versions of every glyph',()=>{
+  const angle=.4,scale=1.3,co=Math.cos(angle),si=Math.sin(angle);
+  for(const [name,points] of Object.entries(samples)){
+    const reversed=recognizeGesture([...points].reverse());
+    assert.equal(reversed?.spell,name,name+' should work in reverse');
+    const transformed=points.map(p=>({x:300+(p.x*co-p.y*si)*scale,y:220+(p.x*si+p.y*co)*scale}));
+    const rotated=recognizeGesture(transformed);
+    assert.equal(rotated?.spell,name,name+' should survive translation, scale and rotation');
+  }
+});
