@@ -7,7 +7,7 @@ Open this repository with Unity 6.3 LTS revision 6000.3.27f2. Package Manager re
 - Input System 1.20.1.
 - Universal Render Pipeline 17.3.0.
 
-Let the first import finish before opening the scene. The project includes an Editor initialization script that creates `Assets/Settings/CatWizardURP.asset` and assigns it to Graphics Settings and all quality levels when no URP asset is already assigned. The initial renderer is Unity's built-in Universal Renderer. The dedicated 2D Renderer and Light2D lighting pass are deferred to a later art/lighting milestone.
+Let the first import finish before opening the scene. The project includes an Editor initialization script that creates `Assets/Settings/CatWizardURP.asset` and assigns it to Graphics Settings and all quality levels when no URP asset is already assigned. The configured renderer is Unity's built-in 2D Renderer, ready for a later Light2D and shadow-caster lighting pass.
 
 If the setup script did not run, use `Cat Wizard > Configure Universal Render Pipeline` from the Editor menu. The script does not overwrite a different render pipeline already assigned to the project.
 
