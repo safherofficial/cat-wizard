@@ -8,7 +8,7 @@ The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchsc
 
 **Vertical Slice 01 — Spell Lab**
 
-- A runtime-built top-down arena with boundary walls and floor grid.
+- A runtime-built top-down arena with boundary walls, floor grid, global 2D light, and colored point lights.
 - Original cat character sprite imported as a transparent Unity Sprite.
 - Desktop movement with WASD / arrow keys.
 - Tablet and phone movement with a left-side virtual thumb zone.
@@ -25,7 +25,7 @@ The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchsc
   - Triangle → Frost burst that freezes props.
   - Spiral → Gravity vortex that pulls props inward.
   - Star → Chaos area blast.
-- Destructible crates, barrels, ceramic vases, and stone blocks break into physics shards.
+- Destructible crates, barrels, ceramic vases, stone blocks, masonry wall segments, and ruin pillars break into physics shards.
 - Runtime HUD displays controls, glyph legend, time-dilation state, and last recognized spell.
 
 ## Technology baseline
