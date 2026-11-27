@@ -47,8 +47,9 @@ The procedural first test arena creates a top-down camera, floor/grid, boundary 
 - Ceramic vases.
 - Stone blocks and pillars.
 - Breakable masonry wall segments.
+- Three cursed wisps that drift, pursue the cat, and attack on contact.
 
-Props use Rigidbody2D, colliders, hit points, spell-specific responses, and temporary physics shards when destroyed. These are placeholder visuals, not final production art.
+Props use Rigidbody2D, colliders, hit points, spell-specific responses, and temporary physics shards when destroyed. Wisps have spell-sensitive health, Frost freeze, Gravity pull, and physical knockback. The cat has health, hit invulnerability, knockback, and arena respawn. These are first-pass systems with placeholder visuals, not final production art.
 
 ## Technical stack
 
@@ -74,6 +75,9 @@ Props use Rigidbody2D, colliders, hit points, spell-specific responses, and temp
 - [ ] Focus loss / app pause cannot leave Time.timeScale altered.
 - [ ] Fireball, Thunderbolt, Frost, Gravity, and Chaos produce their first-pass effects.
 - [ ] Props respond to physics and break into shards.
+- [ ] Wisps pursue the cat, damage on contact, and respect player invulnerability.
+- [ ] All five spells damage wisps; Frost freezes them and Gravity pulls them.
+- [ ] Defeating a wisp increments the HUD counter; player defeat triggers a safe respawn.
 - [ ] HUD remains responsive and legible at target resolutions.
 - [ ] Windows and mobile player builds complete successfully.
 

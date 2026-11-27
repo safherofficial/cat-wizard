@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using CatWizard.Enemies;
 using CatWizard.Player;
 using CatWizard.Spells;
 using CatWizard.World;
@@ -134,6 +135,7 @@ namespace CatWizard.Gameplay
         {
             SpawnLightning(origin, target);
             HashSet<DestructibleProp> struck = new HashSet<DestructibleProp>();
+            HashSet<CursedWisp> struckWisps = new HashSet<CursedWisp>();
             const int segments = 14;
 
             for (int i = 0; i <= segments; i++)
@@ -147,6 +149,10 @@ namespace CatWizard.Gameplay
                     DestructibleProp prop = hits[j].GetComponentInParent<DestructibleProp>();
                     if (prop != null && struck.Add(prop))
                         prop.ReceiveSpell(SpellType.Thunderbolt, point);
+
+                    CursedWisp wisp = hits[j].GetComponentInParent<CursedWisp>();
+                    if (wisp != null && struckWisps.Add(wisp))
+                        wisp.ReceiveSpell(SpellType.Thunderbolt, point);
                 }
             }
 
@@ -180,6 +186,10 @@ namespace CatWizard.Gameplay
                     DestructibleProp prop = hits[i].GetComponentInParent<DestructibleProp>();
                     if (prop != null)
                         prop.ApplyGravityPull(target, 24f);
+
+                    CursedWisp wisp = hits[i].GetComponentInParent<CursedWisp>();
+                    if (wisp != null)
+                        wisp.ApplyGravityPull(target, 18f);
                 }
 
                 yield return null;
@@ -208,6 +218,10 @@ namespace CatWizard.Gameplay
                 DestructibleProp prop = hits[i].GetComponentInParent<DestructibleProp>();
                 if (prop != null && affected.Add(prop))
                     prop.ReceiveSpell(spell, center);
+
+                CursedWisp wisp = hits[i].GetComponentInParent<CursedWisp>();
+                if (wisp != null)
+                    wisp.ReceiveSpell(spell, center);
             }
         }
 

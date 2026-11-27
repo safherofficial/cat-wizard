@@ -1,5 +1,6 @@
 using UnityEngine;
 using CatWizard.Gameplay;
+using CatWizard.Player;
 using CatWizard.Spells;
 
 namespace CatWizard.UI
@@ -10,6 +11,7 @@ namespace CatWizard.UI
     public sealed class SpellLabHud : MonoBehaviour
     {
         private SpellGestureInput gestureInput;
+        private CatPlayerHealth playerHealth;
         private GUIStyle titleStyle;
         private GUIStyle bodyStyle;
         private GUIStyle legendStyle;
@@ -17,9 +19,10 @@ namespace CatWizard.UI
         private Texture2D panelTexture;
         private int cachedWidth;
 
-        public void Configure(SpellGestureInput input)
+        public void Configure(SpellGestureInput input, CatPlayerHealth health)
         {
             gestureInput = input;
+            playerHealth = health;
         }
 
         private void OnGUI()
@@ -67,12 +70,22 @@ namespace CatWizard.UI
                 legend,
                 legendStyle);
 
+            string healthStatus = playerHealth != null
+                ? "CAT HP  " + playerHealth.CurrentHealth + "/" + playerHealth.MaxHealth
+                : "CAT HP  --";
+            string enemyStatus = "WISPS DISPERSED  " +
+                SpellLabBootstrap.EnemiesDefeated + "/" + SpellLabBootstrap.TotalEnemies;
+            GUI.Label(
+                new Rect(margin + 18f * scale, margin + headerHeight + 5f * scale, 460f * scale, 23f * scale),
+                healthStatus + "     •     " + enemyStatus,
+                bodyStyle);
+
             if (!string.IsNullOrEmpty(SpellLabBootstrap.LastSpellName))
             {
                 string status = SpellLabBootstrap.LastSpellName.ToUpperInvariant() +
                     "  CAST  •  " + (SpellLabBootstrap.LastSpellConfidence * 100f).ToString("0") + "% MATCH";
                 GUI.Label(
-                    new Rect(margin + 18f * scale, margin + headerHeight + 8f * scale, 420f * scale, 26f * scale),
+                    new Rect(margin + 18f * scale, margin + headerHeight + 27f * scale, 420f * scale, 26f * scale),
                     status,
                     bodyStyle);
             }

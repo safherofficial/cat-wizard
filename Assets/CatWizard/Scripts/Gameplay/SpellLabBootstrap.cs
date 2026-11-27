@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
+using CatWizard.Enemies;
 using CatWizard.Gameplay;
 using CatWizard.Player;
 using CatWizard.Spells;
@@ -23,6 +24,13 @@ namespace CatWizard.Gameplay
         public static Sprite CircleSprite { get; private set; }
         public static string LastSpellName { get; set; }
         public static float LastSpellConfidence { get; set; }
+        public static int EnemiesDefeated { get; private set; }
+        public static int TotalEnemies { get; private set; }
+
+        public static void RegisterEnemyDefeated()
+        {
+            EnemiesDefeated = Mathf.Min(EnemiesDefeated + 1, TotalEnemies);
+        }
 
         private static Sprite crateSprite;
         private static Sprite barrelSprite;
@@ -34,17 +42,21 @@ namespace CatWizard.Gameplay
             if (Application.isMobilePlatform)
                 Screen.orientation = ScreenOrientation.LandscapeLeft;
 
+            EnemiesDefeated = 0;
+            TotalEnemies = 0;
+            LastSpellName = string.Empty;
+            LastSpellConfidence = 0f;
+
             CreateRuntimeSprites();
             CreateLighting();
             Camera camera = CreateCamera();
             BuildArena();
 
             CatPlayerController player = BuildPlayer(camera);
+            CatPlayerHealth playerHealth = player.GetComponent<CatPlayerHealth>();
+            BuildEnemies(playerHealth);
             BuildSpellPipeline(camera, player);
-            BuildHud();
-
-            LastSpellName = string.Empty;
-            LastSpellConfidence = 0f;
+            BuildHud(playerHealth);
         }
 
         private static void CreateRuntimeSprites()
@@ -315,12 +327,100 @@ namespace CatWizard.Gameplay
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
 
             CatPlayerController controller = cat.AddComponent<CatPlayerController>();
+            cat.AddComponent<CatPlayerHealth>();
 
             CameraFollow2D follow = camera.GetComponent<CameraFollow2D>();
             if (follow != null)
                 follow.SetTarget(cat.transform);
 
             return controller;
+        }
+
+        private void BuildEnemies(CatPlayerHealth playerHealth)
+        {
+            CreateWisp(
+                "Cursed Wisp - Ember",
+                new Vector2(-10.2f, -1.7f),
+                new Color(0.9f, 0.31f, 0.2f),
+                playerHealth);
+
+            CreateWisp(
+                "Cursed Wisp - Aether",
+                new Vector2(0f, 5.85f),
+                new Color(0.36f, 0.7f, 1f),
+                playerHealth);
+
+            CreateWisp(
+                "Cursed Wisp - Gloom",
+                new Vector2(10.2f, 1.65f),
+                new Color(0.68f, 0.39f, 0.94f),
+                playerHealth);
+        }
+
+        private void CreateWisp(
+            string wispName,
+            Vector2 position,
+            Color tint,
+            CatPlayerHealth playerHealth)
+        {
+            GameObject wisp = new GameObject(wispName);
+            wisp.transform.position = position;
+
+            SpriteRenderer aura = wisp.AddComponent<SpriteRenderer>();
+            aura.sprite = CircleSprite;
+            aura.color = new Color(tint.r, tint.g, tint.b, 0.2f);
+            aura.sortingOrder = 8;
+            aura.transform.localScale = Vector3.one * 1.38f;
+
+            GameObject core = new GameObject("Wisp Core");
+            core.transform.SetParent(wisp.transform, false);
+            core.transform.localScale = Vector3.one * 0.76f;
+            SpriteRenderer coreRenderer = core.AddComponent<SpriteRenderer>();
+            coreRenderer.sprite = CircleSprite;
+            coreRenderer.color = tint;
+            coreRenderer.sortingOrder = 9;
+
+            AddWispDetail(wisp.transform, "Left Eye", new Vector2(-0.15f, 0.055f), 0.09f,
+                new Color(0.075f, 0.055f, 0.12f), 10);
+            AddWispDetail(wisp.transform, "Right Eye", new Vector2(0.15f, 0.055f), 0.09f,
+                new Color(0.075f, 0.055f, 0.12f), 10);
+            AddWispDetail(wisp.transform, "Core Glint", new Vector2(-0.19f, 0.2f), 0.1f,
+                new Color(1f, 1f, 1f, 0.82f), 10);
+
+            CircleCollider2D collider = wisp.AddComponent<CircleCollider2D>();
+            collider.radius = 0.43f;
+
+            Rigidbody2D body = wisp.AddComponent<Rigidbody2D>();
+            body.gravityScale = 0f;
+            body.mass = 0.85f;
+            body.linearDamping = 2.8f;
+            body.angularDamping = 5f;
+            body.interpolation = RigidbodyInterpolation2D.Interpolate;
+            body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            body.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+            CursedWisp controller = wisp.AddComponent<CursedWisp>();
+            controller.Configure(playerHealth, 5f, tint);
+            TotalEnemies++;
+        }
+
+        private static void AddWispDetail(
+            Transform parent,
+            string detailName,
+            Vector2 localPosition,
+            float scale,
+            Color tint,
+            int sortingOrder)
+        {
+            GameObject detail = new GameObject(detailName);
+            detail.transform.SetParent(parent, false);
+            detail.transform.localPosition = localPosition;
+            detail.transform.localScale = Vector3.one * scale;
+
+            SpriteRenderer renderer = detail.AddComponent<SpriteRenderer>();
+            renderer.sprite = CircleSprite;
+            renderer.color = tint;
+            renderer.sortingOrder = sortingOrder;
         }
 
         private void BuildSpellPipeline(Camera camera, CatPlayerController player)
@@ -348,10 +448,10 @@ namespace CatWizard.Gameplay
             gameObject.AddComponent<SpellGestureDebugProbe>();
         }
 
-        private void BuildHud()
+        private void BuildHud(CatPlayerHealth playerHealth)
         {
             SpellLabHud hud = gameObject.AddComponent<SpellLabHud>();
-            hud.Configure(GetComponent<SpellGestureInput>());
+            hud.Configure(GetComponent<SpellGestureInput>(), playerHealth);
         }
 
         private static Material CreateLineMaterial()

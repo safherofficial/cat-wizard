@@ -26,7 +26,10 @@ The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchsc
   - Spiral → Gravity vortex that pulls props inward.
   - Star → Chaos area blast.
 - Destructible crates, barrels, ceramic vases, stone blocks, masonry wall segments, and ruin pillars break into physics shards.
-- Runtime HUD displays controls, glyph legend, time-dilation state, and last recognized spell.
+- Three cursed wisps patrol the hall, pursue the cat, and deal contact damage.
+- All five spells can damage the wisps; Frost freezes them and Gravity pulls them into the vortex.
+- Cat health, temporary invulnerability, and automatic arena respawn make enemy contact part of the test loop.
+- Runtime HUD displays controls, glyph legend, time-dilation state, cat health, wisp defeats, and last recognized spell.
 
 ## Technology baseline
 
@@ -47,7 +50,10 @@ Assets/
       Gameplay/
         SpellLabBootstrap.cs
         SpellCombatController.cs
-      Player/CatPlayerController.cs
+      Player/
+        CatPlayerController.cs
+        CatPlayerHealth.cs
+      Enemies/CursedWisp.cs
       Spells/
         SpellType.cs
         SpellGestureInput.cs

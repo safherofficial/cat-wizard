@@ -25,7 +25,9 @@ This makes the first prototype scene self-contained and keeps the initial work f
 | Spiral | Gravity | A temporary vortex pulls nearby props inward before a release impulse. |
 | Star | Chaos | A larger radial burst damages and throws nearby props. |
 
-Destroyed props emit temporary rigidbody shards. The arena also includes six individually destructible masonry wall segments and two ruin pillars, so destruction is not limited to furniture-sized objects. This is intentionally a first-pass feedback loop; the current props do not yet have final bespoke destruction meshes, fracture maps, explosion chains, or persistence.
+Destroyed props emit temporary rigidbody shards. The arena also includes six individually destructible masonry wall segments and two ruin pillars, so destruction is not limited to furniture-sized objects.
+
+Three cursed wisps now add the first enemy-combat loop. They drift around their starting positions, pursue the cat when it enters their awareness radius, and damage the player on contact. All five spells can damage them; Frost temporarily freezes them and Gravity pulls them toward the vortex. Defeated wisps burst into particles and increment the HUD counter. The cat has five health points, brief hit invulnerability, knockback, and an automatic return to the arena after being defeated.
 
 ## Input zones
 
@@ -47,8 +49,8 @@ This command tests the geometry recognizer only. It does not substitute for test
 
 ## Known limitations
 
-- No enemy AI or boss encounter yet.
-- No final cat movement, casting, hit-reaction, or idle animation set yet.
+- No boss encounter, ranged enemy attacks, or multi-wave progression yet.
+- Wisp and cat feedback still use placeholder procedural visuals; final movement, casting, hit-reaction, and idle animation sets are not implemented yet.
 - No spell audio or final VFX package yet.
 - Arena props and impact effects are placeholder generated sprites.
 - Prop destruction currently uses simple radial shard bursts rather than detailed mesh/pixel fracture.
