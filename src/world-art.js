@@ -74,6 +74,22 @@ export function buildWizardCat(g){
   const torso=new THREE.Mesh(new THREE.CylinderGeometry(.4,.66,.92,9,1),robe);torso.position.y=.58;torso.castShadow=true;cat.add(torso);
   const panel=new THREE.Mesh(new THREE.ConeGeometry(.54,.62,8,1,true),robeLight);panel.position.set(0,.62,.05);panel.scale.set(.72,1,.26);cat.add(panel);
   const hem=new THREE.Mesh(new THREE.TorusGeometry(.61,.055,7,24),gold);hem.rotation.x=Math.PI/2;hem.position.y=.16;cat.add(hem);
+  const cape=new THREE.Group();cape.position.set(0,1.04,-.3);cat.add(cape);
+  const capeMat=new THREE.MeshStandardMaterial({color:'#293e62',roughness:.82,flatShading:true,side:THREE.DoubleSide});
+  const capeVertices=new Float32Array([
+    -.31,0,0,  .31,0,0,  -.56,-.92,-.22,
+     .31,0,0,  .56,-.92,-.22, -.56,-.92,-.22,
+    -.31,0,0,  -.56,-.92,-.22, -.2,-1.08,-.32,
+     .31,0,0,  .2,-1.08,-.32, .56,-.92,-.22
+  ]);
+  const capeGeometry=new THREE.BufferGeometry();
+  capeGeometry.setAttribute('position',new THREE.BufferAttribute(capeVertices,3));
+  capeGeometry.computeVertexNormals();
+  const capeMesh=new THREE.Mesh(capeGeometry,capeMat);capeMesh.castShadow=true;cape.add(capeMesh);
+  const capeTrim=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-.55,-.92,-.23),new THREE.Vector3(-.2,-1.07,-.33),
+    new THREE.Vector3(.2,-1.07,-.33),new THREE.Vector3(.55,-.92,-.23)
+  ]),18,.025,5,false),gold);cape.add(capeTrim);
   const legPivots=[],armPivots=[];
   for(const s of [-1,1]){
     const legPivot=new THREE.Group();legPivot.position.set(s*.24,.34,.04);cat.add(legPivot);
@@ -116,7 +132,7 @@ export function buildWizardCat(g){
   const tail=new THREE.Mesh(new THREE.TubeGeometry(curve,18,.095,7,false),fur);tail.castShadow=true;tailPivot.add(tail);
   const tailTip=new THREE.Mesh(new THREE.SphereGeometry(.12,7,6),furLight);tailTip.position.set(-.12,.7,-.42);tailPivot.add(tailTip);
   g.tail=tailPivot;
-  g.catRig={torso,head,hat:hatGroup,pipe,ember,smoke,tail:tailPivot,legPivots,armPivots};
+  g.catRig={torso,head,hat:hatGroup,cape,pipe,ember,smoke,tail:tailPivot,legPivots,armPivots};
   return player;
 }
 export function buildWisps(g){
@@ -148,6 +164,8 @@ export function animateWorld(game,dt){
     rig.legPivots.forEach((pivot,i)=>{pivot.rotation.x=Math.sin(stride+i*Math.PI)*.58*amount;});
     rig.armPivots.forEach((pivot,i)=>{pivot.rotation.x=Math.sin(stride+i*Math.PI+Math.PI)*.43*amount;});
     rig.hat.rotation.z=-.1+Math.sin(game.worldTime*1.3)*.035+Math.sin(stride)*.025*amount;
+    rig.cape.rotation.x=Math.sin(game.worldTime*2.2)*.045+Math.sin(stride)*.075*amount;
+    rig.cape.rotation.z=Math.sin(game.worldTime*1.35)*.035+Math.sin(stride*.5)*.08*amount;
     rig.tail.rotation.y=Math.sin(game.worldTime*2.45)*.28+Math.sin(stride*.5)*.12*amount;
     rig.tail.rotation.x=Math.cos(game.worldTime*2.05)*.12;
     rig.pipe.rotation.z=-.22+Math.sin(game.worldTime*3.1)*.025;

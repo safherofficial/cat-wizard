@@ -7,6 +7,25 @@ const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const rand = (a,b) => a + Math.random() * (b-a);
 const dist = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 
+function createGlowTexture(){
+  const canvas=document.createElement('canvas');
+  canvas.width=canvas.height=128;
+  const context=canvas.getContext('2d');
+  const gradient=context.createRadialGradient(64,64,0,64,64,64);
+  gradient.addColorStop(0,'rgba(255,255,245,1)');
+  gradient.addColorStop(.14,'rgba(255,229,173,.96)');
+  gradient.addColorStop(.34,'rgba(255,145,67,.7)');
+  gradient.addColorStop(.62,'rgba(255,82,32,.2)');
+  gradient.addColorStop(1,'rgba(255,52,20,0)');
+  context.fillStyle=gradient;
+  context.fillRect(0,0,128,128);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.generateMipmaps=true;
+  texture.minFilter=THREE.LinearMipmapLinearFilter;
+  return texture;
+}
+
 class CatWizard {
   constructor(canvas) {
     this.canvas = canvas;
@@ -26,6 +45,7 @@ class CatWizard {
     this.renderer.toneMappingExposure = .92;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.glowTexture=createGlowTexture();
 
     this.clock = new THREE.Timer();
     this.clock.connect(document);
@@ -270,7 +290,9 @@ class CatWizard {
       node.geometry?.dispose();
       if(node.material){
         const materials=Array.isArray(node.material)?node.material:[node.material];
-        materials.forEach(material=>{material.map?.dispose();material.dispose();});
+        // Maps can be shared by sprites and other effects; release material
+        // instances here and dispose the shared glow texture once at shutdown.
+        materials.forEach(material=>material.dispose());
       }
     });
   }
@@ -379,7 +401,13 @@ class CatWizard {
     this.updateCamera(frameDelta);
     this.renderer.render(this.scene,this.camera);
   }
-  dispose(){this.renderer.setAnimationLoop(null);this.resizeObserver.disconnect();this.clock.dispose();this.renderer.dispose();}
+  dispose(){
+    this.renderer.setAnimationLoop(null);
+    this.resizeObserver.disconnect();
+    this.clock.dispose();
+    this.glowTexture.dispose();
+    this.renderer.dispose();
+  }
 }
 
 function boot(){

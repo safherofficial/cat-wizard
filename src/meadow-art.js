@@ -134,8 +134,8 @@ function addGrass(game){
     if(Math.abs(x)>16||Math.abs(z)>13)continue;
     dummy.position.set(x,.015,z);
     dummy.rotation.set(0,random()*TAU,0);
-    const height=.65+random()*.8;
-    const width=.66+random()*.72;
+    const height=.46+random()*.66;
+    const width=.62+random()*.76;
     dummy.scale.set(width,height,width);
     dummy.updateMatrix();mesh.setMatrixAt(placed,dummy.matrix);
     color.set(palette[Math.floor(random()*palette.length)]);mesh.setColorAt(placed,color);
