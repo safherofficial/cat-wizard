@@ -25,8 +25,9 @@ Create a GameObject named SpellSystems and add:
 - SpellGestureRecognizer
 - SpellTimeDilation
 - SpellDrawingController
+- SpellGestureDebugProbe (temporary development listener)
 
-The controller can auto-find the first three components on the same GameObject. Assign the gesture trail component in the Stroke Renderer field.
+The controller can auto-find the first three components on the same GameObject. Assign the gesture trail component in the Stroke Renderer field. The debug probe listens to the controller events and reports the recognized spell and confidence in the Console.
 
 Create a child or sibling GameObject named GestureTrail:
 - Add a LineRenderer.
@@ -39,19 +40,19 @@ Use a top-down orthographic camera looking toward the XY gameplay plane. Place t
 
 ## Spell event integration
 
-SpellDrawingController exposes a SpellCast event. Subscribe the gameplay spell system to receive:
+SpellDrawingController exposes a SpellCast event. It sends:
 - SpellType: the recognized spell.
 - Screen release position: the end of the drawing gesture.
 - Confidence: recognizer score from 0 to 1.
 
-The event is the handoff point for projectile spawning, spell-specific VFX, collision effects, and environmental destruction. Those effect systems and the playable test scene are not included in this initial source foundation yet.
+The debug probe confirms recognition only. Projectile spawning, spell-specific VFX, collision effects, and environmental destruction are the next gameplay layer; they are not yet implemented and no playable build is claimed.
 
 ## First manual checks
 
 1. Enter Play Mode on desktop and hold-drag a large circle with the left mouse button.
 2. Confirm the world slows as soon as the mouse is pressed.
 3. Confirm the tracing line follows the mouse at normal input responsiveness.
-4. Release the mouse and confirm Fireball is emitted through the SpellCast event.
+4. Release the mouse and confirm Fireball appears in the Console through the debug probe.
 5. Repeat with a lightning bolt, triangle, spiral, and star.
 6. Repeat on a touch device, then with a supported stylus.
 7. Draw an unknown scribble and confirm no spell event is emitted.
