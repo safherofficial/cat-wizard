@@ -282,11 +282,19 @@ namespace CatWizard.Gameplay
 
         private static Material CreateLineMaterial()
         {
-            Shader shader = Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
             if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Sprites/Default");
 
-            return shader != null ? new Material(shader) : new Material(Shader.Find("UI/Default"));
+            if (shader == null)
+            {
+                Debug.LogError("[Cat Wizard] No compatible unlit shader was found for spell trails and arena lines.");
+                return new Material(Shader.Find("Hidden/InternalErrorShader"));
+            }
+
+            return new Material(shader);
         }
 
         private static Sprite CreateSolidSprite(Color color, int size)
