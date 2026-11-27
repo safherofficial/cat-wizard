@@ -37,28 +37,29 @@ namespace CatWizard.Editor
                     MakeStar()
                 };
 
+                int passed = 0;
                 for (int i = 0; i < paths.Length; i++)
                 {
                     List<Vector2> transformed = TransformWithNoise(paths[i], i * 0.37f, 0.82f);
-
-                    bool accepted = recognizer.TryRecognize(
+                    ValidateCase(
+                        recognizer,
                         transformed,
-                        out SpellType actual,
-                        out float confidence);
+                        expected[i],
+                        expected[i] + " forward",
+                        failures,
+                        ref passed);
 
-                    if (!accepted || actual != expected[i])
-                    {
-                        failures.Add(
-                            expected[i] + " => " +
-                            (accepted ? actual.ToString() : "REJECTED") +
-                            " (confidence " + confidence.ToString("0.000") + ")");
-                    }
-                    else
-                    {
-                        Debug.Log(
-                            "[Cat Wizard] PASS " + expected[i] +
-                            " confidence " + confidence.ToString("0.000"));
-                    }
+                    var reversedPath = new List<Vector2>(paths[i]);
+                    reversedPath.Reverse();
+                    List<Vector2> transformedReverse =
+                        TransformWithNoise(reversedPath, i * 0.23f + 0.6f, 1.08f);
+                    ValidateCase(
+                        recognizer,
+                        transformedReverse,
+                        expected[i],
+                        expected[i] + " reverse",
+                        failures,
+                        ref passed);
                 }
 
                 List<Vector2> accidentalLine = new List<Vector2>();
@@ -73,11 +74,12 @@ namespace CatWizard.Editor
                 }
                 else
                 {
+                    passed++;
                     Debug.Log("[Cat Wizard] PASS unrecognized straight-line gesture rejected");
                 }
 
                 if (failures.Count == 0)
-                    Debug.Log("[Cat Wizard] Gesture recognizer validation passed: 6/6 checks.");
+                    Debug.Log("[Cat Wizard] Gesture recognizer validation passed: " + passed + "/11 checks.");
                 else
                     Debug.LogError(
                         "[Cat Wizard] Gesture recognizer validation failed: " +
@@ -87,6 +89,34 @@ namespace CatWizard.Editor
             {
                 UnityEngine.Object.DestroyImmediate(host);
             }
+        }
+
+        private static void ValidateCase(
+            SpellGestureRecognizer recognizer,
+            List<Vector2> path,
+            SpellType expected,
+            string caseName,
+            List<string> failures,
+            ref int passed)
+        {
+            bool accepted = recognizer.TryRecognize(
+                path,
+                out SpellType actual,
+                out float confidence);
+
+            if (!accepted || actual != expected)
+            {
+                failures.Add(
+                    caseName + " => " +
+                    (accepted ? actual.ToString() : "REJECTED") +
+                    " (confidence " + confidence.ToString("0.000") + ")");
+                return;
+            }
+
+            passed++;
+            Debug.Log(
+                "[Cat Wizard] PASS " + caseName +
+                " confidence " + confidence.ToString("0.000"));
         }
 
         private static List<Vector2> TransformWithNoise(List<Vector2> source, float rotation, float scale)
