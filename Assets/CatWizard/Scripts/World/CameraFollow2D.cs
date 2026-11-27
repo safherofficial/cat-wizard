@@ -16,6 +16,12 @@ namespace CatWizard.World
             bounds = worldBounds;
         }
 
+        public void SetTarget(Transform followTarget)
+        {
+            target = followTarget;
+            velocity = Vector3.zero;
+        }
+
         private void LateUpdate()
         {
             if (target == null)
