@@ -13,8 +13,8 @@ namespace CatWizard.Spells
         private const float NormalizedSize = 250f;
         private const float HalfDiagonal = 176.7767f;
 
-        [SerializeField, Min(8)]
-        private int minimumInputPoints = 8;
+        [SerializeField, Range(3, 12)]
+        private int minimumInputPoints = 4;
 
         [SerializeField, Min(1f)]
         private float minimumStrokeLengthPixels = 70f;
