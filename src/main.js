@@ -284,7 +284,7 @@ class CatWizard {
   }
   damageLine(a,b){
     const ab=new THREE.Vector2(b.x-a.x,b.z-a.z);
-    const dTo=p=>{const ap=new THREE.Vector2(p.x-a.x,p.z-a.z),t=clamp(ap.dot(ab)/Math.max(ab.lengthSq(),1e-4),0,1);return ap.distanceTo(new THREE.Vector2(a.x,a.z).addScaledVector(ab,t));};
+    const dTo=p=>{const ap=new THREE.Vector2(p.x-a.x,p.z-a.z),t=clamp(ap.dot(ab)/Math.max(ab.lengthSq(),1e-4),0,1);return new THREE.Vector2(p.x,p.z).distanceTo(new THREE.Vector2(a.x,a.z).addScaledVector(ab,t));};
     this.props.forEach(p=>{if(!p.destroyed&&dTo(p.group.position)<.95)this.hitProp(p,'Thunderbolt',a,1.1,7);});
     this.wisps.forEach(w=>{if(!w.defeated&&dTo(w.group.position)<1.05)this.hitWisp(w,'Thunderbolt',2.5);});
   }
