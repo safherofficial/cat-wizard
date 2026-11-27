@@ -31,7 +31,7 @@ jobs:
       - name: Verify static output
         run: |
           test -s dist/index.html
-          test -s dist/assets/cat-wizard.png
+          test -s dist/assets/cat-wizard.webp
           find dist/assets -maxdepth 1 -type f | grep -Eq '\.js$'
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4

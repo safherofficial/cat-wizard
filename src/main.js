@@ -155,7 +155,7 @@ class CatWizard {
   }
 
   loadCat() {
-    new THREE.TextureLoader().load(import.meta.env.BASE_URL+'assets/cat-wizard.png',(map)=>{
+    new THREE.TextureLoader().load(import.meta.env.BASE_URL+'assets/cat-wizard.webp',(map)=>{
       map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());
       this.catSprite=new THREE.Sprite(new THREE.SpriteMaterial({map,transparent:true,depthWrite:false,depthTest:false,toneMapped:false}));
       this.catSprite.scale.set(2.2,1.65,1);this.catSprite.position.y=1.04;this.catSprite.renderOrder=20;this.player.add(this.catSprite);this.placeholder.visible=false;
