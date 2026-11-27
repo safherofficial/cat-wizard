@@ -45,7 +45,8 @@ The procedural first test arena creates a top-down camera, floor/grid, boundary 
 - Wooden crates.
 - Barrels.
 - Ceramic vases.
-- Stone blocks.
+- Stone blocks and pillars.
+- Breakable masonry wall segments.
 
 Props use Rigidbody2D, colliders, hit points, spell-specific responses, and temporary physics shards when destroyed. These are placeholder visuals, not final production art.
 
