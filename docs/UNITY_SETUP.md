@@ -50,7 +50,7 @@ Destroyed props emit temporary physics shards. These are first-pass placeholder 
 
 ## Validation
 
-In the Unity Editor, run `Cat Wizard > Validate Gesture Recognizer`. The command checks all five templates after rotation, scaling, translation, and small deterministic point noise; it also checks rejection of a straight-line stroke.
+In the Unity Editor, run `Cat Wizard > Validate Gesture Recognizer`. The command checks all five templates in forward and reverse directions after rotation, scaling, translation, and small deterministic point noise; it also checks rejection of a straight-line stroke.
 
 Then manually verify:
 1. Mouse down slows the world immediately.
