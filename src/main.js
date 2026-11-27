@@ -50,6 +50,28 @@ class CatWizard {
     this.buildArena();
     this.buildPlayer();
     this.buildWisps();
+    if (new URLSearchParams(location.search).get('debug') === '1') {
+      // Read-only QA snapshot; only exposed when the explicit debug query is present.
+      window.__CAT_WIZARD_DEBUG__ = {
+        player: () => ({ x: this.player.position.x, z: this.player.position.z, health: this.playerHealth }),
+        wisps: () => this.wisps.map(w => ({
+          x: w.group.position.x, z: w.group.position.z, health: w.health,
+          defeated: w.defeated, frozen: w.freeze
+        })),
+        obstacles: () => this.obstacles.map(o => ({
+          x: o.fixed ? o.x : o.group.position.x,
+          z: o.fixed ? o.z : o.group.position.z,
+          radius: o.radius || 0,
+          fixed: Boolean(o.fixed),
+          destroyed: Boolean(o.destroyed),
+          type: o.type || 'pillar'
+        })),
+        view: () => ({
+          width: this.viewWidth, height: this.viewHeight,
+          rect: (() => { const r = this.canvas.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; })()
+        })
+      };
+    }
     this.bindInput();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas.parentElement);
