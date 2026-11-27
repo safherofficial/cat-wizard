@@ -160,23 +160,23 @@ export function buildWizardCat(g){
   cat.add(cape);
   const capeShape=new THREE.Shape();
   capeShape.moveTo(-.32,.08);
-  capeShape.bezierCurveTo(-.54,-.12,-.5,-.63,-.69,-1.02);
-  capeShape.quadraticCurveTo(0,-1.2,.69,-1.02);
-  capeShape.bezierCurveTo(.5,-.63,.54,-.12,.32,.08);
+  capeShape.bezierCurveTo(-.54,-.12,-.5,-.55,-.66,-.91);
+  capeShape.quadraticCurveTo(0,-1.02,.66,-.91);
+  capeShape.bezierCurveTo(.5,-.55,.54,-.12,.32,.08);
   capeShape.closePath();
   const capeMesh=new THREE.Mesh(new THREE.ShapeGeometry(capeShape,18),capeMat);
   capeMesh.castShadow=true;
   cape.add(capeMesh);
   const liningShape=new THREE.Shape();
   liningShape.moveTo(-.22,-.04);
-  liningShape.bezierCurveTo(-.38,-.34,-.36,-.73,-.5,-.99);
-  liningShape.quadraticCurveTo(0,-1.08,.5,-.99);
-  liningShape.bezierCurveTo(.36,-.73,.38,-.34,.22,-.04);
+  liningShape.bezierCurveTo(-.38,-.34,-.36,-.68,-.49,-.89);
+  liningShape.quadraticCurveTo(0,-.96,.49,-.89);
+  liningShape.bezierCurveTo(.36,-.68,.38,-.34,.22,-.04);
   liningShape.closePath();
   const lining=new THREE.Mesh(new THREE.ShapeGeometry(liningShape,14),capeLining);
   lining.position.z=.006;
   cape.add(lining);
-  tube(cape,[[-.67,-1.01,.012],[-.36,-1.13,.012],[0,-1.16,.012],[.36,-1.13,.012],[.67,-1.01,.012]],.025,gold);
+  tube(cape,[[-.65,-.9,.012],[-.34,-.98,.012],[0,-1.0,.012],[.34,-.98,.012],[.65,-.9,.012]],.025,gold);
   tube(cape,[[-.32,.05,.014],[0,-.12,.014],[.32,.05,.014]],.018,goldLight);
 
   // Waist details and the little illuminated star at the centre of the robe.
