@@ -4,7 +4,7 @@ Cat Wizard now runs as a native browser game built with Three.js. Unity is no lo
 
 ## Stack
 
-- Three.js `0.187.0` for the WebGL scene, orthographic camera, lighting, materials, sprites and effects.
+- Three.js `0.187.0` for the WebGL scene, perspective follow camera, lighting, materials, stylized meshes, animated vegetation, particles and effects.
 - Vite `8.4.0` for development and optimized static builds.
 - Native JavaScript modules; no Unity player, license, WebAssembly runtime or game server is required.
 
@@ -38,7 +38,7 @@ The deployable site is written to `dist/`.
 
 ## Gameplay
 
-The arena is assembled from Three.js geometry and a generated stone-floor texture. Player movement resolves against the destructible props and fixed ruin pillars; broken props stop blocking the player. The wisps begin far enough from the spawn point to avoid immediate unavoidable contact damage. It includes a spell seal, boundary masonry, ruined pillars, destructible crates, barrels, vases and stone blocks, three pursuing cursed wisps, player health, invulnerability, respawn, spell trails, impact rings and debris. The original full-body cat art (grey fur, pipe, pink bowtie and tail) is chroma-keyed to a transparent alpha background and served from `public/assets/cat-wizard.webp`.
+The scene is a stylized painted meadow built from a seeded 2048×1536 ground texture, 9,000 animated instanced grass blades, nearly 1,000 flower clusters, tree canopies, bushes, a winding river, a cottage, a working windmill, hills, standing stones and floating fireflies. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is a modeled 3D grey cat with the signature pink bow tie, pointed ears, violet wizard hat and pipe; the walk cycle articulates the legs and arms, with secondary head, hat, tail and pipe-smoke motion. Three faceted cursed wisps pursue the player. Destructible props, player health, invulnerability, respawn and the five gesture spells are retained. The follow camera is closer to the character to emphasize the third-person adventure view.
 
 ## Runtime timing
 

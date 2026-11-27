@@ -145,6 +145,21 @@ function addGrass(game){
   game.scene.add(mesh);game.grassMaterial=material;
 }
 
+function addFireflies(game){
+  const random=seeded(66021),count=150,positions=new Float32Array(count*3),phases=new Float32Array(count),base=new Float32Array(count*3);
+  for(let i=0;i<count;i++){
+    const x=random()*34-17,z=random()*25-12.5,y=.55+random()*2.2;
+    base[i*3]=x;base[i*3+1]=y;base[i*3+2]=z;
+    phases[i]=random()*TAU;
+    positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  const material=new THREE.PointsMaterial({color:'#fff0b0',size:.13,transparent:true,opacity:.72,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+  const points=new THREE.Points(geometry,material);
+  points.frustumCulled=false;game.scene.add(points);game.fireflies={points,base,phases};
+}
+
 function addFlowers(game){
   const random=seeded(7788),count=980;
   const stemGeometry=new THREE.CylinderGeometry(.012,.018,.23,4);
@@ -366,6 +381,7 @@ export function buildMeadowArena(game){
 
   addGrass(game);
   addFlowers(game);
+  addFireflies(game);
 
   // The destructible props are scattered through the clearing like things left by its keeper.
   const props=[
@@ -382,8 +398,8 @@ export function buildMeadowArena(game){
 export function animateMeadow(game,dt){
   if(game.player){
     const p=game.player.position;
-    const target=new THREE.Vector3(p.x*.12,8.6,p.z+9.3);
-    const look=new THREE.Vector3(p.x,1.05,p.z-3.2);
+    const target=new THREE.Vector3(p.x*.12,7.25,p.z+7.8);
+    const look=new THREE.Vector3(p.x,1.2,p.z-2.45);
     const a=1-Math.exp(-dt*2.8);
     game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
   }
@@ -398,4 +414,15 @@ export function animateMeadow(game,dt){
     game.magicOrbits[0].rotation.z+=dt*.55;game.magicOrbits[1].rotation.y-=dt*.42;
   }
   if(game.cottageSmoke)game.cottageSmoke.position.y=4.1+Math.sin(game.worldTime*.45)*.13;
+  if(game.fireflies){
+    const attribute=game.fireflies.points.geometry.attributes.position;
+    for(let i=0;i<game.fireflies.phases.length;i++){
+      const phase=game.fireflies.phases[i],k=i*3;
+      attribute.array[k]=game.fireflies.base[k]+Math.sin(game.worldTime*.42+phase)*.16;
+      attribute.array[k+1]=game.fireflies.base[k+1]+Math.sin(game.worldTime*1.35+phase)*.28;
+      attribute.array[k+2]=game.fireflies.base[k+2]+Math.cos(game.worldTime*.36+phase)*.14;
+    }
+    attribute.needsUpdate=true;
+    game.fireflies.points.material.opacity=.52+Math.sin(game.worldTime*2.1)*.16;
+  }
 }

@@ -13,7 +13,7 @@ class CatWizard {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#83d1ed');
     this.scene.fog = new THREE.Fog('#b9e2e8',42,92);
-    this.camera = new THREE.PerspectiveCamera(52,1,.1,120);
+    this.camera = new THREE.PerspectiveCamera(48,1,.1,120);
     this.camera.position.set(0,20,20);
     this.cameraLook = new THREE.Vector3(0,0,-2);
     this.camera.lookAt(this.cameraLook);
@@ -166,25 +166,66 @@ class CatWizard {
   cast(spell,target,confidence) {
     this.castCount++;this.lastSpell=SPELLS[spell].name;this.status(this.lastSpell+' cast · '+Math.round(confidence*100)+'% match');this.updateHud();
     if(spell==='Fireball'){
-      const orb=new THREE.Mesh(new THREE.SphereGeometry(.2,16,12),new THREE.MeshStandardMaterial({color:'#ff9a5d',emissive:'#ff542c',emissiveIntensity:2.2}));
-      orb.add(new THREE.PointLight('#ff783e',4,3));this.scene.add(orb);
-      this.effects.push({kind:'fire',object:orb,start:new THREE.Vector3(this.player.position.x,.9,this.player.position.z),target:new THREE.Vector3(target.x,.9,target.z),age:0,duration:.34});
+      const orb=new THREE.Group();
+      const shell=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,1),new THREE.MeshStandardMaterial({color:'#ff6a3d',emissive:'#ff542c',emissiveIntensity:1.9,roughness:.28,flatShading:true}));
+      const core=new THREE.Mesh(new THREE.SphereGeometry(.145,12,10),new THREE.MeshBasicMaterial({color:'#fff1b4',toneMapped:false}));
+      const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:this.glowTexture,color:'#ff8a42',transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+      glow.scale.set(1.5,1.5,1);orb.add(shell,core,glow);orb.add(new THREE.PointLight('#ff783e',6,4));
+      this.scene.add(orb);
+      this.effects.push({kind:'fire',object:orb,start:new THREE.Vector3(this.player.position.x,.95,this.player.position.z),target:new THREE.Vector3(target.x,.95,target.z),age:0,duration:.46,lastTrail:-1});
     }else if(spell==='Thunderbolt'){
-      const a=new THREE.Vector3(this.player.position.x,.3,this.player.position.z),b=new THREE.Vector3(target.x,.3,target.z),points=[];
-      for(let i=0;i<=12;i++){const p=a.clone().lerp(b,i/12);if(i&&i!==12){p.x+=rand(-.35,.35);p.z+=rand(-.35,.35);}points.push(p);}
-      this.lineEffect(points,'#ffe18a',.25);this.damageLine(a,b);this.burst(target,'#ffe18a',18,2.6);
-    }else if(spell==='Frost')this.radial(spell,target,3.25,.25,'#91dcff',0,1.4);
-    else if(spell==='Gravity'){
+      const a=new THREE.Vector3(this.player.position.x,.8,this.player.position.z),b=new THREE.Vector3(target.x,1.1,target.z);
+      this.addLightning(a,b);
+      this.damageLine(a,b);this.burst(new THREE.Vector3(target.x,.65,target.z),'#ffe18a',28,2.4);
+    }else if(spell==='Frost'){
+      this.castFrost(target);
+    }else if(spell==='Gravity'){
       const center=new THREE.Vector2(target.x,target.z);
       this.wisps.forEach(w=>{if(!w.defeated&&dist(w.group.position,{x:target.x,z:target.z})<=5.8){this.hitWisp(w,'Gravity',.8,center);this.pullWisp(w,center,1.6);}});
-      const ring=this.ring(target,'#b995ff');this.effects.push({kind:'gravity',object:ring,center,age:0,duration:1.15});
+      const ring=this.ring(target,'#b995ff');
+      const echo=this.ring(target,'#e4d7ff');echo.position.y=.24;
+      this.effects.push({kind:'ring',object:echo,age:0,duration:1.15,scale:4.7});
+      this.effects.push({kind:'gravity',object:ring,center,age:0,duration:1.15});
+      this.burst(new THREE.Vector3(target.x,.3,target.z),'#c4a4ff',16,1.8);
     }else if(spell==='Chaos')this.radial(spell,target,3.8,2.4,'#ff9ccc',17,0);
+  }
+
+  castFrost(target){
+    this.radial('Frost',target,3.25,.25,'#91dcff',0,1.4);
+    this.burst(new THREE.Vector3(target.x,.4,target.z),'#b8ecff',34,2.1);
+    const material=new THREE.MeshStandardMaterial({color:'#c6f4ff',emissive:'#69c8e8',emissiveIntensity:.5,roughness:.2,metalness:.18,transparent:true,opacity:.92});
+    for(let i=0;i<9;i++){
+      const a=i*Math.PI*2/9,r=rand(.8,2.7),shard=new THREE.Mesh(new THREE.OctahedronGeometry(rand(.14,.25),0),material.clone());
+      shard.position.set(target.x+Math.cos(a)*r,rand(.65,1.25),target.z+Math.sin(a)*r);
+      shard.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));this.scene.add(shard);
+      this.debris.push({object:shard,v:new THREE.Vector3(Math.cos(a)*rand(.15,.55),rand(1.4,2.8),Math.sin(a)*rand(.15,.55)),age:0,duration:rand(.8,1.35),gravity:1.7});
+    }
+  }
+
+  addLightning(start,end){
+    const points=[start.clone()];
+    const count=15;
+    for(let i=1;i<count;i++){
+      const t=i/count,p=start.clone().lerp(end,t);
+      p.x+=rand(-.55,.55);p.z+=rand(-.55,.55);p.y+=Math.sin(t*Math.PI)*rand(.15,.9);points.push(p);
+    }
+    points.push(end.clone());
+    this.lineEffect(points,'#fff9dc',.34);
+    const glowPoints=points.map(p=>new THREE.Vector3(p.x,p.y-.035,p.z));
+    this.lineEffect(glowPoints,'#82eaff',.28);
+    [4,8,11].forEach((at,index)=>{
+      const origin=points[at],sign=index%2?1:-1;
+      const branchEnd=origin.clone().add(new THREE.Vector3(sign*rand(.55,1.15),rand(-.15,.25),rand(.35,.85)));
+      const branchPoints=[origin,origin.clone().lerp(branchEnd,.42).add(new THREE.Vector3(rand(-.18,.18),.16,rand(-.18,.18))),branchEnd];
+      this.lineEffect(branchPoints,'#fff1a8',.22);
+    });
   }
 
   ring(p,color) {const m=new THREE.Mesh(new THREE.TorusGeometry(.75,.065,8,64),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthWrite:false}));m.rotation.x=Math.PI/2;m.position.set(p.x,.22,p.z);this.scene.add(m);return m;}
   lineEffect(points,color,duration){const o=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color,transparent:true}));this.scene.add(o);this.effects.push({kind:'line',object:o,age:0,duration});}
   radial(spell,target,radius,damage,color,impulse,freeze){
-    const ring=this.ring(target,color);this.effects.push({kind:'ring',object:ring,age:0,duration:.48,scale:radius*1.25});this.burst(target,color,24,radius*1.5);
+    const ring=this.ring(target,color);this.effects.push({kind:'ring',object:ring,age:0,duration:.58,scale:radius*1.28});
+    this.burst(new THREE.Vector3(target.x,.35,target.z),color,spell==='Chaos'?46:34,radius*1.5);
     this.props.forEach(p=>{if(!p.destroyed&&dist(p.group.position,{x:target.x,z:target.z})<=radius){this.hitProp(p,spell,target,damage,impulse);if(freeze)this.freezeProp(p,freeze);}});
     this.wisps.forEach(w=>{if(!w.defeated&&dist(w.group.position,{x:target.x,z:target.z})<=radius+.35){this.hitWisp(w,spell,({Fireball:1.75,Thunderbolt:2.5,Frost:.7,Gravity:.8,Chaos:3.25})[spell]||1);if(freeze)w.freeze=freeze;if(impulse)this.pushWisp(w,target,impulse*.15);}});
   }
@@ -214,7 +255,24 @@ class CatWizard {
   pullWisp(w,target,force){const d=new THREE.Vector2(target.x-w.group.position.x,target.y===undefined?target.z:target.y-w.group.position.z);if(d.lengthSq()>.001)w.velocity.addScaledVector(d.normalize(),force);}
   pushWisp(w,center,force){const d=new THREE.Vector2(w.group.position.x-center.x,w.group.position.z-center.z);if(d.lengthSq()>.001)w.velocity.addScaledVector(d.normalize(),force);}
   burst(p,color,count,spread){
-    for(let i=0;i<count;i++){const s=rand(.045,.11),o=new THREE.Mesh(new THREE.SphereGeometry(s,7,6),new THREE.MeshBasicMaterial({color,transparent:true}));o.position.set(p.x+rand(-.1,.1),Math.max(.12,(p.y||0)+rand(-.1,.1)),p.z+rand(-.1,.1));this.scene.add(o);this.debris.push({object:o,v:new THREE.Vector3(rand(-spread,spread),rand(.3,1.8),rand(-spread,spread)),age:0,duration:rand(.35,.95),gravity:1.3});}
+    for(let i=0;i<count;i++){
+      const size=rand(.035,.095),geometry=i%4===0?new THREE.OctahedronGeometry(size*1.25,0):new THREE.SphereGeometry(size,7,6);
+      const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
+      const particle=new THREE.Mesh(geometry,material);
+      particle.position.set(p.x+rand(-.12,.12),Math.max(.12,(p.y||0)+rand(-.12,.12)),p.z+rand(-.12,.12));
+      particle.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));this.scene.add(particle);
+      this.debris.push({object:particle,v:new THREE.Vector3(rand(-spread,spread),rand(.4,2.1),rand(-spread,spread)),age:0,duration:rand(.42,1.05),gravity:1.05});
+    }
+  }
+
+  disposeEffectObject(object){
+    object.traverse(node=>{
+      node.geometry?.dispose();
+      if(node.material){
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        materials.forEach(material=>{material.map?.dispose();material.dispose();});
+      }
+    });
   }
 
   status(text){const e=document.getElementById('game-status');if(e)e.textContent=text;}
@@ -248,6 +306,7 @@ class CatWizard {
   hurtPlayer(w){
     if(this.playerInvul>0||this.respawn>0)return;this.playerHealth=Math.max(0,this.playerHealth-1);this.playerInvul=1.15;
     const d=new THREE.Vector2(this.player.position.x-w.group.position.x,this.player.position.z-w.group.position.z);if(d.lengthSq()>.001)this.playerMove.addScaledVector(d.normalize(),4.4);
+    this.burst(new THREE.Vector3(this.player.position.x,1.1,this.player.position.z),'#ffb0a0',16,1.15);
     this.status('Ouch. The cat has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('The cat is returning to the chamber…');}
   }
   updateProps(dt){
@@ -269,16 +328,28 @@ class CatWizard {
   }
   updateEffects(dt){
     for(let i=this.effects.length-1;i>=0;i--){const e=this.effects[i];e.age+=dt;const t=clamp(e.age/e.duration,0,1);
-      if(e.kind==='fire'){e.object.position.copy(e.start).lerp(e.target,t);if(t>=1){this.radial('Fireball',e.target,2.1,1.25,'#ff875a',11,0);this.scene.remove(e.object);e.object.geometry.dispose();e.object.material.dispose();this.effects.splice(i,1);continue;}}
+      if(e.kind==='fire'){
+        e.object.position.copy(e.start).lerp(e.target,t);
+        e.object.rotation.y+=dt*5;e.object.rotation.z+=dt*2.4;
+        const trailStep=Math.floor(e.age*18);
+        if(trailStep!==e.lastTrail){e.lastTrail=trailStep;this.burst(e.object.position,'#ffad5c',2,.28);}
+        if(t>=1){this.radial('Fireball',e.target,2.1,1.25,'#ff875a',11,0);this.burst(new THREE.Vector3(e.target.x,.8,e.target.z),'#fff0b3',18,1.35);this.scene.remove(e.object);this.disposeEffectObject(e.object);this.effects.splice(i,1);continue;}
+      }
       if(e.kind==='ring'){e.object.scale.setScalar(.6+t*e.scale);e.object.material.opacity=1-t;}
       if(e.kind==='gravity'){e.object.scale.setScalar(.8+t*4.2);e.object.rotation.y+=dt*2.7;e.object.material.opacity=.95-t*.5;
         this.props.forEach(p=>{if(p.destroyed||p.frozen>0)return;const d=new THREE.Vector2(e.center.x-p.group.position.x,e.center.y-p.group.position.z),r=Math.max(.45,d.length());if(r<5.4&&r>.001)p.velocity.addScaledVector(d.normalize(),dt*4.8/r);});
         this.wisps.forEach(w=>{if(w.defeated)return;const d=new THREE.Vector2(e.center.x-w.group.position.x,e.center.y-w.group.position.z);if(d.length()<5.8&&d.length()>.001)w.velocity.addScaledVector(d.normalize(),dt*4);});
       }
       if(e.kind==='line')e.object.material.opacity=1-t;
-      if(t>=1){this.scene.remove(e.object);e.object.geometry.dispose();e.object.material.dispose();this.effects.splice(i,1);}
+      if(t>=1){this.scene.remove(e.object);this.disposeEffectObject(e.object);this.effects.splice(i,1);}
     }
-    for(let i=this.debris.length-1;i>=0;i--){const p=this.debris[i];p.age+=dt;p.v.y-=(p.gravity||5)*dt;p.object.position.addScaledVector(p.v,dt);p.object.rotation.x+=dt*3;p.object.rotation.z+=dt*4;p.object.scale.setScalar(Math.max(.01,1-p.age/p.duration));if(p.age>=p.duration){this.scene.remove(p.object);p.object.geometry.dispose();p.object.material.dispose();this.debris.splice(i,1);}}
+    for(let i=this.debris.length-1;i>=0;i--){
+      const p=this.debris[i];p.age+=dt;p.v.y-=(p.gravity||5)*dt;p.object.position.addScaledVector(p.v,dt);
+      p.object.rotation.x+=dt*3;p.object.rotation.z+=dt*4;
+      const life=clamp(1-p.age/p.duration,0,1);p.object.scale.setScalar(Math.max(.01,life));
+      if(p.object.material?.transparent)p.object.material.opacity=life;
+      if(p.age>=p.duration){this.scene.remove(p.object);this.disposeEffectObject(p.object);this.debris.splice(i,1);}
+    }
   }
 
   updateCamera(realDt){animateWorld(this,realDt);}

@@ -8,8 +8,8 @@ Cat Wizard is a top-down fantasy action prototype starring a distinguished grey 
 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
-- A dark stone training hall with a central spell seal, boundary walls, ruined pillars, destructible props, colored lights and player obstacle collision.
-- Full original grey cat wizard artwork, with the green chroma background removed and alpha transparency preserved, loaded as a lightweight WebP sprite.
+- A hand-painted meadow arena with a winding dirt path, river, swaying 3D grass, wildflowers, trees, cottage, windmill, standing stones, fireflies and a floating spell core.
+- A 3D modeled grey cat wizard with the signature pink bow tie, pointed ears, violet wizard hat, pipe and articulated walk cycle.
 - Desktop movement with WASD or arrow keys.
 - Touch movement on the left side and independent spell drawing on the right side.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.

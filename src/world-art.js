@@ -74,11 +74,17 @@ export function buildWizardCat(g){
   const torso=new THREE.Mesh(new THREE.CylinderGeometry(.4,.66,.92,9,1),robe);torso.position.y=.58;torso.castShadow=true;cat.add(torso);
   const panel=new THREE.Mesh(new THREE.ConeGeometry(.54,.62,8,1,true),robeLight);panel.position.set(0,.62,.05);panel.scale.set(.72,1,.26);cat.add(panel);
   const hem=new THREE.Mesh(new THREE.TorusGeometry(.61,.055,7,24),gold);hem.rotation.x=Math.PI/2;hem.position.y=.16;cat.add(hem);
+  const legPivots=[],armPivots=[];
   for(const s of [-1,1]){
-    const leg=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.42,6),fur);leg.position.set(s*.24,.18,.04);cat.add(leg);
-    const boot=new THREE.Mesh(new THREE.SphereGeometry(.17,8,6),dark);boot.scale.set(1,.58,1.25);boot.position.set(s*.24,.075,.16);cat.add(boot);
-    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.115,.48,4,7),robe);arm.position.set(s*.48,.96,.04);arm.rotation.z=s*-.42;cat.add(arm);
-    const paw=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),furLight);paw.position.set(s*.61,.72,.28);cat.add(paw);
+    const legPivot=new THREE.Group();legPivot.position.set(s*.24,.34,.04);cat.add(legPivot);
+    const leg=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.42,6),fur);leg.position.y=-.12;leg.castShadow=true;legPivot.add(leg);
+    const boot=new THREE.Mesh(new THREE.SphereGeometry(.17,8,6),dark);boot.scale.set(1,.58,1.25);boot.position.set(0,-.25,.12);legPivot.add(boot);
+    legPivots.push(legPivot);
+
+    const armPivot=new THREE.Group();armPivot.position.set(s*.43,1.04,.04);cat.add(armPivot);
+    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.115,.48,4,7),robe);arm.position.set(s*.055,-.055,.035);arm.rotation.z=s*-.34;arm.castShadow=true;armPivot.add(arm);
+    const paw=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),furLight);paw.position.set(s*.13,-.29,.22);armPivot.add(paw);
+    armPivots.push(armPivot);
   }
   const head=new THREE.Mesh(new THREE.SphereGeometry(.53,12,10),fur);head.scale.set(1.02,.86,.88);head.position.set(0,1.47,.05);head.castShadow=true;cat.add(head);
   for(const s of [-1,1]){
@@ -93,16 +99,24 @@ export function buildWizardCat(g){
   const muzzle=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),white);muzzle.scale.set(1.3,.72,.72);muzzle.position.set(0,1.33,.54);cat.add(muzzle);
   const nose=new THREE.Mesh(new THREE.SphereGeometry(.065,7,6),innerEar);nose.position.set(0,1.42,.67);cat.add(nose);
   const knot=new THREE.Mesh(new THREE.SphereGeometry(.085,8,6),gold);knot.position.set(0,1.08,.65);cat.add(knot);
-  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.1,10),robe);brim.position.y=1.92;cat.add(brim);
-  const hat=new THREE.Mesh(new THREE.ConeGeometry(.43,.88,8),new THREE.MeshStandardMaterial({color:'#594b8d',roughness:.72,flatShading:true}));hat.position.set(0,2.37,0);hat.rotation.z=-.1;hat.castShadow=true;cat.add(hat);
-  const band=new THREE.Mesh(new THREE.TorusGeometry(.44,.045,7,24),gold);band.rotation.x=Math.PI/2;band.position.y=2.02;cat.add(band);
-  const star=new THREE.Mesh(new THREE.OctahedronGeometry(.13),new THREE.MeshStandardMaterial({color:'#ffe5a0',emissive:'#d99d47',emissiveIntensity:.9}));star.position.set(.27,2.56,.12);cat.add(star);
+  const hatGroup=new THREE.Group();hatGroup.position.y=1.92;cat.add(hatGroup);
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.1,10),robe);hatGroup.add(brim);
+  const hat=new THREE.Mesh(new THREE.ConeGeometry(.43,.88,8),new THREE.MeshStandardMaterial({color:'#594b8d',roughness:.72,flatShading:true}));hat.position.set(0,.45,0);hat.rotation.z=-.1;hat.castShadow=true;hatGroup.add(hat);
+  const band=new THREE.Mesh(new THREE.TorusGeometry(.44,.045,7,24),gold);band.rotation.x=Math.PI/2;band.position.y=.1;hatGroup.add(band);
+  const star=new THREE.Mesh(new THREE.OctahedronGeometry(.13),new THREE.MeshStandardMaterial({color:'#ffe5a0',emissive:'#d99d47',emissiveIntensity:.9}));star.position.set(.27,.64,.12);hatGroup.add(star);
   const pipe=new THREE.Group();pipe.position.set(.58,.78,.42);pipe.rotation.x=Math.PI/2.8;pipe.rotation.z=-.22;cat.add(pipe);
   const pipeMat=new THREE.MeshStandardMaterial({color:'#70452e',roughness:.5}),stem=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.47,7),pipeMat);stem.rotation.x=Math.PI/2;stem.position.z=.15;pipe.add(stem);
   const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.22,7),pipeMat);bowl.position.set(0,.01,.42);pipe.add(bowl);
+  const ember=new THREE.Mesh(new THREE.SphereGeometry(.045,7,6),new THREE.MeshBasicMaterial({color:'#ffad58',toneMapped:false}));ember.position.set(0,.13,.42);pipe.add(ember);
+  const smoke=new THREE.Group();smoke.position.set(0,.18,.43);pipe.add(smoke);
+  const smokeMat=new THREE.MeshBasicMaterial({color:'#f8f2dd',transparent:true,opacity:.28,depthWrite:false});
+  for(let i=0;i<3;i++){const puff=new THREE.Mesh(new THREE.IcosahedronGeometry(.045+i*.012,1),smokeMat);puff.position.set(Math.sin(i*2)*.055,i*.12,0);smoke.add(puff);}
   const tailPivot=new THREE.Group();tailPivot.position.set(0,.48,-.46);cat.add(tailPivot);
   const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(-.25,.18,-.22),new THREE.Vector3(-.37,.48,-.36),new THREE.Vector3(-.12,.7,-.42)]);
-  const tail=new THREE.Mesh(new THREE.TubeGeometry(curve,18,.095,7,false),fur);tail.castShadow=true;tailPivot.add(tail);g.tail=tailPivot;
+  const tail=new THREE.Mesh(new THREE.TubeGeometry(curve,18,.095,7,false),fur);tail.castShadow=true;tailPivot.add(tail);
+  const tailTip=new THREE.Mesh(new THREE.SphereGeometry(.12,7,6),furLight);tailTip.position.set(-.12,.7,-.42);tailPivot.add(tailTip);
+  g.tail=tailPivot;
+  g.catRig={torso,head,hat:hatGroup,pipe,ember,smoke,tail:tailPivot,legPivots,armPivots};
   return player;
 }
 export function buildWisps(g){
@@ -120,4 +134,35 @@ export function buildWisps(g){
     return {group,body,aura,light,halo,home:new THREE.Vector2(x,z),health:5,color,phase:THREE.MathUtils.randFloat(0,Math.PI*2),freeze:0,cooldown:0,velocity:new THREE.Vector2(),defeated:false,flash:0};
   });
 }
-export function animateWorld(game,dt){ animateMeadow(game,dt); }
+export function animateWorld(game,dt){
+  animateMeadow(game,dt);
+  const rig=game.catRig;
+  if(rig){
+    const moving=game.playerMove.length()>.24;
+    const stride=game.worldTime*11.5;
+    const amount=moving?Math.min(1,game.playerMove.length()/4.6):0;
+    rig.torso.rotation.z=Math.sin(game.worldTime*2.1)*.018+Math.sin(stride*2)*.025*amount;
+    rig.torso.rotation.x=Math.sin(stride)*.035*amount;
+    rig.head.rotation.z=Math.sin(game.worldTime*1.35)*.025+Math.sin(stride)*.025*amount;
+    rig.head.rotation.x=Math.cos(game.worldTime*1.7)*.018;
+    rig.legPivots.forEach((pivot,i)=>{pivot.rotation.x=Math.sin(stride+i*Math.PI)*.58*amount;});
+    rig.armPivots.forEach((pivot,i)=>{pivot.rotation.x=Math.sin(stride+i*Math.PI+Math.PI)*.43*amount;});
+    rig.hat.rotation.z=-.1+Math.sin(game.worldTime*1.3)*.035+Math.sin(stride)*.025*amount;
+    rig.tail.rotation.y=Math.sin(game.worldTime*2.45)*.28+Math.sin(stride*.5)*.12*amount;
+    rig.tail.rotation.x=Math.cos(game.worldTime*2.05)*.12;
+    rig.pipe.rotation.z=-.22+Math.sin(game.worldTime*3.1)*.025;
+    rig.ember.scale.setScalar(.85+Math.sin(game.worldTime*8)*.16);
+    rig.smoke.children.forEach((puff,i)=>{
+      puff.position.y=.12*i+((game.worldTime*.32+i*.22)% .38);
+      puff.position.x=Math.sin(game.worldTime*1.8+i)*.06;
+      puff.scale.setScalar(.85+((game.worldTime+i*.31)% .4));
+    });
+    game.catRoot.position.y=.025+Math.sin(game.worldTime*(moving?11:3.6))*(moving?.055:.018);
+  }
+  game.wisps?.forEach((w,i)=>{
+    if(w.defeated)return;
+    w.group.rotation.z=Math.sin(game.worldTime*1.8+w.phase)*.055;
+    w.halo.rotation.x=Math.PI/2.7+Math.sin(game.worldTime*1.1+w.phase)*.08;
+    w.body.scale.y=1.15+Math.sin(game.worldTime*2.8+w.phase)*.045;
+  });
+}
