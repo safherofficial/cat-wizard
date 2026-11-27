@@ -44,6 +44,19 @@ namespace CatWizard.Editor
 
                 if (pipeline == null)
                 {
+                    RenderPipelineAsset activePipeline = GraphicsSettings.defaultRenderPipeline;
+                    if (activePipeline != null && !(activePipeline is UniversalRenderPipelineAsset))
+                    {
+                        Debug.LogWarning(
+                            "[Cat Wizard] A different render pipeline is already assigned. It has been preserved; URP setup was skipped.");
+                        return;
+                    }
+
+                    pipeline = activePipeline as UniversalRenderPipelineAsset;
+                }
+
+                if (pipeline == null)
+                {
                     ScriptableRendererData rendererData =
                         AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererAssetPath);
 
@@ -74,7 +87,16 @@ namespace CatWizard.Editor
                     for (int i = 0; i < QualitySettings.names.Length; i++)
                     {
                         QualitySettings.SetQualityLevel(i, false);
-                        if (QualitySettings.renderPipeline != pipeline)
+                        RenderPipelineAsset qualityPipeline = QualitySettings.renderPipeline;
+                        if (qualityPipeline != null && qualityPipeline != pipeline)
+                        {
+                            Debug.LogWarning(
+                                "[Cat Wizard] Preserving a different render pipeline assigned to quality level '" +
+                                QualitySettings.names[i] + "'.");
+                            continue;
+                        }
+
+                        if (qualityPipeline != pipeline)
                         {
                             QualitySettings.renderPipeline = pipeline;
                             changed = true;
