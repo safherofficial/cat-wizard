@@ -17,7 +17,7 @@ class CatWizard {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#83d1ed');
     this.scene.fog = new THREE.Fog('#b9e2e8',42,92);
-    this.camera = new THREE.PerspectiveCamera(42,1,.1,120);
+    this.camera = new THREE.PerspectiveCamera(52,1,.1,120);
     this.camera.position.set(0,20,20);
     this.cameraLook = new THREE.Vector3(0,0,-2);
     this.camera.lookAt(this.cameraLook);
@@ -148,7 +148,7 @@ class CatWizard {
     const r=this.canvas.getBoundingClientRect(),ndc=new THREE.Vector2(((p.x-r.left)/r.width)*2-1,-(((p.y-r.top)/r.height)*2-1));
     this.raycaster.setFromCamera(ndc,this.camera);const hit=new THREE.Vector3();
     if(!this.raycaster.ray.intersectPlane(this.groundPlane,hit))return new THREE.Vector3(this.player.position.x,.12,this.player.position.z);
-    hit.x=clamp(hit.x,-12.1,12.1);hit.z=clamp(hit.z,-6.6,6.6);hit.y=.12;return hit;
+    hit.x=clamp(hit.x,-17.5,17.5);hit.z=clamp(hit.z,-13,13);hit.y=.12;return hit;
   }
 
   drawStroke() {
@@ -234,8 +234,8 @@ class CatWizard {
     if(this.respawn>0){this.respawn=Math.max(0,this.respawn-realDt);this.player.visible=Math.floor(this.respawn*20)%2===0;if(this.respawn===0){this.player.position.set(0,0,-3.4);this.playerHealth=5;this.playerMove.set(0,0);this.player.visible=true;this.updateHud();}return;}
     const m=new THREE.Vector2();if(this.keys.has('a')||this.keys.has('arrowleft'))m.x--;if(this.keys.has('d')||this.keys.has('arrowright'))m.x++;if(this.keys.has('w')||this.keys.has('arrowup'))m.y--;if(this.keys.has('s')||this.keys.has('arrowdown'))m.y++;m.add(this.touchMove);if(m.lengthSq()>1)m.normalize();
     this.playerMove.lerp(m.multiplyScalar(5.2),1-Math.exp(-dt*12));
-    this.player.position.x=clamp(this.player.position.x+this.playerMove.x*dt,-12.1,12.1);
-    this.player.position.z=clamp(this.player.position.z+this.playerMove.y*dt,-6.6,6.6);
+    this.player.position.x=clamp(this.player.position.x+this.playerMove.x*dt,-16.7,16.7);
+    this.player.position.z=clamp(this.player.position.z+this.playerMove.y*dt,-12.2,12.2);
     for(const obstacle of this.obstacles){
       if(obstacle.destroyed)continue;
       const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
@@ -248,8 +248,8 @@ class CatWizard {
         this.player.position.z=oz+nz*minimum;
       }
     }
-    this.player.position.x=clamp(this.player.position.x,-12.1,12.1);
-    this.player.position.z=clamp(this.player.position.z,-6.6,6.6);
+    this.player.position.x=clamp(this.player.position.x,-16.7,16.7);
+    this.player.position.z=clamp(this.player.position.z,-12.2,12.2);
     if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.035+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.065:.025);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
   }
   hurtPlayer(w){

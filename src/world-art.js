@@ -64,7 +64,7 @@ function entrance(scene){
 export function buildArena(game){ buildMeadowArena(game); }
 
 export function buildWizardCat(g){
-  const player=new THREE.Group();player.position.set(0,0,-3.4);g.scene.add(player);g.addShadow(player,.9,.42,.25);
+  const player=new THREE.Group();player.position.set(0,0,5.2);g.scene.add(player);g.addShadow(player,.9,.42,.25);
   const cat=new THREE.Group();player.add(cat);g.catRoot=cat;
   const fur=new THREE.MeshStandardMaterial({color:'#858f98',roughness:.82,flatShading:true}),furLight=new THREE.MeshStandardMaterial({color:'#b9c3c4',roughness:.8,flatShading:true});
   const pink=new THREE.MeshStandardMaterial({color:'#ef91b2',roughness:.4,flatShading:true}),robe=new THREE.MeshStandardMaterial({color:'#385c78',roughness:.82,flatShading:true});
@@ -106,7 +106,7 @@ export function buildWizardCat(g){
   return player;
 }
 export function buildWisps(g){
-  return [[-10.2,-1.7,'#ef8e68'],[0,5.7,'#64c8dc'],[10.2,1.65,'#aa8ee5']].map(([x,z,color])=>{
+  return [[-9.5,-1.6,'#ef8e68'],[0,-5.6,'#64c8dc'],[9.4,.8,'#aa8ee5']].map(([x,z,color])=>{
     const group=new THREE.Group();group.position.set(x,0,z);g.scene.add(group);
     const aura=new THREE.Mesh(new THREE.SphereGeometry(.82,14,10),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.16,depthWrite:false}));aura.position.y=1.15;group.add(aura);
     const mat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.8,roughness:.26,flatShading:true});

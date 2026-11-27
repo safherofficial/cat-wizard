@@ -103,7 +103,7 @@ function makeBladeGeometry(){
 }
 
 function addGrass(game){
-  const random=seeded(48821),count=52000;
+  const random=seeded(48821),count=30000;
   const geometry=makeBladeGeometry();
   const material=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,side:THREE.DoubleSide});
   material.onBeforeCompile=shader=>{
@@ -141,7 +141,7 @@ function addGrass(game){
     color.set(palette[Math.floor(random()*palette.length)]);mesh.setColorAt(placed,color);
     placed++;
   }
-  mesh.count=placed;mesh.frustumCulled=false;mesh.receiveShadow=true;mesh.castShadow=false;
+  mesh.count=placed;mesh.frustumCulled=false;mesh.receiveShadow=false;mesh.castShadow=false;
   game.scene.add(mesh);game.grassMaterial=material;
 }
 
@@ -164,7 +164,7 @@ function addFlowers(game){
     const x=random()*34-17,z=random()*26-13;
     if(Math.hypot(x,z)<4.5||distanceToPath(x,z)<1.35||(x>9.7&&z>-11&&z<10))continue;
     if(random()<.18)continue;
-    const y=.16+random()*.05,scale=.65+random()*.8;
+    const y=.115+random()*.035,scale=.72+random()*.9;
     dummy.position.set(x,y,z);dummy.scale.setScalar(scale);dummy.rotation.set(0,random()*TAU,0);dummy.updateMatrix();stems.setMatrixAt(n,dummy.matrix);
     col.set(colors[Math.floor(random()*colors.length)]);
     for(let j=0;j<5;j++){
@@ -382,8 +382,8 @@ export function buildMeadowArena(game){
 export function animateMeadow(game,dt){
   if(game.player){
     const p=game.player.position;
-    const target=new THREE.Vector3(p.x*.16,14.3,p.z+14);
-    const look=new THREE.Vector3(p.x,0,p.z-1.7);
+    const target=new THREE.Vector3(p.x*.12,8.6,p.z+9.3);
+    const look=new THREE.Vector3(p.x,1.05,p.z-3.2);
     const a=1-Math.exp(-dt*2.8);
     game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
   }
