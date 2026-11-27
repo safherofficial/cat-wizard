@@ -33,12 +33,12 @@ The deployable site is written to `dist/`.
 | Circle | Fireball | Traveling fire projectile and impact burst. |
 | Lightning | Thunderbolt | Strike that damages objects and wisps along its path. |
 | Triangle | Frost | Area pulse that chills and temporarily freezes targets. |
-| Spiral | Gravity | Temporary vortex pulling movable objects and wisps inward. |
+| Spiral | Gravity | Temporary vortex pulling movable objects and wisps inward, with an impact pulse for wisps in range. |
 | Star | Chaos | Wide, high-impact blast. |
 
 ## Gameplay
 
-The arena is assembled from Three.js geometry and a generated stone-floor texture. It includes a spell seal, boundary masonry, ruined pillars, destructible crates, barrels, vases and stone blocks, three pursuing cursed wisps, player health, invulnerability, respawn, spell trails, impact rings and debris. The original cat art is served from `public/assets/cat-wizard.png`.
+The arena is assembled from Three.js geometry and a generated stone-floor texture. Player movement resolves against the destructible props and fixed ruin pillars; broken props stop blocking the player. The wisps begin far enough from the spawn point to avoid immediate unavoidable contact damage. It includes a spell seal, boundary masonry, ruined pillars, destructible crates, barrels, vases and stone blocks, three pursuing cursed wisps, player health, invulnerability, respawn, spell trails, impact rings and debris. The original cat art is served from `public/assets/cat-wizard.png`.
 
 ## Deployment
 
