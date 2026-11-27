@@ -8,14 +8,16 @@ using UnityEngine.Rendering.Universal;
 namespace CatWizard.Editor
 {
     /// <summary>
-    /// Creates and assigns a URP asset on first Editor import. This makes the
-    /// repository self-configuring after Package Manager has resolved URP.
+    /// Creates and assigns a URP asset with the built-in 2D Renderer on first
+    /// Editor import. This makes the repository self-configuring after URP resolves.
     /// </summary>
     [InitializeOnLoad]
     internal static class CatWizardProjectSetup
     {
         private const string SettingsFolder = "Assets/Settings";
         private const string PipelineAssetPath = SettingsFolder + "/CatWizardURP.asset";
+        private const string RendererAssetPath = SettingsFolder + "/CatWizard2DRenderer.asset";
+        private const string BuiltinRendererTempPath = "Assets/UniversalRenderer.asset";
 
         static CatWizardProjectSetup()
         {
@@ -35,22 +37,23 @@ namespace CatWizard.Editor
 
             try
             {
+                EnsureSettingsFolder();
+
                 UniversalRenderPipelineAsset pipeline =
                     AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PipelineAssetPath);
 
                 if (pipeline == null)
                 {
-                    if (!AssetDatabase.IsValidFolder(SettingsFolder))
-                    {
-                        if (!AssetDatabase.IsValidFolder("Assets/Settings"))
-                            AssetDatabase.CreateFolder("Assets", "Settings");
-                    }
+                    ScriptableRendererData rendererData =
+                        AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererAssetPath);
 
-                    // Unity's factory creates the renderer data and pipeline defaults.
-                    pipeline = UniversalRenderPipelineAsset.Create();
+                    if (rendererData == null)
+                        rendererData = Create2DRendererData();
+
+                    pipeline = UniversalRenderPipelineAsset.Create(rendererData);
                     if (pipeline == null)
                     {
-                        Debug.LogError("[Cat Wizard] Unity could not create the URP asset. Create one via Assets > Create > Rendering > URP Asset (with Universal Renderer), then assign it in Project Settings > Graphics.");
+                        Debug.LogError("[Cat Wizard] Unity could not create the URP asset.");
                         return;
                     }
 
@@ -87,11 +90,60 @@ namespace CatWizard.Editor
                     EditorUtility.SetDirty(pipeline);
 
                 AssetDatabase.SaveAssets();
+                Debug.Log("[Cat Wizard] URP configured with the 2D Renderer.");
             }
             catch (Exception exception)
             {
                 Debug.LogError("[Cat Wizard] URP setup did not complete: " + exception);
             }
+        }
+
+        private static void EnsureSettingsFolder()
+        {
+            if (!AssetDatabase.IsValidFolder(SettingsFolder))
+                AssetDatabase.CreateFolder("Assets", "Settings");
+        }
+
+        private static ScriptableRendererData Create2DRendererData()
+        {
+            // LoadBuiltinRendererData initializes Unity's own 2D renderer resources.
+            // In the Editor, URP currently creates this asset at a fixed temporary path.
+            if (AssetDatabase.LoadMainAssetAtPath(BuiltinRendererTempPath) != null)
+                throw new InvalidOperationException(
+                    "Assets/UniversalRenderer.asset already exists. Move or inspect that asset before automatic 2D renderer setup.");
+
+            UniversalRenderPipelineAsset factory = UniversalRenderPipelineAsset.Create();
+            if (factory == null)
+                throw new InvalidOperationException("Unable to create a temporary URP factory asset.");
+
+            ScriptableRendererData rendererData = factory.LoadBuiltinRendererData(RendererType._2DRenderer);
+            if (rendererData == null)
+            {
+                UnityEngine.Object.DestroyImmediate(factory);
+                throw new InvalidOperationException("URP did not return its built-in 2D renderer data.");
+            }
+
+            string generatedPath = AssetDatabase.GetAssetPath(rendererData);
+            if (string.IsNullOrEmpty(generatedPath))
+            {
+                AssetDatabase.CreateAsset(rendererData, RendererAssetPath);
+            }
+            else if (generatedPath != RendererAssetPath)
+            {
+                string moveError = AssetDatabase.MoveAsset(generatedPath, RendererAssetPath);
+                if (!string.IsNullOrEmpty(moveError))
+                {
+                    UnityEngine.Object.DestroyImmediate(factory);
+                    throw new InvalidOperationException("Could not move the URP 2D renderer asset: " + moveError);
+                }
+            }
+
+            rendererData.name = "CatWizard2DRenderer";
+            EditorUtility.SetDirty(rendererData);
+            AssetDatabase.SaveAssets();
+
+            UnityEngine.Object.DestroyImmediate(factory);
+            return AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererAssetPath);
         }
     }
 }
