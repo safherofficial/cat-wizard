@@ -2,33 +2,35 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace CatWizard.Spells
 {
     /// <summary>
-    /// Captures one pointer stroke in screen coordinates. Input sampling is done
-    /// from Update and is not affected by Time.timeScale.
+    /// Captures a single stroke from mouse, touch, or stylus in screen-space.
+    /// On touch devices the left edge is reserved for movement; any touch that
+    /// starts to the right of that zone can draw a spell.
     /// </summary>
     public sealed class SpellGestureInput : MonoBehaviour
     {
-        private enum InputSource
-        {
-            None,
-            Touch,
-            Pen,
-            Mouse
-        }
+        private enum InputSource { None, Touch, Pen, Mouse }
 
         [SerializeField, Min(0f)]
-        private float minimumPointSpacing = 3f;
+        private float minimumPointSpacing = 2.5f;
+
+        [SerializeField, Range(0.1f, 0.6f)]
+        private float gestureMinimumXFraction = 0.32f;
 
         public event Action StrokeStarted;
         public event Action<Vector2> StrokePointAdded;
         public event Action<IReadOnlyList<Vector2>> StrokeCompleted;
         public event Action StrokeCancelled;
 
-        private readonly List<Vector2> strokePoints = new List<Vector2>(128);
+        public bool IsDrawing => activeSource != InputSource.None;
+
+        private readonly List<Vector2> strokePoints = new List<Vector2>(160);
         private InputSource activeSource;
+        private int activeTouchId = -1;
 
         private void Update()
         {
@@ -43,12 +45,23 @@ namespace CatWizard.Spells
 
         private void TryBeginStroke()
         {
-            // Prefer a new touch, then a pen tip, then the mouse.
-            if (Touchscreen.current != null &&
-                Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+            if (Touchscreen.current != null)
             {
-                BeginStroke(InputSource.Touch, Touchscreen.current.primaryTouch.position.ReadValue());
-                return;
+                var touches = Touchscreen.current.touches;
+                for (int i = 0; i < touches.Count; i++)
+                {
+                    TouchControl touch = touches[i];
+                    if (!touch.press.wasPressedThisFrame)
+                        continue;
+
+                    Vector2 position = touch.position.ReadValue();
+                    if (position.x < Screen.width * gestureMinimumXFraction)
+                        continue;
+
+                    activeTouchId = touch.touchId.ReadValue();
+                    BeginStroke(InputSource.Touch, position);
+                    return;
+                }
             }
 
             if (Pen.current != null && Pen.current.tip.wasPressedThisFrame)
@@ -58,9 +71,7 @@ namespace CatWizard.Spells
             }
 
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-            {
                 BeginStroke(InputSource.Mouse, Mouse.current.position.ReadValue());
-            }
         }
 
         private void BeginStroke(InputSource source, Vector2 screenPosition)
@@ -68,7 +79,6 @@ namespace CatWizard.Spells
             activeSource = source;
             strokePoints.Clear();
             strokePoints.Add(screenPosition);
-
             StrokeStarted?.Invoke();
             StrokePointAdded?.Invoke(screenPosition);
         }
@@ -82,25 +92,25 @@ namespace CatWizard.Spells
             switch (activeSource)
             {
                 case InputSource.Touch:
-                    if (Touchscreen.current == null)
+                {
+                    TouchControl touch = FindActiveTouch();
+                    if (touch == null)
                     {
                         CancelStroke();
                         return;
                     }
 
-                    var touch = Touchscreen.current.primaryTouch;
                     position = touch.position.ReadValue();
                     isPressed = touch.press.isPressed;
                     wasReleased = touch.press.wasReleasedThisFrame;
                     break;
-
+                }
                 case InputSource.Pen:
                     if (Pen.current == null)
                     {
                         CancelStroke();
                         return;
                     }
-
                     position = Pen.current.position.ReadValue();
                     isPressed = Pen.current.tip.isPressed;
                     wasReleased = Pen.current.tip.wasReleasedThisFrame;
@@ -112,7 +122,6 @@ namespace CatWizard.Spells
                         CancelStroke();
                         return;
                     }
-
                     position = Mouse.current.position.ReadValue();
                     isPressed = Mouse.current.leftButton.isPressed;
                     wasReleased = Mouse.current.leftButton.wasReleasedThisFrame;
@@ -127,18 +136,31 @@ namespace CatWizard.Spells
             {
                 AppendPoint(position);
                 CompleteStroke();
-                return;
             }
-
-            if (isPressed)
+            else if (isPressed)
             {
                 AppendPoint(position);
-                return;
+            }
+            else
+            {
+                CancelStroke();
+            }
+        }
+
+        private TouchControl FindActiveTouch()
+        {
+            if (Touchscreen.current == null)
+                return null;
+
+            var touches = Touchscreen.current.touches;
+            for (int i = 0; i < touches.Count; i++)
+            {
+                TouchControl touch = touches[i];
+                if (touch.touchId.ReadValue() == activeTouchId)
+                    return touch;
             }
 
-            // The input disappeared without a normal release (for example,
-            // a focus change). Cancel rather than accidentally casting.
-            CancelStroke();
+            return null;
         }
 
         private void AppendPoint(Vector2 point)
@@ -156,10 +178,11 @@ namespace CatWizard.Spells
 
         private void CompleteStroke()
         {
-            List<Vector2> completedPoints = new List<Vector2>(strokePoints);
+            List<Vector2> completed = new List<Vector2>(strokePoints);
             strokePoints.Clear();
             activeSource = InputSource.None;
-            StrokeCompleted?.Invoke(completedPoints);
+            activeTouchId = -1;
+            StrokeCompleted?.Invoke(completed);
         }
 
         private void CancelStroke()
@@ -169,6 +192,7 @@ namespace CatWizard.Spells
 
             strokePoints.Clear();
             activeSource = InputSource.None;
+            activeTouchId = -1;
             StrokeCancelled?.Invoke();
         }
 
