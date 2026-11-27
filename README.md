@@ -8,7 +8,7 @@ The defining mechanic is gesture-cast magic: draw a symbol with a mouse, touchsc
 
 **Vertical Slice 01 — Spell Lab**
 
-- A runtime-built top-down arena with boundary walls, floor grid, global 2D light, and colored point lights.
+- A runtime-built top-down stone hall with individually shaded floor tiles, an engraved central spell seal, corner runes, carved masonry props, ground shadows, global 2D light, and colored point lights.
 - Original cat character sprite imported as a transparent Unity Sprite.
 - Desktop movement with WASD / arrow keys.
 - Tablet and phone movement with a left-side virtual thumb zone.

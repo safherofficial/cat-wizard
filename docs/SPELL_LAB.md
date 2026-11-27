@@ -4,7 +4,7 @@
 
 `Assets/CatWizard/Scenes/SpellLab.unity` is the first gameplay test scene. It contains a single bootstrap object. At runtime the bootstrap constructs the arena, creates the cat player and camera, and wires the gesture spell pipeline, effects, and HUD.
 
-This makes the first prototype scene self-contained and keeps the initial work focused on the magic-casting loop. The room is lit by a global 2D light and three colored point lights. Arena props and spell sprites are placeholders generated at runtime. The cat artwork is the supplied transparent character sprite.
+This makes the first prototype scene self-contained and keeps the initial work focused on the magic-casting loop. The room is lit by a global 2D light and three colored point lights. The floor is now a detailed runtime-generated stone atlas with an engraved central spell seal, corner runes, carved stone props, reinforced wooden crates, and soft ground shadows. The cat artwork is the supplied transparent character sprite. This is a stylized procedural art pass, not final hand-painted production art.
 
 ## Play loop
 
@@ -52,7 +52,7 @@ This command tests the geometry recognizer only. It does not substitute for test
 - No boss encounter, ranged enemy attacks, or multi-wave progression yet.
 - Wisp and cat feedback still use placeholder procedural visuals; final movement, casting, hit-reaction, and idle animation sets are not implemented yet.
 - No spell audio or final VFX package yet.
-- Arena props and impact effects are placeholder generated sprites.
+- Floor, stone, and wooden prop textures are procedurally generated and stylized; final hand-painted environment art, animated character frames, and bespoke spell VFX are still future art milestones.
 - Prop destruction currently uses simple radial shard bursts rather than detailed mesh/pixel fracture.
 - Gravity and Thunderbolt area interactions are prototype approximations.
 - Gesture thresholds need tuning with real mouse/touch/stylus handwriting.
