@@ -5,7 +5,7 @@ const TAU = Math.PI * 2;
 
 export function buildLighting(g){
   g.scene.background=new THREE.Color('#a9d8e5');
-  g.scene.fog=new THREE.Fog('#d7e8dc',70,158);
+  g.scene.fog=new THREE.Fog('#d7e8dc',92,228);
   g.scene.add(new THREE.HemisphereLight('#f6fbf1','#718b66',1.48));
 
   const sun=new THREE.DirectionalLight('#ffe5bd',2.25);
