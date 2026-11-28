@@ -750,6 +750,159 @@ function addAncientRuins(game,x=1,z=-31){
   }
 }
 
+
+function addWoodlandBridge(game){
+  const centerX=10.1,centerZ=-9.35;
+  const wood=new THREE.MeshStandardMaterial({color:'#906747',roughness:.88,flatShading:true});
+  const sunlitWood=new THREE.MeshStandardMaterial({color:'#bd9163',roughness:.82,flatShading:true});
+  const darkWood=new THREE.MeshStandardMaterial({color:'#654b3a',roughness:.94,flatShading:true});
+  const brass=new THREE.MeshStandardMaterial({color:'#d6b879',metalness:.48,roughness:.38});
+  const deck=new THREE.Group();
+  deck.position.set(centerX,.045,centerZ);
+  game.scene.add(deck);
+
+  // Individual planks create a hand-built silhouette while sharing their material.
+  for(let i=0;i<12;i++){
+    const plank=new THREE.Mesh(
+      new THREE.BoxGeometry(2.62,.13,.245),
+      i%3===0?sunlitWood:wood
+    );
+    plank.position.set(0,.12,-1.62+i*.295);
+    plank.rotation.y=(i%2===0?1:-1)*.008;
+    plank.castShadow=true;
+    plank.receiveShadow=true;
+    deck.add(plank);
+  }
+
+  for(const side of [-1,1]){
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(.16,.18,3.55),darkWood);
+    rail.position.set(side*1.28,.88,0);
+    rail.castShadow=true;
+    deck.add(rail);
+    for(const z of [-1.52,0,1.52]){
+      const post=new THREE.Mesh(new THREE.BoxGeometry(.18,.92,.18),wood);
+      post.position.set(side*1.28,.51,z);
+      post.castShadow=true;
+      deck.add(post);
+      const cap=new THREE.Mesh(new THREE.SphereGeometry(.12,7,5),brass);
+      cap.position.set(side*1.28,.99,z);
+      deck.add(cap);
+    }
+  }
+
+  for(const z of [-1.72,1.72]){
+    const support=new THREE.Mesh(new THREE.BoxGeometry(2.86,.22,.24),darkWood);
+    support.position.set(0,-.045,z);
+    support.castShadow=true;
+    deck.add(support);
+  }
+
+  // Warm lanterns at both ends make the crossing readable at a glance.
+  for(const z of [-1.9,1.9]){
+    const lantern=new THREE.Group();
+    lantern.position.set(0,.05,z);
+    deck.add(lantern);
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,.36,7),brass);
+    stem.position.y=1.08;
+    lantern.add(stem);
+    const glow=new THREE.Mesh(
+      new THREE.OctahedronGeometry(.12,1),
+      new THREE.MeshStandardMaterial({
+        color:'#ffe5a7',emissive:'#d98c3f',emissiveIntensity:.8,
+        roughness:.25,metalness:.12
+      })
+    );
+    glow.position.y=1.3;
+    lantern.add(glow);
+    const light=new THREE.PointLight('#ffd18c',.48,3.4,2);
+    light.position.y=1.3;
+    lantern.add(light);
+  }
+
+  game.bridge=deck;
+}
+
+function addRockOutcrops(game){
+  const random=seeded(57291);
+  const clusters=[
+    [-41,23,11],[40,22,11],[-41,-28,10],[41,-29,10],
+    [-22,32,9],[24,32,9],[-22,-31,9],[24,-31,9],
+    [-45,2,7],[45,3,7]
+  ];
+  const capacity=112;
+  const geometry=new THREE.IcosahedronGeometry(.72,1);
+  const material=new THREE.MeshStandardMaterial({
+    color:'#ffffff',vertexColors:true,roughness:.96,flatShading:true
+  });
+  const mossGeometry=new THREE.SphereGeometry(1,7,5);
+  const mossMaterial=new THREE.MeshStandardMaterial({
+    color:'#ffffff',vertexColors:true,roughness:1,flatShading:true
+  });
+  const rocks=new THREE.InstancedMesh(geometry,material,capacity);
+  const moss=new THREE.InstancedMesh(mossGeometry,mossMaterial,capacity);
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+  const rockColors=['#8c958a','#a09b88','#7f8980','#9c907d','#858f88'];
+  const mossColors=['#688d5e','#7c9a67','#91a36c'];
+  let count=0,mossCount=0;
+
+  clusters.forEach(([cx,cz,wanted])=>{
+    let placed=0,attempts=0;
+    while(placed<wanted&&count<capacity&&attempts<wanted*12){
+      attempts++;
+      const angle=random()*TAU;
+      const radius=.4+random()*2.2;
+      const x=cx+Math.cos(angle)*radius;
+      const z=cz+Math.sin(angle)*radius*.82;
+      if(x<WORLD_BOUNDS.minX+1.2||x>WORLD_BOUNDS.maxX-1.2||
+        z<WORLD_BOUNDS.minZ+1.2||z>WORLD_BOUNDS.maxZ-1.2)continue;
+      if(distanceToPath(x,z)<2.3)continue;
+      if(Math.hypot(x+31,z+8)<10.5)continue;
+      if(Math.hypot(x-1,z+31)<9.2)continue;
+      const blocked=(game.obstacles||[]).some(obstacle=>{
+        if(obstacle.destroyed)return false;
+        const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
+        const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
+        return Math.hypot(x-ox,z-oz)<(obstacle.radius||.55)+.65;
+      });
+      if(blocked)continue;
+
+      const scale=.46+random()*.72;
+      const sx=scale*(.78+random()*.42),sz=scale*(.78+random()*.42);
+      dummy.position.set(x,scale*.45,z);
+      dummy.scale.set(sx,scale*(.68+random()*.35),sz);
+      dummy.rotation.set(random()*.24,random()*TAU,random()*.2);
+      dummy.updateMatrix();
+      rocks.setMatrixAt(count,dummy.matrix);
+      color.set(rockColors[Math.floor(random()*rockColors.length)]);
+      rocks.setColorAt(count,color);
+
+      if(random()<.62){
+        dummy.position.set(x+(random()-.5)*.24,scale*.82,z+(random()-.5)*.22);
+        dummy.scale.set(scale*.42,.055+random()*.035,scale*.3);
+        dummy.rotation.set(0,random()*TAU,random()*.08);
+        dummy.updateMatrix();
+        moss.setMatrixAt(mossCount,dummy.matrix);
+        color.set(mossColors[Math.floor(random()*mossColors.length)]);
+        moss.setColorAt(mossCount++,color);
+      }
+
+      game.obstacles.push({x,z,radius:.42*Math.max(sx,sz),fixed:true});
+      count++;placed++;
+    }
+  });
+
+  rocks.count=count;
+  moss.count=mossCount;
+  [rocks,moss].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+}
+
 export function buildMeadowArena(game){
   game.treeTops=[];game.windmills=[];game.windShaders=[];game.effectsGround=[];
   const ground=new THREE.Mesh(
@@ -793,6 +946,7 @@ export function buildMeadowArena(game){
   addWater(game);
   addRiverBankLife(game);
   addMoonPond(game);
+  addWoodlandBridge(game);
   const hillMat=new THREE.MeshStandardMaterial({color:'#8eaf78',roughness:1,flatShading:true});
   [
     [-17,-13,7,4,8],[0,-18,11,5,7],[18,-14,8,4,9],[-22,0,7,6,8],[24,3,8,5,8],
@@ -846,6 +1000,7 @@ export function buildMeadowArena(game){
   ];
   props.forEach(p=>game.addProp(...p));
   addAncientRuins(game);
+  addRockOutcrops(game);
   addMushrooms(game);
 }
 
