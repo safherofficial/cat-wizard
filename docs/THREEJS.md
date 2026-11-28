@@ -42,7 +42,7 @@ The scene is a stylized painted meadow built from a seeded 2048×1536 ground tex
 
 ## Blender character asset
 
-The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. It generates an editable Blender project, a GLB export and a preview render, with separate NLA clips for idle, walk, run, cast and hit. The script has been statically syntax-checked, but it has not yet been executed in the user's local Blender installation. The runtime now loads the optimized Frog Wizard LOD1 scene directly. The Blender builder remains useful for future rigged/animated exports; the current GLB has no animation clips.
+The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. It generates an editable Blender project, a GLB export and a preview render, with separate NLA clips for idle, walk, run, cast and hit. The script has been statically syntax-checked, but it has not yet been executed in the user's local Blender installation. The runtime now loads a standalone 5.8 MB Frog Wizard LOD1 scene (about 67% smaller than the 17.7 MB source), with ~63k triangles. The Blender builder remains useful for future rigged/animated exports; the current GLB has no animation clips or skeletal rig, so idle and movement use light procedural body motion.
 
 ## Runtime timing
 
