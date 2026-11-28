@@ -857,6 +857,10 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     look.set(p.x,1.2,p.z-2.45);
     const a=1-Math.exp(-realDt*2.8);
     game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
+    if(game.sunLight){
+      game.sunLight.position.set(p.x-12,24,p.z+10);
+      game.sunLight.target.position.set(p.x,0,p.z);
+    }
   }
   const shader=game.grassMaterial?.userData?.shader;
   if(shader?.uniforms?.uMeadowTime)shader.uniforms.uMeadowTime.value=game.worldTime;
