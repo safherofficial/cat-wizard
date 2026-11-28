@@ -144,8 +144,21 @@ def _analyse(scene, filepath, imported_actions=None, imported_images=None):
         if o.parent and o.parent.type == 'ARMATURE'
         and o.parent_type == 'BONE' and bool(o.parent_bone)
     ]
+    bound_mesh_ids = {o.as_pointer() for o in skinned + rigid_bone_parts}
+    unbound_meshes = [o for o in meshes if o.as_pointer() not in bound_mesh_ids]
+    unknown_bone_parts = [
+        o for o in rigid_bone_parts
+        if o.parent_bone not in {bone.name for rig in armatures for bone in rig.data.bones}
+    ]
     lines.append("Weighted meshes with Armature modifier: {0}/{1}".format(len(skinned), len(meshes)))
     lines.append("Rigid meshes parented to armature bones: {0}/{1}".format(len(rigid_bone_parts), len(meshes)))
+    lines.append("Meshes without recognized rig binding: {0}/{1}".format(len(unbound_meshes), len(meshes)))
+    if unbound_meshes:
+        warnings.append("Meshes without weighted or rigid armature binding: " +
+                        ", ".join(o.name for o in unbound_meshes))
+    if unknown_bone_parts:
+        warnings.append("Rigid mesh parts reference unexpected bone names: " +
+                        ", ".join(o.name + " -> " + o.parent_bone for o in unknown_bone_parts))
     if armatures and not skinned and not rigid_bone_parts:
         warnings.append("Armature exists but no mesh uses skin weights or bone parenting.")
 
