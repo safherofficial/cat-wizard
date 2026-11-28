@@ -27,6 +27,12 @@ A Blender 2.93-compatible character builder is included in `blender/CatWizard_Bl
 
 Open the game with `?perf=1` to display FPS, average CPU frame cost, draw calls, triangles, geometry/texture counts and the active quality preset. Compare manual profiles with `?perf=1&quality=medium` or `?perf=1&quality=low`. High quality remains the default; these profiles do not switch automatically.
 
+## Rendering and performance
+
+- Use `?perf=1` to inspect FPS, average CPU frame cost, draw calls, triangles, geometry/texture counts and the active quality preset.
+- Compare `?perf=1&quality=high`, `medium` and `low`; the default remains High.
+- The meadow uses instanced bush and river-bank batches, a lightweight animated river shader and a dynamic firefly position buffer.
+
 ## Run locally
 
 ```bash
