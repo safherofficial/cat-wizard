@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinnedModel } from 'three/addons/utils/SkeletonUtils.js';
 import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, buildWisps as buildArtWisps, animateWorld } from './world-art.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
 import './style.css';
 
 const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/17373543-4bfb-4953-9977-285d5ce9a224.glb';
+const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/37363773-56ae-4734-9a97-d8639492c452.glb';
 const rand = (a,b) => a + Math.random() * (b-a);
 const dist = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 
@@ -138,6 +139,10 @@ class CatWizard {
     this.player=buildWizardCat(this);
     this.playerCollisionRadius=.62;
     this.frogMixer=null;
+    this.frogActions=Object.create(null);
+    this.frogCurrentAction=null;
+    this.frogCurrentName='';
+    this.frogActionLock=0;
     this.frogRoot=null;
     this.frogModel=null;
     const loader=new GLTFLoader();
@@ -146,7 +151,8 @@ class CatWizard {
       // avoiding the original high-detail mesh and cutting the download by roughly 67%.
       const source=gltf.scenes?.find(scene=>scene.name?.includes('LOD1'))||gltf.scenes?.[1]||gltf.scene;
       if(!source)throw new Error('The Frog Wizard GLB has no usable scene.');
-      const model=source.clone(true);
+      // SkeletonUtils.clone keeps the SkinnedMesh bound to its cloned bone hierarchy.
+      const model=cloneSkinnedModel(source);
       model.name='FrogWizard_LOD1_Runtime';
       const originalBounds=new THREE.Box3().setFromObject(model);
       const originalSize=originalBounds.getSize(new THREE.Vector3());
@@ -180,10 +186,16 @@ class CatWizard {
       this.tail=null;
       this.frogRoot=root;
       this.frogModel=model;
-      this.frogMixer=gltf.animations?.length?new THREE.AnimationMixer(model):null;
+      const clips=gltf.animations||[];
+      this.frogMixer=clips.length?new THREE.AnimationMixer(model):null;
+      this.frogActions=Object.create(null);
+      this.frogCurrentAction=null;
+      this.frogCurrentName='';
+      this.frogActionLock=0;
       if(this.frogMixer){
-        const idle=gltf.animations.find(clip=>/idle|stand/i.test(clip.name))||gltf.animations[0];
-        this.frogMixer.clipAction(idle).play();
+        for(const clip of clips)this.frogActions[clip.name]=this.frogMixer.clipAction(clip);
+        const idle=clips.find(clip=>/idle|stand/i.test(clip.name))||clips[0];
+        if(idle)this.playFrogAnimation(idle.name,{fade:0});
       }
       this.status(gltf.animations?.length?'Frog Wizard ready · animations loaded':'Frog Wizard ready · procedural idle and movement');
       this.updateHud();
@@ -191,6 +203,31 @@ class CatWizard {
       console.error('Frog Wizard GLB could not be loaded; keeping the fallback character.',error);
       this.status('Frog Wizard asset unavailable · fallback character active');
     });
+  }
+
+  playFrogAnimation(name,{once=false,fade=.14}={}){
+    if(!this.frogMixer)return false;
+    const key=Object.keys(this.frogActions).find(value=>value.toLowerCase()===name.toLowerCase());
+    if(!key)return false;
+    const action=this.frogActions[key];
+    if(this.frogCurrentAction===action&&!once)return true;
+    const previous=this.frogCurrentAction;
+    action.reset();
+    action.enabled=true;
+    action.paused=false;
+    action.clampWhenFinished=once;
+    action.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);
+    action.setEffectiveTimeScale(1);
+    action.setEffectiveWeight(1);
+    action.play();
+    if(previous&&previous!==action){
+      if(fade>0)action.crossFadeFrom(previous,fade,false);
+      else previous.stop();
+    }else if(fade>0)action.fadeIn(fade);
+    this.frogCurrentAction=action;
+    this.frogCurrentName=key;
+    this.frogActionLock=once?action.getClip().duration:0;
+    return true;
   }
 
   buildWisps() { this.wisps=buildArtWisps(this); }
@@ -254,6 +291,7 @@ class CatWizard {
   }
 
   cast(spell,target,confidence) {
+    this.playFrogAnimation('Cast',{once:true,fade:.08});
     this.castCount++;this.lastSpell=SPELLS[spell].name;this.status(this.lastSpell+' cast · '+Math.round(confidence*100)+'% match');this.updateHud();
     if(spell==='Fireball'){
       const orb=new THREE.Group();
@@ -374,9 +412,11 @@ class CatWizard {
   }
   updatePlayer(dt,realDt){
     this.playerInvul=Math.max(0,this.playerInvul-realDt);
+    if(this.frogActionLock>0)this.frogActionLock=Math.max(0,this.frogActionLock-dt);
     if(this.respawn>0){this.respawn=Math.max(0,this.respawn-realDt);this.player.visible=Math.floor(this.respawn*20)%2===0;if(this.respawn===0){this.player.position.set(0,0,-3.4);this.playerHealth=5;this.playerMove.set(0,0);this.player.visible=true;this.updateHud();}return;}
     const m=new THREE.Vector2();if(this.keys.has('a')||this.keys.has('arrowleft'))m.x--;if(this.keys.has('d')||this.keys.has('arrowright'))m.x++;if(this.keys.has('w')||this.keys.has('arrowup'))m.y--;if(this.keys.has('s')||this.keys.has('arrowdown'))m.y++;m.add(this.touchMove);if(m.lengthSq()>1)m.normalize();
-    this.playerMove.lerp(m.multiplyScalar(5.2),1-Math.exp(-dt*12));
+    const targetSpeed=this.keys.has('shift')?7:5.2;
+    this.playerMove.lerp(m.multiplyScalar(targetSpeed),1-Math.exp(-dt*12));
     this.player.position.x=clamp(this.player.position.x+this.playerMove.x*dt,-16.7,16.7);
     this.player.position.z=clamp(this.player.position.z+this.playerMove.y*dt,-12.2,12.2);
     for(const obstacle of this.obstacles){
@@ -393,10 +433,24 @@ class CatWizard {
     }
     this.player.position.x=clamp(this.player.position.x,-16.7,16.7);
     this.player.position.z=clamp(this.player.position.z,-12.2,12.2);
-    if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.055+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.045:.012);this.catRoot.rotation.z=Math.sin(this.worldTime*(moving?12:2.5))*(moving?.022:.008);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
+    if(this.catRoot){
+      const moving=this.playerMove.length()>.24;
+      if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);
+      if(this.frogMixer){
+        if(this.frogActionLock<=0){
+          const desired=moving?(this.keys.has('shift')?'Run':'Walk'):'Idle';
+          this.playFrogAnimation(desired);
+        }
+      }else{
+        this.catRoot.position.y=.055+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.045:.012);
+        this.catRoot.rotation.z=Math.sin(this.worldTime*(moving?12:2.5))*(moving?.022:.008);
+        if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}
+      }
+    }
   }
   hurtPlayer(w){
     if(this.playerInvul>0||this.respawn>0)return;this.playerHealth=Math.max(0,this.playerHealth-1);this.playerInvul=1.15;
+    this.playFrogAnimation('Hit',{once:true,fade:.05});
     const d=new THREE.Vector2(this.player.position.x-w.group.position.x,this.player.position.z-w.group.position.z);if(d.lengthSq()>.001)this.playerMove.addScaledVector(d.normalize(),4.4);
     this.burst(new THREE.Vector3(this.player.position.x,1.1,this.player.position.z),'#ffb0a0',16,1.15);
     this.status('Ouch. Frog Wizard has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('Frog Wizard is returning to the chamber…');}
@@ -485,7 +539,7 @@ function boot(){
   const game=new CatWizard(document.getElementById('game-canvas'));
   if(new URLSearchParams(location.search).get('debug')==='1'){
     window.__CAT_WIZARD_DEBUG__=()=>({
-      player:{x:game.player.position.x,z:game.player.position.z,health:game.playerHealth,invulnerability:game.playerInvul,respawn:game.respawn,moveX:game.playerMove.x,moveZ:game.playerMove.y},
+      player:{x:game.player.position.x,z:game.player.position.z,health:game.playerHealth,invulnerability:game.playerInvul,respawn:game.respawn,moveX:game.playerMove.x,moveZ:game.playerMove.y,animation:game.frogCurrentName},
       wisps:game.wisps.map(w=>({x:w.group.position.x,z:w.group.position.z,health:w.health,freeze:w.freeze,cooldown:w.cooldown,defeated:w.defeated,distance:Math.hypot(game.player.position.x-w.group.position.x,game.player.position.z-w.group.position.z)})),
       world:{time:game.worldTime,timeScale:game.timeScale,casts:game.castCount,defeated:game.wispsDefeated}
     });

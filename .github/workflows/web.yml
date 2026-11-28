@@ -3,6 +3,8 @@ name: Cat Wizard Web
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -39,7 +41,7 @@ jobs:
           path: dist
   deploy:
     name: Publish browser game
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:
