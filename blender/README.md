@@ -43,7 +43,7 @@ It exports five NLA clips: `Idle`, `Walk`, `Run`, `Cast` and `Hit`. The characte
    npm run audit:character -- ~/CatWizard_Art_v2/cat-wizard-character-v2.glb
    ```
 
-The Blender audit checks expected bones and animation clips, rigid bone-parenting or weighted mesh binding, geometry counts, dimensions, materials and image-texture UVs. The standalone audit checks GLB container integrity, embedded buffers, mesh/accessor references, animation channels and required clip names. Missing rig node names or hierarchy differences are warnings that must be reconciled with the Blender report. Both are structural audits, not visual or runtime certification.
+The Blender audit checks expected bones and animation clips, rigid bone-parenting or weighted mesh binding, geometry counts, dimensions, materials, image-texture UVs and meshes without recognized rig bindings. The standalone audit checks GLB container integrity, embedded buffers, mesh/accessor references, animation channels, required clip names, the full 13-node rig hierarchy and direct mesh attachment to rig bones. Missing required bones, broken hierarchy or mesh nodes detached from rig bones fail the standalone check. Both are structural audits, not visual or runtime certification.
 
 ## Runtime integration boundary
 
