@@ -11,7 +11,8 @@ export function buildLighting(g){
   const sun=new THREE.DirectionalLight('#ffe5bd',2.25);
   sun.position.set(-12,24,10);
   sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048);
+  const shadowResolution=g.quality?.shadowMapSize||2048;
+  sun.shadow.mapSize.set(shadowResolution,shadowResolution);
   Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:.5,far:60});
   sun.shadow.bias=-.00016;
   sun.shadow.normalBias=.022;
