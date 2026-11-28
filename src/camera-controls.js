@@ -29,3 +29,22 @@ export function rotateCameraOrbit(orbit, deltaX, deltaY, sensitivity = CAMERA_OR
     pitch: clamp(currentPitch + safeDeltaY * safeSensitivity, PITCH_MIN, PITCH_MAX)
   };
 }
+
+
+/**
+ * Converts camera-local WASD/touch input into world-space X/Z movement.
+ * Input convention is X: left(-)/right(+), Y: forward(-)/back(+).
+ * A zero yaw preserves the original controls: forward is world -Z, right is world +X.
+ */
+export function cameraRelativeMovement(inputX, inputY, yaw = CAMERA_ORBIT_DEFAULTS.yaw) {
+  const x = Number.isFinite(inputX) ? inputX : 0;
+  const y = Number.isFinite(inputY) ? inputY : 0;
+  const angle = Number.isFinite(yaw) ? yaw : CAMERA_ORBIT_DEFAULTS.yaw;
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+
+  return {
+    x: x * cosine + y * sine,
+    z: -x * sine + y * cosine
+  };
+}
