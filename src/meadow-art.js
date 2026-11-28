@@ -345,7 +345,7 @@ function addWater(game){
     shader.uniforms.uWaterTime={value:0};
     shader.vertexShader=shader.vertexShader.replace(
       '#include <common>',
-      '#include <common>\\nuniform float uWaterTime;'
+      '#include <common>\nuniform float uWaterTime;'
     );
     shader.vertexShader=shader.vertexShader.replace(
       '#include <begin_vertex>',
@@ -355,7 +355,7 @@ function addWater(game){
     );
     shader.fragmentShader=shader.fragmentShader.replace(
       '#include <common>',
-      '#include <common>\\nuniform float uWaterTime;'
+      '#include <common>\nuniform float uWaterTime;'
     );
     shader.fragmentShader=shader.fragmentShader.replace(
       '#include <color_fragment>',
