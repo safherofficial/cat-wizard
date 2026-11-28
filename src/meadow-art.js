@@ -154,7 +154,9 @@ function addFireflies(game){
     positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;
   }
   const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  const positionAttribute=new THREE.BufferAttribute(positions,3);
+  positionAttribute.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position',positionAttribute);
   const material=new THREE.PointsMaterial({color:'#fff0b0',size:.13,transparent:true,opacity:.72,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
   const points=new THREE.Points(geometry,material);
   points.frustumCulled=false;game.scene.add(points);game.fireflies={points,base,phases};
@@ -234,14 +236,40 @@ function addTree(game,x,z,scale=1,phase=0){
   game.obstacles.push({x,z,radius:.72*scale,fixed:true});
 }
 
-function addBush(game,x,z,scale=1){
-  const group=new THREE.Group();group.position.set(x,0,z);group.scale.setScalar(scale);game.scene.add(group);
+function addBushes(game,placements){
+  const lobesPerBush=7;
+  const geometry=new THREE.IcosahedronGeometry(.34,1);
+  const material=new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.95,flatShading:true});
+  const instances=new THREE.InstancedMesh(geometry,material,placements.length*lobesPerBush);
   const colors=['#4d884e','#679d55','#82aa62'];
-  for(let i=0;i<7;i++){
-    const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(.34,1),new THREE.MeshStandardMaterial({color:colors[i%3],roughness:.95,flatShading:true}));
-    mesh.position.set(Math.cos(i*TAU/7)*.34,.3+(i%3)*.07,Math.sin(i*TAU/7)*.28);
-    mesh.scale.set(1,.75,.9);mesh.castShadow=true;group.add(mesh);
-  }
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+  let index=0;
+
+  placements.forEach(([x,z,scale])=>{
+    for(let i=0;i<lobesPerBush;i++){
+      const angle=i*TAU/lobesPerBush;
+      dummy.position.set(
+        x+Math.cos(angle)*.34*scale,
+        (.3+(i%3)*.07)*scale,
+        z+Math.sin(angle)*.28*scale
+      );
+      dummy.scale.set(scale,scale*.75,scale*.9);
+      dummy.rotation.set(0,0,0);
+      dummy.updateMatrix();
+      instances.setMatrixAt(index,dummy.matrix);
+      color.set(colors[i%colors.length]);
+      instances.setColorAt(index,color);
+      index++;
+    }
+  });
+
+  instances.count=index;
+  instances.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  instances.castShadow=true;
+  instances.receiveShadow=false;
+  instances.computeBoundingSphere();
+  game.scene.add(instances);
 }
 
 function addStandingStone(game,x,z,height=2.1,lean=0){
@@ -313,9 +341,46 @@ function addWater(game){
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();
   const waterMat=new THREE.MeshPhysicalMaterial({color:'#78bfce',roughness:.24,metalness:.08,transparent:true,opacity:.9,side:THREE.DoubleSide,clearcoat:.65,clearcoatRoughness:.2});
+  waterMat.onBeforeCompile=shader=>{
+    shader.uniforms.uWaterTime={value:0};
+    shader.vertexShader=shader.vertexShader.replace(
+      '#include <common>',
+      '#include <common>\\nuniform float uWaterTime;'
+    );
+    shader.vertexShader=shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      transformed.y += sin(position.x * 0.85 + position.z * 1.15 + uWaterTime * 1.6) * 0.012
+        + cos(position.x * 1.25 - position.z * 0.65 + uWaterTime * 1.05) * 0.008;`
+    );
+    shader.fragmentShader=shader.fragmentShader.replace(
+      '#include <common>',
+      '#include <common>\\nuniform float uWaterTime;'
+    );
+    shader.fragmentShader=shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+      float waterGlint = sin(gl_FragCoord.x * 0.027 + gl_FragCoord.y * 0.013 + uWaterTime * 2.0);
+      diffuseColor.rgb *= 0.985 + waterGlint * 0.018;`
+    );
+    waterMat.userData.shader=shader;
+  };
   const water=new THREE.Mesh(geometry,waterMat);water.receiveShadow=true;game.scene.add(water);game.waterMaterial=waterMat;
+
+  const bankGeometry=new THREE.IcosahedronGeometry(.28,0);
   const bankMaterial=new THREE.MeshStandardMaterial({color:'#d0b886',roughness:1,flatShading:true});
-  for(const [x,z] of points){const pebble=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,0),bankMaterial);pebble.position.set(x,-.01,z+(x%2?.95:-.95));pebble.scale.set(1,.4,.65);game.scene.add(pebble);}
+  const bankPebbles=new THREE.InstancedMesh(bankGeometry,bankMaterial,points.length);
+  const pebbleTransform=new THREE.Object3D();
+  points.forEach(([x,z],i)=>{
+    pebbleTransform.position.set(x,-.01,z+(x%2?.95:-.95));
+    pebbleTransform.scale.set(1,.4,.65);
+    pebbleTransform.updateMatrix();
+    bankPebbles.setMatrixAt(i,pebbleTransform.matrix);
+  });
+  bankPebbles.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  bankPebbles.receiveShadow=true;
+  bankPebbles.computeBoundingSphere();
+  game.scene.add(bankPebbles);
   game.riverCurve=curve;
 }
 
@@ -377,7 +442,7 @@ export function buildMeadowArena(game){
     [-15,-1.7,1.2,5.1],[15.2,1.4,1.12,5.8]
   ];
   trees.forEach(([x,z,s,p])=>addTree(game,x,z,s,p));
-  [[-8.8,-1.8],[8.6,-2.8],[-8.9,5.9],[8.7,5.8],[-13,3.2],[13,-4.5],[-4.8,9.3],[3.4,9.5]].forEach(([x,z],i)=>addBush(game,x,z,.8+(i%3)*.12));
+  addBushes(game,[[-8.8,-1.8,.8],[8.6,-2.8,.92],[-8.9,5.9,1.04],[8.7,5.8,.8],[-13,3.2,.92],[13,-4.5,1.04],[-4.8,9.3,.8],[3.4,9.5,.92]]);
 
   addGrass(game);
   addFlowers(game);
@@ -398,13 +463,17 @@ export function buildMeadowArena(game){
 export function animateMeadow(game,worldDt,realDt=worldDt){
   if(game.player){
     const p=game.player.position;
-    const target=new THREE.Vector3(p.x*.12,7.25,p.z+7.8);
-    const look=new THREE.Vector3(p.x,1.2,p.z-2.45);
+    const target=game.cameraTarget||(game.cameraTarget=new THREE.Vector3());
+    const look=game.cameraLookTarget||(game.cameraLookTarget=new THREE.Vector3());
+    target.set(p.x*.12,7.25,p.z+7.8);
+    look.set(p.x,1.2,p.z-2.45);
     const a=1-Math.exp(-realDt*2.8);
     game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
   }
   const shader=game.grassMaterial?.userData?.shader;
   if(shader?.uniforms?.uMeadowTime)shader.uniforms.uMeadowTime.value=game.worldTime;
+  const waterShader=game.waterMaterial?.userData?.shader;
+  if(waterShader?.uniforms?.uWaterTime)waterShader.uniforms.uWaterTime.value=game.worldTime;
   game.treeTops?.forEach(t=>{t.group.rotation.z=Math.sin(game.worldTime*.72+t.phase)*t.amount;t.group.rotation.x=Math.cos(game.worldTime*.58+t.phase)*t.amount*.55;});
   game.windmills?.forEach((m,i)=>{m.rotation.z+=worldDt*(.34+i*.025);});
   if(game.magicCore){
