@@ -44,6 +44,18 @@ The scene is a stylized painted meadow built from a seeded 2048×1536 ground tex
 
 The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. It generates an editable Blender project, a GLB export and a preview render, with separate NLA clips for idle, walk, run, cast and hit. The script has been statically syntax-checked, but it has not yet been executed in the user's local Blender installation. The existing Three.js character remains active until the exported GLB is reviewed, copied into `public/assets/cat-wizard-character.glb`, and connected to the runtime loader.
 
+
+## Meadow visual and draw-call pass
+
+- Bush lobes now share one instanced geometry/material batch instead of creating one mesh/material per lobe.
+- River-bank pebbles are batched into a single `InstancedMesh`.
+- The river adds subtle vertex ripples and a low-amplitude animated highlight through a material shader hook. The animation uses world time, so it participates in the 15% spell-drawing slow motion.
+- Firefly positions use a dynamic buffer usage hint because the positions are updated continuously.
+- Camera target vectors are reused between frames rather than allocated on each camera update.
+- Quality profiles now also control shadow-map resolution and antialiasing. High preserves the previous 2048 shadow map and antialiasing defaults; Medium halves the shadow-map dimensions; Low disables shadows and antialiasing.
+
+The meadow batching is intended to lower draw-call overhead without reducing the number of bush lobes or changing their placements. GPU savings and the visual quality of the animated river still require comparison in a real browser across the three profiles.
+
 ## Runtime timing
 
 - The animation loop subdivides larger frame deltas into small simulation steps, preserving elapsed gameplay time on slower-refresh devices while keeping motion and impact updates stable.
@@ -72,11 +84,11 @@ The CPU figure is not a GPU execution timer; WebGL work may complete asynchronou
 
 Three manual quality presets are available for comparison:
 
-| Query value | Pixel-ratio cap | Shadows |
-| --- | ---: | --- |
-| `high` (default) | 1.5 | Soft shadow maps |
-| `medium` | 1.25 | Standard shadow maps |
-| `low` | 1.0 | Disabled |
+| Query value | Pixel-ratio cap | Shadow map | Antialiasing |
+| --- | ---: | ---: | --- |
+| `high` (default) | 1.5 | 2048 × 2048, soft | On |
+| `medium` | 1.25 | 1024 × 1024, standard | On |
+| `low` | 1.0 | Shadows disabled | Off |
 
 Examples:
 
