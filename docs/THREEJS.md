@@ -1,6 +1,6 @@
-# Cat Wizard — Three.js browser edition
+# Frog Wizard — Three.js browser edition
 
-Cat Wizard now runs as a native browser game built with Three.js. Unity is no longer part of the production runtime or web build pipeline.
+Frog Wizard now runs as a native browser game built with Three.js. Unity is no longer part of the production runtime or web build pipeline.
 
 ## Stack
 
@@ -14,6 +14,7 @@ Cat Wizard now runs as a native browser game built with Three.js. Unity is no lo
 npm install
 npm run dev
 npm test
+python tests/blender_source_test.py
 npm run build
 npm run preview
 ```
@@ -22,38 +23,124 @@ The deployable site is written to `dist/`.
 
 ## Controls
 
-- Desktop: WASD or arrow keys move the cat; hold the left mouse button, draw a single glyph and release to cast.
-- Touch: hold and drag on the left 32% of the game surface to move; draw and release on the right side to cast. Pointer IDs are independent, allowing movement and spell drawing together.
+- Desktop: WASD or arrow keys move relative to the camera heading (W always moves toward the top of the view); hold the right mouse button and drag to orbit the follow camera; hold the left mouse button, draw a single glyph and release to cast. The cat turns to face its actual world-space travel direction.
+- Touch: hold and drag on the left 32% of the game surface to move relative to the camera heading; draw and release on the right side to cast. Pointer IDs are independent, allowing movement and spell drawing together.
 - Drawing reduces world simulation speed to 15%; after release it eases back to full speed over 250 ms.
 
 ## Spells
 
 | Gesture | Spell | Effect |
 | --- | --- | --- |
-| Circle | Fireball | Traveling fire projectile and impact burst. |
-| Lightning | Thunderbolt | Strike that damages objects and wisps along its path. |
-| Triangle | Frost | Area pulse that chills and temporarily freezes targets. |
-| Spiral | Gravity | Temporary vortex pulling movable objects and wisps inward, with an impact pulse for wisps in range. |
-| Star | Chaos | Wide, high-impact blast. |
+| Circle | Fireball | Arcing projectile; collides with the first prop in its path, then detonates with a distance-scaled blast. |
+| Lightning | Thunderbolt | Instant strike; applies a directional impulse and damage to props along the bolt. |
+| Triangle | Frost | Area pulse that freezes props in place, stopping their movement and spin until thaw. |
+| Spiral | Gravity | Temporary vortex that pulls and swirls props; their collisions exchange momentum. |
+| Star | Chaos | Wide shockwave with distance-scaled outward impulse and destructible impact.
 
 ## Gameplay
 
-The scene is a stylized painted meadow built from a seeded 2048×1536 ground texture, 9,000 animated instanced grass blades, nearly 1,000 flower clusters, tree canopies, bushes, a winding river, a cottage, a working windmill, hills, standing stones and floating fireflies. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is a modeled 3D grey cat with the signature pink bow tie, pointed ears, violet wizard hat and pipe; the walk cycle articulates the legs and arms, with a moving cloak, secondary head and hat motion, a swaying tail and animated pipe smoke. Instanced grass bends in the wind and fireflies drift above the flowers. Three faceted cursed wisps pursue the player. Destructible props, player health, invulnerability, respawn and the five gesture spells are retained. The follow camera is closer to the character to emphasize the third-person adventure view.
+The scene is a 148 × 120 free-roam enchanted valley built from a seeded 3584×2816 painted ground texture, 56,000 animated instanced grass blades, 6,000 wildflower clusters, 520 floating fireflies, four peripheral pine groves, two moonlit crystal beds, a northern starlight shrine, tree canopies, bushes, a winding river, a west-side moon pond, expanded mushroom hollows, an old oak grove, a southern ring of ancient stones, a timber footbridge, moss-covered rocky outcrops, a cottage, a working windmill and a wider ring of distant hills. Hand-painted trails lead from the central spell clearing into the new outer biomes. The 148 × 120 ground is a subdivided, deterministic heightfield: broad, low-relief rises and shallow basins blend into level walking trails, the central spell clearing, the river corridor and landmark pads. Grass, flowers, trees, mushrooms, rocks and crystals are anchored to their local surface height; the player, camera, directional light and spell-picking ray follow the same profile. The camera and directional shadow light follow the player across the expanded bounds. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is the Frog Wizard: a textured static GLB with mushroom accessories. Its two-scene LOD pair renders 253,449 triangles at close range and 63,362 beyond 14 world units. The source contains no skeleton or animation clips, so runtime motion is currently handled by character-facing rotation and a subtle whole-body bob rather than limb articulation. Instanced grass bends in the wind and fireflies drift above the flowers. This phase deliberately has no enemies, health, damage-to-player or respawn loop. Instead, it isolates the five gesture spells and their interactions with destructible crates, barrels, vases and stones. Movable props have mass, damped velocity, wall and pillar collisions, and pairwise momentum exchange. The follow camera is closer to the character to emphasize the third-person view.
+
+
+## Sculpted meadow terrain
+
+- `src/terrain.js` provides a deterministic, bounded height function for broad rises, shallow basins and subtle surface undulation.
+- The ground plane is subdivided and displaced into a static Three.js heightfield; it retains the hand-painted grass texture and recomputes vertex normals for natural lighting.
+- Trail corridors, the central spell clearing, the river, moon pond, ruins and major landmark pads stay level or blend gently into the surrounding terrain.
+- Instanced grass, flower patches, pine trees, crystals, mushrooms, rocks and the other grounded set pieces use the same height function to avoid floating or buried placement.
+- Player elevation, camera follow, directional-light tracking, spell rings, projectiles and terrain ray-picking follow the surface.
+- Dedicated tests check flat gameplay areas, positive and negative landforms, finite bounds and gradual height changes.
+
+## Distinct woodland, crystal and marsh micro-biomes
+
+- Adds a low-poly fern understorey to the four pine groves, with fallen logs, moss-covered timber and cut stumps placed away from the trails and existing collision landmarks.
+- Adds 52 softly glowing, drifting motes around the two crystal beds. Their color palette follows the crystal tones and their movement is driven by world time, so it slows during spell drawing.
+- Adds twelve marsh-reed clumps around the moon pond, with separate instanced stalks, seed heads and leaves.
+- Gives the flower fields region-aware color palettes: cool and luminous tones near the crystals, muted woodland colors beneath the pines, and warm pale-gold colors around the northern shrine.
+- Batches the new fern, log, stump, reed and mote details with instanced meshes or point geometry to keep the additional environment dressing lightweight.
+- Keeps all grounded details aligned to the shared terrain heightfield.
 
 ## Blender character asset
 
-The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. It generates an editable Blender project, a GLB export and a preview render, with separate NLA clips for idle, walk, run, cast and hit. The script has been statically syntax-checked, but it has not yet been executed in the user's local Blender installation. The existing Three.js character remains active until the exported GLB is reviewed, copied into `public/assets/cat-wizard-character.glb`, and connected to the runtime loader.
+The current candidate source is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), with a companion `blender/CatWizard_GLBAudit_Blender293.py`. Character 02 adds dedicated Hat, Ear.L, Ear.R and Tail.Tip bones to a 13-bone rigid-part rig; it includes Idle, Walk, Run, Cast and Hit NLA clips. Bevelled curve details are converted to meshes before GLB export, and the builder validates expected bones, mesh bindings and clips before saving/exporting. The Blender audit helper checks the exported GLB's structure and produces front/side/rear previews.
+
+After generating the GLB in Blender 2.93, run the standalone structural audit from the repository root:
+
+```bash
+npm run audit:character -- ~/CatWizard_Art_v2/cat-wizard-character-v2.glb
+```
+
+That Node.js tool checks GLB container integrity, embedded buffer bounds, mesh/accessor references and animation channel references, and reports the five expected clips. It also reports rig nodes and parent-hierarchy deviations for follow-up in the Blender audit. The check is structural only: it does not replace Blender execution, visual review or Three.js playback. No generated `.blend`, `.glb` or preview render has yet been verified in this environment. The browser continues to use the current procedural Three.js cat until the candidate is generated, audited and explicitly approved. The older ZIP remains as Character 01 legacy material.
+
+## Meadow visual and draw-call pass
+
+- Bush lobes now share one instanced geometry/material batch instead of creating one mesh/material per lobe.
+- River-bank pebbles are batched into a single `InstancedMesh`.
+- The river adds subtle vertex ripples and a low-amplitude animated highlight through a material shader hook. The animation uses world time, so it participates in the 15% spell-drawing slow motion.
+- Firefly positions use a dynamic buffer usage hint because the positions are updated continuously.
+- Camera target vectors are reused between frames rather than allocated on each camera update.
+- Quality profiles now also control shadow-map resolution and antialiasing. High preserves the previous 2048 shadow map and antialiasing defaults; Medium halves the shadow-map dimensions; Low disables shadows and antialiasing.
+
+The meadow batching is intended to lower draw-call overhead without reducing the number of bush lobes or changing their placements. GPU savings and the visual quality of the animated river still require comparison in a real browser across the three profiles.
 
 ## Runtime timing
 
-- The animation loop subdivides larger frame deltas into small simulation steps, preserving elapsed gameplay time on slower-refresh devices while keeping motion and impact updates stable.
+- The animation loop subdivides larger frame deltas into small simulation steps, preserving elapsed gameplay time on slower-refresh devices while keeping player movement, prop collisions and spell impacts stable.
 
 ## Deployment
 
-Every push to `main`, or a manual run of **Cat Wizard Web**, runs `npm install`, `npm test`, `npm run build`, verifies the generated static files and publishes `dist/` through GitHub Pages.
+Pull requests targeting `main` run JavaScript tests, Blender source-contract tests and the production build, but do not publish the game. Pushes to `main`, or a manual run of **Frog Wizard Web**, run the same checks and publish `dist/` through GitHub Pages.
 
 The first Pages deployment requires **Repository → Settings → Pages → Build and deployment → Source → GitHub Actions**. No Unity license or Vercel integration is involved.
 
 Expected URL: https://safherofficial.github.io/cat-wizard/
 
 A successful workflow build confirms static compilation and packaging. Graphics, browser input, device performance and real playability still require hands-on browser testing.
+
+## Performance diagnostics
+
+Append `?perf=1` to the Preview URL to show a compact runtime overlay. It reports:
+
+- Approximate frames per second over a rolling measurement window.
+- Average JavaScript frame cost, including simulation and WebGL command submission.
+- Draw calls and triangles from the most recent render.
+- Active geometry and texture counts tracked by Three.js.
+- The selected quality preset and renderer pixel ratio.
+
+The CPU figure is not a GPU execution timer; WebGL work may complete asynchronously. Use browser performance tools or a GPU profiler for deeper investigation.
+
+Three manual quality presets are available for comparison:
+
+| Query value | Pixel-ratio cap | Shadow map | Antialiasing |
+| --- | ---: | ---: | --- |
+| `high` | 1.3 | 1024 × 1024, standard PCF | On |
+| `medium` | 1.1 | 768 × 768, standard PCF | On |
+| `low` | 0.9 | Shadows disabled | Off |
+
+Examples:
+
+- `?perf=1`
+- `?perf=1&quality=medium`
+- `?perf=1&quality=low`
+
+Without a `quality` query parameter the game selects a preset from available CPU, memory and coarse-pointer hints. `?quality=high`, `medium` or `low` remains an explicit override. A hysteresis-based pixel-ratio controller also lowers internal resolution after sustained slow frames and restores it only after sustained headroom, avoiding rapid quality oscillation.
+
+The large grass and flower fields are divided into 32-world-unit instanced cells so the camera can cull off-screen vegetation. Terrain tessellation is reduced to approximately one vertex per world unit, while the painted ground texture is 2048 × 1664. Fireflies and crystal motes now animate in the vertex shader rather than uploading new point positions from JavaScript every frame. Decorative tree branches and leaf crowns no longer cast expensive shadow-map passes.
+
+
+## Atmospheric valley backdrop
+
+- Replaces the flat sky-only horizon with a lightweight gradient sky dome and a warm, low-intensity sun halo.
+- Adds 40 distant, irregular mountain peaks as one instanced draw, softened by extended scene fog to frame the larger valley.
+- Adds sixteen drifting storybook cloud formations (96 instanced puffs total); their slow movement follows world time and therefore eases during spell drawing.
+- Adds four instanced pine groves, two emissive crystal beds and a northern starlight shrine as new outer-map destinations.
+- Keeps the backdrop free of shadow casting and uses deterministic layout helpers with unit tests so the horizon remains stable between launches.
+
+
+## Frog Wizard model and LOD
+
+The runtime expects `public/assets/frog-wizard-lods.glb`. Vite serves it from the correct base path on both GitHub Pages and Vercel. The GLB contains two scenes sharing the original PBR material and embedded WebP maps. Near LOD: 253,449 triangles. Far LOD: 63,362 triangles, selected at 14 world units with 12% hysteresis. Meshes do not cast or receive shadow-map shadows; the existing soft ground shadow remains separate.
+
+The original model is one fused mesh with no skin, bones or animation channels. The character is scaled to approximately the former protagonist's height and animated as a single root while moving. The procedural cat remains a temporary fallback if the GLB has not been added or fails to load.
+
+The asset metadata preserves its **CC BY 4.0** source attribution. “Frog wizard with mushrooms” by Scenario, title by Patch; source URL is retained in the GLB and in the project README.
