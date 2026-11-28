@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMERA_ORBIT_DEFAULTS, rotateCameraOrbit } from '../src/camera-controls.js';
+import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, rotateCameraOrbit } from '../src/camera-controls.js';
 
 test('camera starts at a stable, elevated follow angle', () => {
   assert.equal(CAMERA_ORBIT_DEFAULTS.yaw, 0);
@@ -33,8 +33,6 @@ test('non-finite mouse deltas do not corrupt the camera orbit', () => {
   assert.equal(next.pitch, CAMERA_ORBIT_DEFAULTS.pitch);
 });
 
-
-import { cameraRelativeMovement } from '../src/camera-controls.js';
 
 test('camera-relative WASD preserves the original forward and right directions at zero yaw', () => {
   assert.deepEqual(cameraRelativeMovement(0, -1, 0), { x: 0, z: -1 });
