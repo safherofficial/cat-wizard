@@ -1130,16 +1130,27 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     const target=game.cameraTarget||(game.cameraTarget=new THREE.Vector3());
     const look=game.cameraLookTarget||(game.cameraLookTarget=new THREE.Vector3());
     const orbit=game.cameraOrbit||{yaw:0,pitch:.533,distance:11.9};
-    look.set(p.x,1.35,p.z-.85);
+    // Keep the orbit pivot on the player, with a small movement-aware lead.
+    // This avoids the world-fixed focus offset drifting sideways after camera orbit.
+    const move=game.playerMove||{x:0,y:0};
+    const speed=Math.min(1,Math.hypot(move.x,move.y)/5.2);
+    look.set(
+      p.x+move.x*.085,
+      1.32,
+      p.z+move.y*.085
+    );
     const horizontal=Math.cos(orbit.pitch)*orbit.distance;
     target.set(
       look.x+Math.sin(orbit.yaw)*horizontal,
       look.y+Math.sin(orbit.pitch)*orbit.distance,
       look.z+Math.cos(orbit.yaw)*horizontal
     );
-    const a=1-Math.exp(-realDt*3.4);
-    game.camera.position.lerp(target,a);
-    game.cameraLook.lerp(look,a);
+    // The focus point reacts slightly faster than the camera body to keep
+    // the wizard visually anchored during turns and direction changes.
+    const positionAlpha=1-Math.exp(-realDt*4.8);
+    const focusAlpha=1-Math.exp(-realDt*(5.8+speed*.8));
+    game.camera.position.lerp(target,positionAlpha);
+    game.cameraLook.lerp(look,focusAlpha);
     game.camera.lookAt(game.cameraLook);
     if(game.sunLight){
       game.sunLight.position.set(p.x-12,24,p.z+10);
