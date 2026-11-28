@@ -136,7 +136,7 @@ class CatWizard {
   buildPlayer() {
     // Keep the existing character as an immediate fallback while the optimized GLB loads.
     this.player=buildWizardCat(this);
-    this.playerCollisionRadius=.58;
+    this.playerCollisionRadius=.62;
     this.frogMixer=null;
     this.frogRoot=null;
     this.frogModel=null;
@@ -167,6 +167,8 @@ class CatWizard {
       const root=new THREE.Group();
       root.name='FrogWizardCharacterRoot';
       root.add(model);
+      const playerShadow=this.player.children.find(child=>child.isMesh&&child.geometry?.type==='CircleGeometry');
+      if(playerShadow)playerShadow.scale.set(1.45,1.25,1);
       this.player.add(root);
       const previous=this.catRoot;
       if(previous){
@@ -391,13 +393,13 @@ class CatWizard {
     }
     this.player.position.x=clamp(this.player.position.x,-16.7,16.7);
     this.player.position.z=clamp(this.player.position.z,-12.2,12.2);
-    if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.035+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.065:.025);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
+    if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.055+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.045:.012);this.catRoot.rotation.z=Math.sin(this.worldTime*(moving?12:2.5))*(moving?.022:.008);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
   }
   hurtPlayer(w){
     if(this.playerInvul>0||this.respawn>0)return;this.playerHealth=Math.max(0,this.playerHealth-1);this.playerInvul=1.15;
     const d=new THREE.Vector2(this.player.position.x-w.group.position.x,this.player.position.z-w.group.position.z);if(d.lengthSq()>.001)this.playerMove.addScaledVector(d.normalize(),4.4);
     this.burst(new THREE.Vector3(this.player.position.x,1.1,this.player.position.z),'#ffb0a0',16,1.15);
-    this.status('Ouch. The cat has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('The cat is returning to the chamber…');}
+    this.status('Ouch. Frog Wizard has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('Frog Wizard is returning to the chamber…');}
   }
   updateProps(dt){
     this.props.forEach(p=>{if(p.destroyed)return;if(p.frozen>0){p.frozen=Math.max(0,p.frozen-dt);if(!p.frozen){p.mat.color.set(({crate:'#956342',barrel:'#70452f',vase:'#a66f70',stone:'#686b7a'})[p.type]);p.mat.emissiveIntensity=0;}return;}
