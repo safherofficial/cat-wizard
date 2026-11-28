@@ -4,7 +4,10 @@ import {
   createCloudPuffLayout,
   createCrystalGroveLayout,
   createDistantMountainLayout,
-  createPeripheralPineLayout
+  createPeripheralPineLayout,
+  createWoodlandFloorLayout,
+  createCrystalMoteLayout,
+  createPondReedLayout
 } from './environment-layout.js';
 import { terrainElevationAt } from './terrain.js';
 
@@ -208,6 +211,9 @@ function addFlowers(game){
   const centers=new THREE.InstancedMesh(centerGeometry,centerMaterial,count);
   const dummy=new THREE.Object3D(),col=new THREE.Color();
   const colors=['#fff2d4','#f2a4a0','#f4c86e','#b6a2dc','#e9a5c4','#d9e8a4'];
+  const woodlandColors=['#f1e8c9','#d9c99c','#c6d9a1','#eadcbf'];
+  const crystalColors=['#d7f1f0','#b9d8f4','#cdbce9','#f3e5ff'];
+  const shrineColors=['#fff0c8','#f4d18c','#f0e2b2','#d7dfbd'];
   let n=0,p=0;
   for(let i=0;i<count*8&&n<count;i++){
     const x=WORLD_BOUNDS.minX+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX);
@@ -220,7 +226,21 @@ function addFlowers(game){
     if(nearLandmark||random()<.18)continue;
     const y=terrainElevationAt(x,z)+.115+random()*.035,scale=.72+random()*.9;
     dummy.position.set(x,y,z);dummy.scale.setScalar(scale);dummy.rotation.set(0,random()*TAU,0);dummy.updateMatrix();stems.setMatrixAt(n,dummy.matrix);
-    col.set(colors[Math.floor(random()*colors.length)]);
+    const inCrystalGrove=Math.min(
+      Math.hypot(x-55,z+38),
+      Math.hypot(x+55,z+35)
+    )<8.5;
+    const inPineGrove=[
+      [-60,39],[-59,-39],[60,39],[60,-39]
+    ].some(([cx,cz])=>Math.hypot(x-cx,z-cz)<8.5);
+    const flowerPalette=inCrystalGrove
+      ?crystalColors
+      :inPineGrove
+        ?woodlandColors
+        :z>42&&Math.abs(x)<12
+          ?shrineColors
+          :colors;
+    col.set(flowerPalette[Math.floor(random()*flowerPalette.length)]);
     for(let j=0;j<5;j++){
       const a=j*TAU/5,idx=p++;
       dummy.position.set(x+Math.cos(a)*.075*scale,y+.13*scale,z+Math.sin(a)*.075*scale);
@@ -311,6 +331,302 @@ function addBushes(game,placements){
   game.scene.add(instances);
 }
 
+
+
+function createFernGeometry(){
+  const positions=[];
+  const indices=[];
+  const addQuad=(a,b,c,d)=>{
+    const start=positions.length/3;
+    positions.push(...a,...b,...c,...d);
+    indices.push(start,start+1,start+2,start,start+2,start+3);
+  };
+
+  for(let frond=0;frond<7;frond++){
+    const angle=frond*TAU/7+.18;
+    const directionX=Math.sin(angle),directionZ=Math.cos(angle);
+    const sideX=directionZ,sideZ=-directionX;
+    const length=.72+(frond%3)*.075;
+    const top=[directionX*length*.28,length,directionZ*length*.28];
+    const mid=[top[0]*.5,length*.52,top[2]*.5];
+
+    addQuad(
+      [0,.025,0],
+      [sideX*.017,.025,sideZ*.017],
+      [mid[0]+sideX*.011,mid[1],mid[2]+sideZ*.011],
+      [mid[0]-sideX*.011,mid[1],mid[2]-sideZ*.011]
+    );
+    addQuad(
+      [mid[0]+sideX*.011,mid[1],mid[2]+sideZ*.011],
+      [mid[0]-sideX*.011,mid[1],mid[2]-sideZ*.011],
+      [top[0]-sideX*.008,top[1],top[2]-sideZ*.008],
+      [top[0]+sideX*.008,top[1],top[2]+sideZ*.008]
+    );
+
+    for(let pair=0;pair<5;pair++){
+      const t=.18+pair*.145;
+      const center=[
+        top[0]*t,
+        length*t,
+        top[2]*t
+      ];
+      const leafletLength=length*(.32*(1-t)+.085);
+      for(const sign of [-1,1]){
+        const tip=[
+          center[0]+sideX*leafletLength*sign,
+          center[1]+leafletLength*.2,
+          center[2]+sideZ*leafletLength*sign
+        ];
+        const middle=[
+          center[0]+sideX*leafletLength*.52*sign,
+          center[1]+leafletLength*.1,
+          center[2]+sideZ*leafletLength*.52*sign
+        ];
+        const width=leafletLength*.16;
+        addQuad(
+          center,
+          [middle[0]+directionX*width,middle[1]+.025,middle[2]+directionZ*width],
+          tip,
+          [middle[0]-directionX*width,middle[1]-.015,middle[2]-directionZ*width]
+        );
+      }
+    }
+  }
+
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function addWoodlandUnderstory(game){
+  const layout=createWoodlandFloorLayout();
+  const fernCandidates=layout.ferns.filter(fern=>{
+    if(distanceToPath(fern.x,fern.z)<2.35)return false;
+    return !(game.obstacles||[]).some(obstacle=>{
+      if(obstacle.destroyed)return false;
+      const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
+      const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
+      return Math.hypot(fern.x-ox,fern.z-oz)<(obstacle.radius||.55)+.55;
+    });
+  });
+  const fernGeometry=createFernGeometry();
+  const fernMaterial=new THREE.MeshStandardMaterial({
+    color:'#ffffff',
+    side:THREE.DoubleSide,
+    roughness:.9,
+    flatShading:true
+  });
+  const ferns=new THREE.InstancedMesh(fernGeometry,fernMaterial,fernCandidates.length);
+  const fernColors=['#5f965c','#78a96b','#86ad70','#4e8359'];
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+
+  fernCandidates.forEach((fern,index)=>{
+    const groundY=terrainElevationAt(fern.x,fern.z);
+    dummy.position.set(fern.x,groundY+.018,fern.z);
+    dummy.rotation.set(0,fern.rotationY,0);
+    dummy.scale.setScalar(fern.scale);
+    dummy.updateMatrix();
+    ferns.setMatrixAt(index,dummy.matrix);
+    color.set(fernColors[fern.tintIndex]);
+    ferns.setColorAt(index,color);
+  });
+  ferns.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  ferns.castShadow=false;
+  ferns.receiveShadow=false;
+  ferns.computeBoundingSphere();
+  game.scene.add(ferns);
+
+  const logCandidates=layout.fallenLogs.filter(log=>
+    distanceToPath(log.x,log.z)>2.6
+    &&!(game.obstacles||[]).some(obstacle=>{
+      if(obstacle.destroyed)return false;
+      const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
+      const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
+      return Math.hypot(log.x-ox,log.z-oz)<(obstacle.radius||.55)+1.4;
+    })
+  );
+  const logGeometry=new THREE.CylinderGeometry(1,1,1,8);
+  const logMaterial=new THREE.MeshStandardMaterial({
+    color:'#896247',roughness:.98,flatShading:true
+  });
+  const logs=new THREE.InstancedMesh(logGeometry,logMaterial,logCandidates.length);
+  const mossGeometry=new THREE.IcosahedronGeometry(1,0);
+  const mossMaterial=new THREE.MeshStandardMaterial({
+    color:'#72966a',roughness:1,flatShading:true
+  });
+  const logMoss=new THREE.InstancedMesh(mossGeometry,mossMaterial,logCandidates.length);
+
+  logCandidates.forEach((log,index)=>{
+    const groundY=terrainElevationAt(log.x,log.z);
+    dummy.position.set(log.x,groundY+log.radius,log.z);
+    dummy.rotation.set(0,log.rotationY,Math.PI/2);
+    dummy.scale.set(log.radius,log.length,log.radius);
+    dummy.updateMatrix();
+    logs.setMatrixAt(index,dummy.matrix);
+
+    dummy.position.set(log.x,groundY+log.radius*1.72,log.z);
+    dummy.rotation.set(.05,log.rotationY,.12);
+    dummy.scale.set(log.length*.22,.07,log.radius*.72);
+    dummy.updateMatrix();
+    logMoss.setMatrixAt(index,dummy.matrix);
+  });
+  [logs,logMoss].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+
+  const stumpGeometry=new THREE.CylinderGeometry(1,1.08,1,8);
+  const stumpMaterial=new THREE.MeshStandardMaterial({
+    color:'#77543d',roughness:.98,flatShading:true
+  });
+  const stumps=new THREE.InstancedMesh(stumpGeometry,stumpMaterial,layout.stumps.length);
+  const stumpTopGeometry=new THREE.CylinderGeometry(.78,.78,.025,8);
+  const stumpTopMaterial=new THREE.MeshStandardMaterial({
+    color:'#b38b61',roughness:.94,flatShading:true
+  });
+  const stumpTops=new THREE.InstancedMesh(stumpTopGeometry,stumpTopMaterial,layout.stumps.length);
+
+  layout.stumps.forEach((stump,index)=>{
+    const groundY=terrainElevationAt(stump.x,stump.z);
+    dummy.position.set(stump.x,groundY+stump.height*.5,stump.z);
+    dummy.rotation.set(0,stump.rotationY,0);
+    dummy.scale.set(stump.radius,stump.height,stump.radius);
+    dummy.updateMatrix();
+    stumps.setMatrixAt(index,dummy.matrix);
+    dummy.position.set(stump.x,groundY+stump.height*.98,stump.z);
+    dummy.scale.set(stump.radius,1,stump.radius);
+    dummy.updateMatrix();
+    stumpTops.setMatrixAt(index,dummy.matrix);
+  });
+  [stumps,stumpTops].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+
+  game.woodlandUnderstory={ferns,logs,logMoss,stumps,stumpTops};
+}
+
+function addCrystalMotes(game){
+  const layout=createCrystalMoteLayout();
+  const positions=new Float32Array(layout.length*3);
+  const base=new Float32Array(layout.length*3);
+  const colors=new Float32Array(layout.length*3);
+  const phases=new Float32Array(layout.length);
+  const sizes=[.13,.14,.12,.15];
+  const palette=['#9cebd9','#b3dcff','#d7b8ff','#e1fff0'];
+
+  layout.forEach((mote,index)=>{
+    const offset=index*3;
+    const groundY=terrainElevationAt(mote.x,mote.z);
+    base[offset]=mote.x;
+    base[offset+1]=groundY+mote.height;
+    base[offset+2]=mote.z;
+    positions[offset]=base[offset];
+    positions[offset+1]=base[offset+1];
+    positions[offset+2]=base[offset+2];
+    const tint=new THREE.Color(palette[mote.tintIndex]);
+    tint.toArray(colors,offset);
+    phases[index]=mote.phase;
+  });
+
+  const geometry=new THREE.BufferGeometry();
+  const positionAttribute=new THREE.BufferAttribute(positions,3);
+  positionAttribute.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position',positionAttribute);
+  geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  const material=new THREE.PointsMaterial({
+    color:'#ffffff',
+    size:.16,
+    sizeAttenuation:true,
+    vertexColors:true,
+    transparent:true,
+    opacity:.76,
+    depthWrite:false,
+    blending:THREE.AdditiveBlending
+  });
+  const points=new THREE.Points(geometry,material);
+  points.frustumCulled=false;
+  game.scene.add(points);
+  game.biomeMotes={points,base,phases,sizes};
+}
+
+function addPondReeds(game){
+  const layout=createPondReedLayout();
+  const stalkCount=layout.length*3;
+  const stemGeometry=new THREE.CylinderGeometry(.016,.03,1,5);
+  const stemMaterial=new THREE.MeshStandardMaterial({
+    color:'#668d5a',roughness:.96,flatShading:true
+  });
+  const stems=new THREE.InstancedMesh(stemGeometry,stemMaterial,stalkCount);
+  const headGeometry=new THREE.SphereGeometry(.055,6,5);
+  const headMaterial=new THREE.MeshStandardMaterial({
+    color:'#b59a62',roughness:.9,flatShading:true
+  });
+  const heads=new THREE.InstancedMesh(headGeometry,headMaterial,stalkCount);
+  const leafGeometry=new THREE.ConeGeometry(.055,.36,5);
+  const leafMaterial=new THREE.MeshStandardMaterial({
+    color:'#85a96b',roughness:.94,flatShading:true
+  });
+  const leaves=new THREE.InstancedMesh(leafGeometry,leafMaterial,stalkCount*2);
+  const dummy=new THREE.Object3D();
+  let stalkIndex=0,leafIndex=0;
+
+  layout.forEach(reed=>{
+    for(let stalk=0;stalk<3;stalk++){
+      const angle=reed.rotationY+stalk*2.08;
+      const offset=(stalk-1)*.17;
+      const x=reed.x+Math.cos(angle)*offset;
+      const z=reed.z+Math.sin(angle)*offset;
+      const groundY=terrainElevationAt(x,z);
+      const height=reed.height*(.82+stalk*.1);
+
+      dummy.position.set(x,groundY+height*.5,z);
+      dummy.rotation.set(reed.lean+(stalk-1)*.09,angle,0);
+      dummy.scale.set(1,height,1);
+      dummy.updateMatrix();
+      stems.setMatrixAt(stalkIndex,dummy.matrix);
+
+      dummy.position.set(x,groundY+height*.91,z);
+      dummy.scale.set(.82,height*.13,.82);
+      dummy.updateMatrix();
+      heads.setMatrixAt(stalkIndex,dummy.matrix);
+
+      for(const side of [-1,1]){
+        dummy.position.set(
+          x+Math.cos(angle+side*.82)*.075,
+          groundY+height*.42,
+          z+Math.sin(angle+side*.82)*.075
+        );
+        dummy.rotation.set(0,angle,side*.88+reed.lean);
+        dummy.scale.set(.8,.82,.8);
+        dummy.updateMatrix();
+        leaves.setMatrixAt(leafIndex++,dummy.matrix);
+      }
+      stalkIndex++;
+    }
+  });
+
+  stems.count=stalkIndex;
+  heads.count=stalkIndex;
+  leaves.count=leafIndex;
+  [stems,heads,leaves].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+  game.pondReeds={stems,heads,leaves};
+}
 
 function addPeripheralPineForest(game){
   const layout=createPeripheralPineLayout();
@@ -425,6 +741,7 @@ function addCrystalGroves(game){
     game.scene.add(light);
   });
   game.crystalGroves=crystals;
+  addCrystalMotes(game);
 }
 
 function addStarlightShrine(game,x=0,z=50){
@@ -1301,6 +1618,7 @@ export function buildMeadowArena(game){
   addRiverBankLife(game);
   addMoonPond(game);
   addWoodlandBridge(game);
+  addPondReeds(game);
   const hillMat=new THREE.MeshStandardMaterial({color:'#8eaf78',roughness:1,flatShading:true});
   [
     [-17,-13,7,4,8],[0,-18,11,5,7],[18,-14,8,4,9],[-22,0,7,6,8],[24,3,8,5,8],
@@ -1339,6 +1657,7 @@ export function buildMeadowArena(game){
   addTree(game,0,30,1.85,5.5);
   addStarlightShrine(game,0,50);
   addPeripheralPineForest(game);
+  addWoodlandUnderstory(game);
   addCrystalGroves(game);
   addBushes(game,[
     [-8.8,-1.8,.8],[8.6,-2.8,.92],[-8.9,5.9,1.04],[8.7,5.8,.8],
@@ -1432,6 +1751,17 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     game.magicOrbits[0].rotation.z+=worldDt*.55;game.magicOrbits[1].rotation.y-=worldDt*.42;
   }
   if(game.cottageSmoke)game.cottageSmoke.position.y=4.1+Math.sin(game.worldTime*.45)*.13;
+  if(game.biomeMotes){
+    const attribute=game.biomeMotes.points.geometry.attributes.position;
+    for(let i=0;i<game.biomeMotes.phases.length;i++){
+      const phase=game.biomeMotes.phases[i],k=i*3;
+      attribute.array[k]=game.biomeMotes.base[k]+Math.sin(game.worldTime*.62+phase)*.11;
+      attribute.array[k+1]=game.biomeMotes.base[k+1]+Math.sin(game.worldTime*1.35+phase)*.22;
+      attribute.array[k+2]=game.biomeMotes.base[k+2]+Math.cos(game.worldTime*.55+phase)*.1;
+    }
+    attribute.needsUpdate=true;
+    game.biomeMotes.points.material.opacity=.58+Math.sin(game.worldTime*1.8)*.16;
+  }
   if(game.fireflies){
     const attribute=game.fireflies.points.geometry.attributes.position;
     for(let i=0;i<game.fireflies.phases.length;i++){
