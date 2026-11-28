@@ -22,7 +22,7 @@ The deployable site is written to `dist/`.
 
 ## Controls
 
-- Desktop: WASD or arrow keys move the cat; hold the left mouse button, draw a single glyph and release to cast.
+- Desktop: WASD or arrow keys move Frog Wizard; hold Shift while moving to run. Hold the left mouse button, draw a single glyph and release to cast.
 - Touch: hold and drag on the left 32% of the game surface to move; draw and release on the right side to cast. Pointer IDs are independent, allowing movement and spell drawing together.
 - Drawing reduces world simulation speed to 15%; after release it eases back to full speed over 250 ms.
 
@@ -38,11 +38,11 @@ The deployable site is written to `dist/`.
 
 ## Gameplay
 
-The scene is a stylized painted meadow built from a seeded 2048×1536 ground texture, 9,000 animated instanced grass blades, nearly 1,000 flower clusters, tree canopies, bushes, a winding river, a cottage, a working windmill, hills, standing stones and floating fireflies. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is now Frog Wizard, loaded through Three.js GLTFLoader from an optimized GLB asset. The loader selects the lighter LOD1 scene (~63k triangles), normalizes model height and ground pivot, enables mesh shadows, and keeps the original character as a graceful fallback if the asset fails to load. The GLB does not contain animation clips or a skeletal rig, so the existing controller supplies facing, idle bob and movement motion without changing WASD or camera-relative controls. Instanced grass bends in the wind and fireflies drift above the flowers. Three faceted cursed wisps pursue the player. Destructible props, player health, invulnerability, respawn and the five gesture spells are retained. The follow camera is closer to the character to emphasize the third-person adventure view.
+The scene is a stylized painted meadow built from a seeded 2048×1536 ground texture, 9,000 animated instanced grass blades, nearly 1,000 flower clusters, tree canopies, bushes, a winding river, a cottage, a working windmill, hills, standing stones and floating fireflies. At its centre, a broken stone ring surrounds a levitating mana core. Frog Wizard is loaded through Three.js GLTFLoader from a rigged GLB with a 21-joint skeleton. The runtime clones the skinned hierarchy with SkeletonUtils, normalizes model height and ground pivot, enables mesh shadows, and preserves the original procedural cat as a fallback if the external asset fails. The controller crossfades between Idle and Walk, uses Shift for Run, plays Cast on successful spells and Hit on damage, and slows the animation mixer together with the world while a glyph is being drawn. Instanced grass bends in the wind and fireflies drift above the flowers. Three faceted cursed wisps pursue the player. Destructible props, player health, invulnerability, respawn and the five gesture spells are retained. The follow camera is closer to the character to emphasize the third-person adventure view.
 
 ## Blender character asset
 
-The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. It generates an editable Blender project, a GLB export and a preview render, with separate NLA clips for idle, walk, run, cast and hit. The script has been statically syntax-checked, but it has not yet been executed in the user's local Blender installation. The runtime now loads a standalone 5.8 MB Frog Wizard LOD1 scene (about 67% smaller than the 17.7 MB source), with ~63k triangles. The Blender builder remains useful for future rigged/animated exports; the current GLB has no animation clips or skeletal rig, so idle and movement use light procedural body motion.
+The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. Frog Wizard was separately rigged in Blender 2.93.5 and exported as a 20.9 MB skinned GLB with 21 joints and five clips: Idle, Walk, Run, Cast and Hit. The runtime uses these clips directly; the original procedural cat remains the load-failure fallback. The original model is “Frog wizard with mushrooms” (title by Patch), created by Scenario and licensed under CC BY 4.0. Source: https://huggingface.co/datasets/scenario-labs/3d-collection/blob/55b4c002b4c1529fc48da3dff98516c3069bfa3f/assets/scenario_asset_dyHjpX6aCe8q1eNZFekAwzj6/output.glb. License: https://creativecommons.org/licenses/by/4.0/.
 
 ## Runtime timing
 
