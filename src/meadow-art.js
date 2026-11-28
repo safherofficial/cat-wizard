@@ -796,8 +796,9 @@ export function buildMeadowArena(game){
   const hillMat=new THREE.MeshStandardMaterial({color:'#8eaf78',roughness:1,flatShading:true});
   [
     [-17,-13,7,4,8],[0,-18,11,5,7],[18,-14,8,4,9],[-22,0,7,6,8],[24,3,8,5,8],
-    [-42,-28,11,4,9],[-10,-43,17,5,8],[37,-30,12,5,10],
-    [-44,15,12,5,10],[43,19,12,5,9],[-18,39,14,4,8],[22,40,13,5,9]
+    [-63,-52,15,5,13],[0,-53,18,6,10],[63,-52,15,5,13],
+    [-64,0,16,6,18],[64,0,16,6,18],
+    [-63,52,15,5,13],[0,53,18,6,10],[63,52,15,5,13]
   ].forEach(([x,z,sx,sy,sz])=>{
     const hill=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),hillMat);
     hill.position.set(x,sy*.35,z);hill.scale.set(sx,sy,sz);hill.receiveShadow=true;game.scene.add(hill);
@@ -853,7 +854,7 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     const p=game.player.position;
     const target=game.cameraTarget||(game.cameraTarget=new THREE.Vector3());
     const look=game.cameraLookTarget||(game.cameraLookTarget=new THREE.Vector3());
-    target.set(p.x*.12,7.25,p.z+7.8);
+    target.set(p.x,7.25,p.z+7.8);
     look.set(p.x,1.2,p.z-2.45);
     const a=1-Math.exp(-realDt*2.8);
     game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
