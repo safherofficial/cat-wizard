@@ -67,6 +67,7 @@ test('accepts a structurally valid Cat Wizard GLB contract', () => {
   assert.equal(report.ok, true, report.errors.join('\n'));
   assert.equal(report.summary.bonesFound, 13);
   assert.equal(report.summary.meshes, 1);
+  assert.equal(report.summary.boneBoundMeshes, 1);
   assert.deepEqual(report.summary.animations, EXPECTED_CLIPS);
 });
 
@@ -84,10 +85,30 @@ test('rejects a malformed GLB header', () => {
   assert.throws(() => parseGlbBuffer(malformed), /magic/);
 });
 
-test('reports missing expected rig nodes as a warning, not a false pass/fail for packaging', () => {
+test('rejects a GLB missing any required rig node', () => {
   const document = validDocument();
   document.nodes.find(node => node.name === 'Tail.Tip').name = undefined;
   const report = auditGlbBuffer(makeGlb(document));
-  assert.equal(report.ok, true);
-  assert.ok(report.warnings.some(warning => warning.includes('Tail.Tip')));
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some(error => error.includes('Tail.Tip')));
+});
+
+test('rejects a mesh node that is not parented to a rig bone', () => {
+  const document = validDocument();
+  const meshIndex = document.nodes.findIndex(node => node.name === 'Robe mesh');
+  const body = document.nodes.find(node => node.name === 'Body');
+  body.children = body.children.filter(index => index !== meshIndex);
+  const report = auditGlbBuffer(makeGlb(document));
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some(error => error.includes('not direct children')));
+});
+
+test('rejects a broken expected bone hierarchy', () => {
+  const document = validDocument();
+  const head = document.nodes.find(node => node.name === 'Head');
+  const hatIndex = document.nodes.findIndex(node => node.name === 'Hat');
+  head.children = head.children.filter(index => index !== hatIndex);
+  const report = auditGlbBuffer(makeGlb(document));
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some(error => error.includes('Hat must be parented to Head')));
 });
