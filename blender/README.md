@@ -7,11 +7,13 @@ This package contains a new Blender candidate asset. It does **not** replace the
 - `CatWizard_CreateCharacter_Blender293.py` — builds the editable character, 13-bone rigid-part rig, five NLA clips, preview render, `.blend` and `.glb`.
 - `CatWizard_GLBAudit_Blender293.py` — imports a generated GLB into a separate scene, reports mesh/material/rig/animation statistics, and renders front/side/rear previews.
 - `CatWizard_Blender293_CharacterBuilder.zip` — previous Character 01 package, retained as a legacy baseline.
+- `../scripts/audit-catwizard-glb.js` — standalone GLB container and game-facing contract audit; does not require Blender.
 
 ## Requirements
 
 - Blender 2.93 LTS.
 - Blender's bundled glTF 2.0 exporter/importer (`io_scene_gltf2`).
+- Node.js 22 for the standalone GLB audit command.
 - No external textures or model dependencies.
 
 ## Build
@@ -35,8 +37,13 @@ It exports five NLA clips: `Idle`, `Walk`, `Run`, `Cast` and `Hit`. The characte
 1. In Blender 2.93, open **Scripting** and run `CatWizard_GLBAudit_Blender293.py`.
 2. Select `cat-wizard-character-v2.glb`.
 3. Review the generated `_AUDIT.txt` and front/side/rear PNGs beside the GLB.
+4. From the repository root, run the Blender-independent GLB check:
 
-The audit checks expected bones and animation clips, rigid bone-parenting or weighted mesh binding, geometry counts, dimensions, materials and image-texture UVs. It is a structural audit, not a visual or runtime certification.
+   ```bash
+   npm run audit:character -- ~/CatWizard_Art_v2/cat-wizard-character-v2.glb
+   ```
+
+The Blender audit checks expected bones and animation clips, rigid bone-parenting or weighted mesh binding, geometry counts, dimensions, materials and image-texture UVs. The standalone audit checks GLB container integrity, embedded buffers, mesh/accessor references, animation channels and required clip names. Missing rig node names or hierarchy differences are warnings that must be reconciled with the Blender report. Both are structural audits, not visual or runtime certification.
 
 ## Runtime integration boundary
 
