@@ -6,6 +6,7 @@ import {
   createDistantMountainLayout,
   createPeripheralPineLayout
 } from './environment-layout.js';
+import { terrainElevationAt } from './terrain.js';
 
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -161,7 +162,7 @@ function addGrass(game){
       Math.hypot(x-obstacle.x,z-obstacle.z)<(obstacle.radius||.6)+.85
     );
     if(nearLandmark)continue;
-    dummy.position.set(x,.015,z);
+    dummy.position.set(x,terrainElevationAt(x,z)+.015,z);
     dummy.rotation.set(0,random()*TAU,0);
     const height=.46+random()*.66;
     const width=.62+random()*.76;
@@ -179,7 +180,7 @@ function addFireflies(game){
   for(let i=0;i<count;i++){
     const x=WORLD_BOUNDS.minX+2+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX-4);
     const z=WORLD_BOUNDS.minZ+2+random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ-4);
-    const y=.55+random()*2.2;
+    const y=terrainElevationAt(x,z)+.55+random()*2.2;
     base[i*3]=x;base[i*3+1]=y;base[i*3+2]=z;
     phases[i]=random()*TAU;
     positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;
@@ -217,7 +218,7 @@ function addFlowers(game){
       Math.hypot(x-obstacle.x,z-obstacle.z)<(obstacle.radius||.6)+.5
     );
     if(nearLandmark||random()<.18)continue;
-    const y=.115+random()*.035,scale=.72+random()*.9;
+    const y=terrainElevationAt(x,z)+.115+random()*.035,scale=.72+random()*.9;
     dummy.position.set(x,y,z);dummy.scale.setScalar(scale);dummy.rotation.set(0,random()*TAU,0);dummy.updateMatrix();stems.setMatrixAt(n,dummy.matrix);
     col.set(colors[Math.floor(random()*colors.length)]);
     for(let j=0;j<5;j++){
@@ -243,7 +244,7 @@ function branch(parent,start,end,radius,material){
 }
 
 function addTree(game,x,z,scale=1,phase=0){
-  const group=new THREE.Group();group.position.set(x,0,z);group.scale.setScalar(scale);game.scene.add(group);
+  const group=new THREE.Group();group.position.set(x,terrainElevationAt(x,z),z);group.scale.setScalar(scale);game.scene.add(group);
   const trunkMaterial=new THREE.MeshStandardMaterial({color:'#8d6243',roughness:.96,flatShading:true});
   const barkLight=new THREE.MeshStandardMaterial({color:'#bb8b5c',roughness:.93,flatShading:true});
   const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.2,.37,2.9,7),trunkMaterial);
@@ -285,10 +286,12 @@ function addBushes(game,placements){
   placements.forEach(([x,z,scale])=>{
     for(let i=0;i<lobesPerBush;i++){
       const angle=i*TAU/lobesPerBush;
+      const lobeX=x+Math.cos(angle)*.34*scale;
+      const lobeZ=z+Math.sin(angle)*.28*scale;
       dummy.position.set(
-        x+Math.cos(angle)*.34*scale,
-        (.3+(i%3)*.07)*scale,
-        z+Math.sin(angle)*.28*scale
+        lobeX,
+        terrainElevationAt(lobeX,lobeZ)+(.3+(i%3)*.07)*scale,
+        lobeZ
       );
       dummy.scale.set(scale,scale*.75,scale*.9);
       dummy.rotation.set(0,0,0);
@@ -330,7 +333,8 @@ function addPeripheralPineForest(game){
 
   layout.forEach((tree,index)=>{
     const s=tree.scale;
-    dummy.position.set(tree.x,1.14*s,tree.z);
+    const groundY=terrainElevationAt(tree.x,tree.z);
+    dummy.position.set(tree.x,groundY+1.14*s,tree.z);
     dummy.rotation.set(0,tree.rotationY,0);
     dummy.scale.set(s,s,s);
     dummy.updateMatrix();
@@ -342,7 +346,7 @@ function addPeripheralPineForest(game){
       {y:3.48,w:.70,h:1.55}
     ];
     levels.forEach((level,layerIndex)=>{
-      dummy.position.set(tree.x,level.y*s,tree.z);
+      dummy.position.set(tree.x,groundY+level.y*s,tree.z);
       dummy.rotation.set(0,tree.rotationY+layerIndex*.18,0);
       dummy.scale.set(level.w*s,level.h*s,level.w*s);
       dummy.updateMatrix();
@@ -386,7 +390,8 @@ function addCrystalGroves(game){
   const palette=['#66cdbb','#84b9df','#a993de','#b2d8ca'];
 
   layout.forEach((crystal,index)=>{
-    dummy.position.set(crystal.x,crystal.height*.49,crystal.z);
+    const groundY=terrainElevationAt(crystal.x,crystal.z);
+    dummy.position.set(crystal.x,groundY+crystal.height*.49,crystal.z);
     dummy.rotation.set(crystal.lean,crystal.rotationY,-crystal.lean*.55);
     dummy.scale.set(crystal.width,crystal.height,crystal.width*.78);
     dummy.updateMatrix();
@@ -413,10 +418,10 @@ function addCrystalGroves(game){
       })
     );
     groundRing.rotation.x=Math.PI/2;
-    groundRing.position.set(x,.055,z);
+    groundRing.position.set(x,terrainElevationAt(x,z)+.055,z);
     game.scene.add(groundRing);
     const light=new THREE.PointLight('#77d9cf',1.25,11,2);
-    light.position.set(x,2.2,z);
+    light.position.set(x,terrainElevationAt(x,z)+2.2,z);
     game.scene.add(light);
   });
   game.crystalGroves=crystals;
@@ -496,7 +501,7 @@ function addStarlightShrine(game,x=0,z=50){
 }
 
 function addStandingStone(game,x,z,height=2.1,lean=0){
-  const group=new THREE.Group();group.position.set(x,0,z);group.rotation.z=lean;game.scene.add(group);
+  const group=new THREE.Group();group.position.set(x,terrainElevationAt(x,z),z);group.rotation.z=lean;game.scene.add(group);
   const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.7,0),new THREE.MeshStandardMaterial({color:'#a9a58b',roughness:.96,flatShading:true}));
   stone.scale.set(.72,height,0.48);stone.position.y=height*.55;stone.castShadow=true;stone.receiveShadow=true;group.add(stone);
   const rune=new THREE.Mesh(new THREE.BoxGeometry(.045,height*.38,.025),new THREE.MeshBasicMaterial({color:'#e4c985',transparent:true,opacity:.65}));
@@ -505,7 +510,7 @@ function addStandingStone(game,x,z,height=2.1,lean=0){
 }
 
 function addCottage(game,x,z){
-  const group=new THREE.Group();group.position.set(x,0,z);game.scene.add(group);
+  const group=new THREE.Group();group.position.set(x,terrainElevationAt(x,z),z);game.scene.add(group);
   const wall=new THREE.MeshStandardMaterial({color:'#d9c79e',roughness:.94,flatShading:true});
   const wood=new THREE.MeshStandardMaterial({color:'#8e6043',roughness:.9,flatShading:true});
   const roof=new THREE.MeshStandardMaterial({color:'#a95f4c',roughness:.92,flatShading:true});
@@ -761,7 +766,9 @@ function addMushrooms(game){
     // Soft moss at the foot of each group visually anchors the small mushrooms.
     for(let patch=0;patch<2;patch++){
       const angle=patch*Math.PI+clusterIndex*.43;
-      dummy.position.set(cx+Math.cos(angle)*.34,.018,cz+Math.sin(angle)*.28);
+      const mossX=cx+Math.cos(angle)*.34;
+       const mossZ=cz+Math.sin(angle)*.28;
+       dummy.position.set(mossX,terrainElevationAt(mossX,mossZ)+.018,mossZ);
       dummy.scale.set(.48+random()*.2,.035,.32+random()*.16);
       dummy.rotation.set(0,random()*TAU,0);
       dummy.updateMatrix();
@@ -789,13 +796,14 @@ function addMushrooms(game){
 
       const scale=.72+random()*.62;
       const stemHeight=.34*scale;
-      dummy.position.set(x,stemHeight*.5,z);
+      const groundY=terrainElevationAt(x,z);
+       dummy.position.set(x,groundY+stemHeight*.5,z);
       dummy.rotation.set(0,random()*TAU,(random()-.5)*.08);
       dummy.scale.setScalar(scale);
       dummy.updateMatrix();
       stems.setMatrixAt(count,dummy.matrix);
 
-      dummy.position.set(x,stemHeight,z);
+      dummy.position.set(x,groundY+stemHeight,z);
       dummy.rotation.set(0,random()*TAU,0);
       dummy.scale.set(scale,scale*.82,scale);
       dummy.updateMatrix();
@@ -807,7 +815,9 @@ function addMushrooms(game){
         const dotAngle=dot*TAU/3+random()*.25;
         const radial=.105*scale;
         const surfaceY=stemHeight+Math.sqrt(Math.max(.01,.24*.24-.105*.105))*scale+.009;
-        dummy.position.set(x+Math.cos(dotAngle)*radial,surfaceY,z+Math.sin(dotAngle)*radial);
+        const dotX=x+Math.cos(dotAngle)*radial;
+         const dotZ=z+Math.sin(dotAngle)*radial;
+         dummy.position.set(dotX,groundY+surfaceY,dotZ);
         dummy.scale.setScalar(.9+random()*.35);
         dummy.rotation.set(0,0,0);
         dummy.updateMatrix();
@@ -1072,7 +1082,8 @@ function addRockOutcrops(game){
 
       const scale=.46+random()*.72;
       const sx=scale*(.78+random()*.42),sz=scale*(.78+random()*.42);
-      dummy.position.set(x,scale*.45,z);
+      const groundY=terrainElevationAt(x,z);
+       dummy.position.set(x,groundY+scale*.45,z);
       dummy.scale.set(sx,scale*(.68+random()*.35),sz);
       dummy.rotation.set(random()*.24,random()*TAU,random()*.2);
       dummy.updateMatrix();
@@ -1081,7 +1092,9 @@ function addRockOutcrops(game){
       rocks.setColorAt(count,color);
 
       if(random()<.62){
-        dummy.position.set(x+(random()-.5)*.24,scale*.82,z+(random()-.5)*.22);
+        const mossX=x+(random()-.5)*.24;
+         const mossZ=z+(random()-.5)*.22;
+         dummy.position.set(mossX,terrainElevationAt(mossX,mossZ)+scale*.82,mossZ);
         dummy.scale.set(scale*.42,.055+random()*.035,scale*.3);
         dummy.rotation.set(0,random()*TAU,random()*.08);
         dummy.updateMatrix();
@@ -1227,8 +1240,24 @@ export function buildMeadowArena(game){
   addSkyDome(game);
   addCloudLayer(game);
   addDistantMountainBackdrop(game);
+  const groundGeometry=new THREE.PlaneGeometry(
+    WORLD_SIZE.width,
+    WORLD_SIZE.depth,
+    Math.round(WORLD_SIZE.width*2),
+    Math.round(WORLD_SIZE.depth*2)
+  );
+  const groundPositions=groundGeometry.attributes.position;
+  for(let index=0;index<groundPositions.count;index++){
+    const x=groundPositions.getX(index);
+    const z=-groundPositions.getY(index);
+    groundPositions.setZ(index,terrainElevationAt(x,z));
+  }
+  groundPositions.needsUpdate=true;
+  groundGeometry.computeVertexNormals();
+  groundGeometry.computeBoundingBox();
+  groundGeometry.computeBoundingSphere();
   const ground=new THREE.Mesh(
-    new THREE.PlaneGeometry(WORLD_SIZE.width,WORLD_SIZE.depth),
+    groundGeometry,
     new THREE.MeshStandardMaterial({map:meadowTexture(),roughness:1,metalness:0})
   );
   ground.rotation.x=-Math.PI/2;ground.position.y=-.09;ground.receiveShadow=true;game.scene.add(ground);
@@ -1237,7 +1266,7 @@ export function buildMeadowArena(game){
     new THREE.PlaneGeometry(WORLD_SIZE.width+44,WORLD_SIZE.depth+44),
     new THREE.MeshStandardMaterial({color:'#6e9862',roughness:1})
   );
-  outerGrass.rotation.x=-Math.PI/2;outerGrass.position.set(0,-.12,0);outerGrass.receiveShadow=true;game.scene.add(outerGrass);
+  outerGrass.rotation.x=-Math.PI/2;outerGrass.position.set(0,-1.05,0);outerGrass.receiveShadow=true;game.scene.add(outerGrass);
 
   // A low, broken ring of old stones makes a natural magical clearing, not a boxed arena.
   const stoneMat=new THREE.MeshStandardMaterial({color:'#b8a98a',roughness:.95,flatShading:true});
@@ -1283,7 +1312,7 @@ export function buildMeadowArena(game){
     [-80,60,19,7,16],[0,72,21,7,13],[80,60,19,7,16]
   ].forEach(([x,z,sx,sy,sz])=>{
     const hill=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),hillMat);
-    hill.position.set(x,sy*.35,z);hill.scale.set(sx,sy,sz);hill.receiveShadow=true;game.scene.add(hill);
+    hill.position.set(x,terrainElevationAt(x,z)+sy*.35,z);hill.scale.set(sx,sy,sz);hill.receiveShadow=true;game.scene.add(hill);
   });
 
   // Small landmarks in the distance make the meadow feel like a place.
