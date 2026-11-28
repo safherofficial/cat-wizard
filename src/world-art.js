@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { buildMeadowArena, animateMeadow } from './meadow-art.js';
 
+const TAU = Math.PI * 2;
+
 export function buildLighting(g){
   g.scene.background=new THREE.Color('#a9d8e5');
   g.scene.fog=new THREE.Fog('#d7e8dc',40,90);
