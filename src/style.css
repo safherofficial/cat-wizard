@@ -312,3 +312,34 @@ kbd{
 @media(prefers-reduced-motion:reduce){
   .spell-item,.fullscreen-button{transition:none}
 }
+
+/* Optional runtime diagnostics: enabled with ?perf=1. */
+.perf-monitor{
+  position:absolute;
+  z-index:4;
+  top:68px;
+  right:14px;
+  max-width:min(250px,44%);
+  margin:0;
+  padding:9px 11px;
+  border:1px solid rgba(220,232,210,.24);
+  border-radius:8px;
+  background:rgba(27,43,39,.84);
+  box-shadow:0 6px 22px rgba(20,43,37,.16),inset 0 1px 0 rgba(255,255,255,.08);
+  color:#e4eedf;
+  font:8px/1.65 'DM Mono',monospace;
+  letter-spacing:.045em;
+  white-space:pre;
+  pointer-events:none;
+  user-select:none;
+  backdrop-filter:blur(8px);
+}
+@media(max-width:560px){
+  .perf-monitor{
+    top:58px;
+    right:9px;
+    max-width:48%;
+    padding:7px 8px;
+    font-size:7px;
+  }
+}
