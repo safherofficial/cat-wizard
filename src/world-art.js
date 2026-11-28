@@ -400,5 +400,4 @@ export function animateWorld(game,worldDt,realDt=worldDt){
     });
     game.catRoot.position.y=.025+Math.sin(game.worldTime*(moving?11:3.6))*(moving?.055:.018);
   }
-  });
 }
