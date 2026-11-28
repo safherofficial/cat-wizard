@@ -4,21 +4,27 @@ export const QUALITY_PRESETS = Object.freeze({
     label: 'LOW',
     maxPixelRatio: 1,
     shadows: false,
-    shadowMap: 'pcf'
+    shadowMap: 'pcf',
+    shadowMapSize: 512,
+    antialias: false
   }),
   medium: Object.freeze({
     key: 'medium',
     label: 'MEDIUM',
     maxPixelRatio: 1.25,
     shadows: true,
-    shadowMap: 'pcf'
+    shadowMap: 'pcf',
+    shadowMapSize: 1024,
+    antialias: true
   }),
   high: Object.freeze({
     key: 'high',
     label: 'HIGH',
     maxPixelRatio: 1.5,
     shadows: true,
-    shadowMap: 'soft'
+    shadowMap: 'soft',
+    shadowMapSize: 2048,
+    antialias: true
   })
 });
 
