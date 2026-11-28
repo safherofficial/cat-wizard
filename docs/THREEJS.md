@@ -14,6 +14,7 @@ Cat Wizard now runs as a native browser game built with Three.js. Unity is no lo
 npm install
 npm run dev
 npm test
+python tests/blender_source_test.py
 npm run build
 npm run preview
 ```
@@ -42,8 +43,15 @@ The scene is a stylized painted meadow built from a seeded 2048×1536 ground tex
 
 ## Blender character asset
 
-The current candidate source is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), with a companion `blender/CatWizard_GLBAudit_Blender293.py`. Character 02 adds dedicated Hat, Ear.L, Ear.R and Tail.Tip bones to a 13-bone rigid-part rig; it includes Idle, Walk, Run, Cast and Hit NLA clips. Bevelled curve details are converted to meshes before GLB export, and the builder validates expected bones, mesh bindings and clips before saving/exporting. The audit helper checks the exported GLB's structure and produces front/side/rear previews. The source has been statically syntax-checked only: it has not been run inside Blender 2.93 here, so no generated .blend/.glb or visual render has been verified. The browser continues to use the current procedural Three.js cat until the generated candidate is reviewed and explicitly approved. The older ZIP remains as Character 01 legacy material.
+The current candidate source is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), with a companion `blender/CatWizard_GLBAudit_Blender293.py`. Character 02 adds dedicated Hat, Ear.L, Ear.R and Tail.Tip bones to a 13-bone rigid-part rig; it includes Idle, Walk, Run, Cast and Hit NLA clips. Bevelled curve details are converted to meshes before GLB export, and the builder validates expected bones, mesh bindings and clips before saving/exporting. The Blender audit helper checks the exported GLB's structure and produces front/side/rear previews.
 
+After generating the GLB in Blender 2.93, run the standalone structural audit from the repository root:
+
+```bash
+npm run audit:character -- ~/CatWizard_Art_v2/cat-wizard-character-v2.glb
+```
+
+That Node.js tool checks GLB container integrity, embedded buffer bounds, mesh/accessor references and animation channel references, and reports the five expected clips. It also reports rig nodes and parent-hierarchy deviations for follow-up in the Blender audit. The check is structural only: it does not replace Blender execution, visual review or Three.js playback. No generated `.blend`, `.glb` or preview render has yet been verified in this environment. The browser continues to use the current procedural Three.js cat until the candidate is generated, audited and explicitly approved. The older ZIP remains as Character 01 legacy material.
 
 ## Meadow visual and draw-call pass
 
@@ -62,7 +70,7 @@ The meadow batching is intended to lower draw-call overhead without reducing the
 
 ## Deployment
 
-Every push to `main`, or a manual run of **Cat Wizard Web**, runs `npm install`, `npm test`, `npm run build`, verifies the generated static files and publishes `dist/` through GitHub Pages.
+Pull requests targeting `main` run JavaScript tests, Blender source-contract tests and the production build, but do not publish the game. Pushes to `main`, or a manual run of **Cat Wizard Web**, run the same checks and publish `dist/` through GitHub Pages.
 
 The first Pages deployment requires **Repository → Settings → Pages → Build and deployment → Source → GitHub Actions**. No Unity license or Vercel integration is involved.
 
