@@ -674,6 +674,18 @@ action("Hit",(1,19),{
     "Tail.Tip":{0:[(1,0),(4,.22),(10,-.12),(19,0)]}
 })
 
+expected_clips = {"Idle", "Walk", "Run", "Cast", "Hit"}
+created_clips = {track.name for track in rig.animation_data.nla_tracks}
+missing_clips = sorted(expected_clips.difference(created_clips))
+if missing_clips:
+    raise RuntimeError("Missing required NLA clips: " + ", ".join(missing_clips))
+
+for obj, bone_name in PARTS:
+    if obj.type != 'MESH' or not obj.material_slots:
+        raise RuntimeError("Invalid export mesh or missing material: " + obj.name)
+    if obj.parent != rig or obj.parent_type != 'BONE' or obj.parent_bone != bone_name:
+        raise RuntimeError("Invalid rigid bone binding for part: " + obj.name)
+
 # ---------------------------------------------------------------------------
 # Studio-only presentation setup; these objects never enter the exported GLB.
 # ---------------------------------------------------------------------------
