@@ -758,7 +758,7 @@ function addWoodlandBridge(game){
   const darkWood=new THREE.MeshStandardMaterial({color:'#654b3a',roughness:.94,flatShading:true});
   const brass=new THREE.MeshStandardMaterial({color:'#d6b879',metalness:.48,roughness:.38});
   const deck=new THREE.Group();
-  deck.position.set(centerX,.045,centerZ);
+  deck.position.set(centerX,-.14,centerZ);
   game.scene.add(deck);
 
   // Individual planks create a hand-built silhouette while sharing their material.
