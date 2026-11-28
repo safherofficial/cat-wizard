@@ -9,7 +9,7 @@ Cat Wizard is a top-down fantasy action prototype starring a distinguished grey 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
 - A hand-painted meadow arena with a winding dirt path, river, swaying 3D grass, wildflowers, trees, cottage, windmill, standing stones, fireflies and a floating spell core.
-- A 3D modeled grey cat wizard with the signature pink bow tie, pointed ears, violet wizard hat, pipe and articulated walk cycle.
+- A low-poly Frog Wizard is now the main character, loaded from an optimized GLB. The runtime selects its lighter LOD1 scene (~63k triangles), normalizes its size and ground pivot, and assigns shadow casting. If the external asset cannot be reached, the original procedural cat remains as a safe fallback.
 - Desktop movement with WASD or arrow keys.
 - Touch movement on the left side and independent spell drawing on the right side.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
@@ -21,7 +21,7 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 
 ## Blender character source
 
-A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The resulting GLB is not part of the browser build until it is reviewed and added under `public/assets/`.
+A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The current Frog Wizard GLB has no embedded animation clips or skeletal rig. Idle bobbing, facing and movement are driven by the existing runtime controller; full limb animation requires a rigged, animated export.
 
 ## Run locally
 

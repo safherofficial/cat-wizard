@@ -1,11 +1,23 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, buildWisps as buildArtWisps, animateWorld } from './world-art.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
 import './style.css';
 
 const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/17373543-4bfb-4953-9977-285d5ce9a224.glb';
 const rand = (a,b) => a + Math.random() * (b-a);
 const dist = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
+
+function disposeObjectTree(root){
+  root.traverse(node=>{
+    if(node.geometry)node.geometry.dispose();
+    if(node.material){
+      const materials=Array.isArray(node.material)?node.material:[node.material];
+      materials.forEach(material=>material.dispose());
+    }
+  });
+}
 
 function createGlowTexture(){
   const canvas=document.createElement('canvas');
@@ -121,7 +133,65 @@ class CatWizard {
     this.props.push(propState);this.obstacles.push(propState);
   }
 
-  buildPlayer() { this.player=buildWizardCat(this); }
+  buildPlayer() {
+    // Keep the existing character as an immediate fallback while the optimized GLB loads.
+    this.player=buildWizardCat(this);
+    this.playerCollisionRadius=.62;
+    this.frogMixer=null;
+    this.frogRoot=null;
+    this.frogModel=null;
+    const loader=new GLTFLoader();
+    loader.load(FROG_WIZARD_MODEL_URL,gltf=>{
+      // The hosted runtime asset contains only the optimized LOD1 scene (~63k triangles),
+      // avoiding the original high-detail mesh and cutting the download by roughly 67%.
+      const source=gltf.scenes?.find(scene=>scene.name?.includes('LOD1'))||gltf.scenes?.[1]||gltf.scene;
+      if(!source)throw new Error('The Frog Wizard GLB has no usable scene.');
+      const model=source.clone(true);
+      model.name='FrogWizard_LOD1_Runtime';
+      const originalBounds=new THREE.Box3().setFromObject(model);
+      const originalSize=originalBounds.getSize(new THREE.Vector3());
+      if(!Number.isFinite(originalSize.y)||originalSize.y<=0)throw new Error('The Frog Wizard model has invalid dimensions.');
+      const targetHeight=2.3;
+      model.scale.setScalar(targetHeight/originalSize.y);
+      model.updateMatrixWorld(true);
+      const groundedBounds=new THREE.Box3().setFromObject(model);
+      model.position.y-=groundedBounds.min.y;
+      model.traverse(node=>{
+        if(!node.isMesh)return;
+        node.castShadow=true;
+        node.receiveShadow=true;
+        node.frustumCulled=true;
+        if(node.geometry&&!node.geometry.boundingSphere)node.geometry.computeBoundingSphere();
+      });
+
+      const root=new THREE.Group();
+      root.name='FrogWizardCharacterRoot';
+      root.add(model);
+      const playerShadow=this.player.children.find(child=>child.isMesh&&child.geometry?.type==='CircleGeometry');
+      if(playerShadow)playerShadow.scale.set(1.45,1.25,1);
+      this.player.add(root);
+      const previous=this.catRoot;
+      if(previous){
+        this.player.remove(previous);
+        disposeObjectTree(previous);
+      }
+      this.catRoot=root;
+      this.catRig=null;
+      this.tail=null;
+      this.frogRoot=root;
+      this.frogModel=model;
+      this.frogMixer=gltf.animations?.length?new THREE.AnimationMixer(model):null;
+      if(this.frogMixer){
+        const idle=gltf.animations.find(clip=>/idle|stand/i.test(clip.name))||gltf.animations[0];
+        this.frogMixer.clipAction(idle).play();
+      }
+      this.status(gltf.animations?.length?'Frog Wizard ready · animations loaded':'Frog Wizard ready · procedural idle and movement');
+      this.updateHud();
+    },undefined,error=>{
+      console.error('Frog Wizard GLB could not be loaded; keeping the fallback character.',error);
+      this.status('Frog Wizard asset unavailable · fallback character active');
+    });
+  }
 
   buildWisps() { this.wisps=buildArtWisps(this); }
 
@@ -314,7 +384,7 @@ class CatWizard {
       const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
       const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
       const dx=this.player.position.x-ox,dz=this.player.position.z-oz;
-      const minimum=.5+obstacle.radius,d2=dx*dx+dz*dz;
+      const minimum=(this.playerCollisionRadius||.5)+obstacle.radius,d2=dx*dx+dz*dz;
       if(d2<minimum*minimum){
         const d=Math.sqrt(Math.max(d2,.0001)),nx=d2>.0001?dx/d:1,nz=d2>.0001?dz/d:0;
         this.player.position.x=ox+nx*minimum;
@@ -323,13 +393,13 @@ class CatWizard {
     }
     this.player.position.x=clamp(this.player.position.x,-16.7,16.7);
     this.player.position.z=clamp(this.player.position.z,-12.2,12.2);
-    if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.035+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.065:.025);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
+    if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.055+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.045:.012);this.catRoot.rotation.z=Math.sin(this.worldTime*(moving?12:2.5))*(moving?.022:.008);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
   }
   hurtPlayer(w){
     if(this.playerInvul>0||this.respawn>0)return;this.playerHealth=Math.max(0,this.playerHealth-1);this.playerInvul=1.15;
     const d=new THREE.Vector2(this.player.position.x-w.group.position.x,this.player.position.z-w.group.position.z);if(d.lengthSq()>.001)this.playerMove.addScaledVector(d.normalize(),4.4);
     this.burst(new THREE.Vector3(this.player.position.x,1.1,this.player.position.z),'#ffb0a0',16,1.15);
-    this.status('Ouch. The cat has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('The cat is returning to the chamber…');}
+    this.status('Ouch. Frog Wizard has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('Frog Wizard is returning to the chamber…');}
   }
   updateProps(dt){
     this.props.forEach(p=>{if(p.destroyed)return;if(p.frozen>0){p.frozen=Math.max(0,p.frozen-dt);if(!p.frozen){p.mat.color.set(({crate:'#956342',barrel:'#70452f',vase:'#a66f70',stone:'#686b7a'})[p.type]);p.mat.emissiveIntensity=0;}return;}
@@ -345,7 +415,7 @@ class CatWizard {
       const dir=new THREE.Vector2(tx-w.group.position.x,tz-w.group.position.z);if(dir.lengthSq()>.05){dir.normalize();w.group.position.x+=dir.x*1.55*dt;w.group.position.z+=dir.y*1.55*dt;}
       w.velocity.multiplyScalar(Math.exp(-dt*2));w.group.position.x+=w.velocity.x*dt;w.group.position.z+=w.velocity.y*dt;
       w.group.position.y=.08+Math.sin(this.worldTime*3.1+w.phase)*.16;w.group.rotation.y+=dt*(.45+Math.sin(this.worldTime+w.phase)*.12);w.aura.scale.setScalar(1+Math.sin(this.worldTime*3+w.phase)*.1);w.halo.rotation.z+=dt*.7;w.light.intensity=2.7+Math.sin(this.worldTime*4+w.phase)*.7;
-      if(w.cooldown>0)w.cooldown-=dt;if(d<.92&&w.cooldown<=0){this.hurtPlayer(w);w.cooldown=1;}
+      if(w.cooldown>0)w.cooldown-=dt;if(d<1.05&&w.cooldown<=0){this.hurtPlayer(w);w.cooldown=1;}
     });
   }
   updateEffects(dt){
@@ -374,7 +444,7 @@ class CatWizard {
     }
   }
 
-  updateCamera(realDt){animateWorld(this,realDt);}
+  updateCamera(realDt){if(this.frogMixer)this.frogMixer.update(realDt*this.timeScale);animateWorld(this,realDt);}
 
   frame(){
     // Preserve elapsed time on low-refresh devices while keeping simulation
@@ -406,6 +476,7 @@ class CatWizard {
     this.resizeObserver.disconnect();
     this.clock.dispose();
     this.glowTexture.dispose();
+    if(this.frogRoot)disposeObjectTree(this.frogRoot);
     this.renderer.dispose();
   }
 }
