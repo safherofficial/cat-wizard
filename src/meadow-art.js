@@ -521,7 +521,6 @@ function addCrystalMotes(game){
   const base=new Float32Array(layout.length*3);
   const colors=new Float32Array(layout.length*3);
   const phases=new Float32Array(layout.length);
-  const sizes=[.13,.14,.12,.15];
   const palette=['#9cebd9','#b3dcff','#d7b8ff','#e1fff0'];
 
   layout.forEach((mote,index)=>{
@@ -596,7 +595,7 @@ function addPondReeds(game){
       stems.setMatrixAt(stalkIndex,dummy.matrix);
 
       dummy.position.set(x,groundY+height*.91,z);
-      dummy.scale.set(.82,height*.13,.82);
+      dummy.scale.set(1,1.6,.82);
       dummy.updateMatrix();
       heads.setMatrixAt(stalkIndex,dummy.matrix);
 
