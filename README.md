@@ -23,6 +23,10 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 
 A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The resulting GLB is not part of the browser build until it is reviewed and added under `public/assets/`.
 
+## Performance diagnostics
+
+Open the game with `?perf=1` to display FPS, average CPU frame cost, draw calls, triangles, geometry/texture counts and the active quality preset. Compare manual profiles with `?perf=1&quality=medium` or `?perf=1&quality=low`. High quality remains the default; these profiles do not switch automatically.
+
 ## Run locally
 
 ```bash
@@ -52,11 +56,13 @@ Expected URL: https://safherofficial.github.io/cat-wizard/
 src/
   main.js           Three.js scene, controls, combat and runtime loop
   gesture.js        one-stroke recognizer and spell templates
+  performance.js    render quality presets and optional runtime diagnostics
   style.css         responsive browser shell and HUD
 public/assets/
   cat-wizard.webp  full original cat artwork, transparent WebP
 tests/
   gesture.test.js   gesture classification checks
+  performance.test.js render quality preset checks
 docs/
   THREEJS.md        development, gameplay and deployment notes
 .github/workflows/
