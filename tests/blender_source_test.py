@@ -126,6 +126,12 @@ class BlenderSourceContractTests(unittest.TestCase):
     def test_uv_warning_only_applies_to_image_textured_materials(self):
         self.assertIn("if uses_image_texture and not mesh.uv_layers:", self.audit_source)
 
+    def test_glb_audit_reports_unbound_and_unknown_bone_parts(self):
+        self.assertIn("unbound_meshes = [o for o in meshes", self.audit_source)
+        self.assertIn("Meshes without recognized rig binding", self.audit_source)
+        self.assertIn("unknown_bone_parts", self.audit_source)
+        self.assertIn("unexpected bone names", self.audit_source)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
