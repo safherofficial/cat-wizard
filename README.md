@@ -9,7 +9,7 @@ Cat Wizard is a top-down fantasy action prototype starring a distinguished grey 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
 - A hand-painted meadow arena with a winding dirt path, river, swaying 3D grass, wildflowers, trees, cottage, windmill, standing stones, fireflies and a floating spell core.
-- Frog Wizard is the main character, now loaded from a rigged GLB with a 21-joint skeleton and five animation clips: Idle, Walk, Run, Cast and Hit. The runtime normalizes model height and ground pivot, enables mesh shadows, and keeps the original procedural cat as a safe fallback if the external asset cannot be reached.
+- Frog Wizard is the main character, loaded from an optimized 8.79 MB rigged GLB with a 21-joint skeleton and five animation clips: Idle, Walk, Run, Cast and Hit. WebP textures retain their original 2048×2048 resolution and base-color alpha, reducing the exported asset by 57.9% compared with the 20.85 MB Blender GLB. The runtime normalizes model height and ground pivot, enables mesh shadows, and keeps the original procedural cat as a safe fallback if the external asset cannot be reached.
 - Desktop movement with WASD or arrow keys; hold Shift to run.
 - Touch movement on the left side and independent spell drawing on the right side.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
@@ -21,7 +21,7 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 
 ## Blender character source
 
-A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The current Frog Wizard GLB has no embedded animation clips or skeletal rig. Idle bobbing, facing and movement are driven by the existing runtime controller; full limb animation requires a rigged, animated export.
+A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. The Frog Wizard character was rigged in Blender 2.93.5 and exported as a 20.85 MB PNG-textured GLB master for Blender editing and interchange. A separate 8.79 MB runtime GLB uses the glTF `EXT_texture_webp` extension to compress the two 2048×2048 textures without changing geometry, skin weights or animation clips; use the PNG master in Blender 2.93.5, because its glTF importer does not support this WebP extension. The browser runtime (Three.js 0.187.0) loads the WebP-optimized variant.
 
 ## Frog Wizard model attribution
 
