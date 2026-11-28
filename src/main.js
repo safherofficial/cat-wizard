@@ -4,7 +4,7 @@ import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortex
 import { recognizeGesture, SPELLS } from './gesture.js';
 import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import { clampWorldPosition } from './world-map.js';
-import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, rotateCameraOrbit } from './camera-controls.js';
+import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, dampAngle, rotateCameraOrbit, zoomCameraOrbit } from './camera-controls.js';
 import './style.css';
 
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -175,6 +175,11 @@ class CatWizard {
     window.addEventListener('blur',cancelActiveInput);
     document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelActiveInput();});
     this.canvas.addEventListener('contextmenu',e=>e.preventDefault());
+    this.canvas.addEventListener('wheel',e=>{
+      if(!Number.isFinite(e.deltaY)||e.deltaY===0)return;
+      this.cameraOrbit=zoomCameraOrbit(this.cameraOrbit,e.deltaY);
+      e.preventDefault();
+    },{passive:false});
     this.canvas.addEventListener('pointerdown',e=>{
       if(e.pointerType==='mouse'&&e.button===2){
         if(this.cameraPointer===null){
@@ -586,7 +591,15 @@ class CatWizard {
     this.player.position.z = safePosition.z;
     if (this.catRoot) {
       const moving = this.playerMove.length() > .24;
-      if (moving) this.catRoot.rotation.y = Math.atan2(this.playerMove.x, this.playerMove.y);
+      if (moving) {
+        const desiredHeading = Math.atan2(this.playerMove.x, this.playerMove.y);
+        this.catRoot.rotation.y = dampAngle(
+          this.catRoot.rotation.y,
+          desiredHeading,
+          dt,
+          14
+        );
+      }
       this.catRoot.position.y = .035 + Math.sin(this.worldTime * (moving ? 12 : 4.2)) * (moving ? .065 : .025);
       if (this.tail) {
         this.tail.rotation.y = Math.sin(this.worldTime * 2.6) * .28;
