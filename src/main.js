@@ -241,8 +241,14 @@ class CatWizard {
 
   screenToWorld(p) {
     const r=this.canvas.getBoundingClientRect(),ndc=new THREE.Vector2(((p.x-r.left)/r.width)*2-1,-(((p.y-r.top)/r.height)*2-1));
-    this.raycaster.setFromCamera(ndc,this.camera);const hit=new THREE.Vector3();
-    if(!this.raycaster.ray.intersectPlane(this.groundPlane,hit))return new THREE.Vector3(this.player.position.x,this.player.position.y+.12,this.player.position.z);
+    this.raycaster.setFromCamera(ndc,this.camera);
+    const terrainHit=this.terrainMesh
+      ? this.raycaster.intersectObject(this.terrainMesh,false)[0]
+      : null;
+    const hit=terrainHit?.point||new THREE.Vector3();
+    if(!terrainHit&&!this.raycaster.ray.intersectPlane(this.groundPlane,hit)){
+      return new THREE.Vector3(this.player.position.x,this.player.position.y+.12,this.player.position.z);
+    }
     const target=clampWorldPosition(hit.x,hit.z,.35);
     hit.x=target.x;hit.z=target.z;hit.y=terrainElevationAt(hit.x,hit.z)+.12;return hit;
   }
