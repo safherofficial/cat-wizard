@@ -4,6 +4,7 @@ import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortex
 import { recognizeGesture, SPELLS } from './gesture.js';
 import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import { clampWorldPosition } from './world-map.js';
+import { CAMERA_ORBIT_DEFAULTS, rotateCameraOrbit } from './camera-controls.js';
 import './style.css';
 
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -67,6 +68,9 @@ class CatWizard {
     this.spellPointer = null;
     this.movePointer = null;
     this.moveOrigin = null;
+    this.cameraPointer = null;
+    this.cameraLastPointer = null;
+    this.cameraOrbit = { ...CAMERA_ORBIT_DEFAULTS };
     this.touchMove = new THREE.Vector2();
     this.playerMove = new THREE.Vector2();
     this.castCount = 0;
@@ -163,6 +167,8 @@ class CatWizard {
       this.keys.clear();
       this.movePointer=null;
       this.moveOrigin=null;
+      this.cameraPointer=null;
+      this.cameraLastPointer=null;
       this.touchMove.set(0,0);
       if(this.spellPointer!==null)this.cancelGesture();
     };
@@ -170,6 +176,16 @@ class CatWizard {
     document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelActiveInput();});
     this.canvas.addEventListener('contextmenu',e=>e.preventDefault());
     this.canvas.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'&&e.button===2){
+        if(this.cameraPointer===null){
+          this.cameraPointer=e.pointerId;
+          this.cameraLastPointer={x:e.clientX,y:e.clientY};
+          this.canvas.setPointerCapture(e.pointerId);
+          this.status('Camera orbit · move the mouse to look around');
+          e.preventDefault();
+        }
+        return;
+      }
       if(e.pointerType==='mouse'&&e.button!==0)return;
       const rect=this.canvas.getBoundingClientRect(),x=e.clientX-rect.left;
       if(e.pointerType==='touch'&&x<rect.width*.32&&this.movePointer===null){
@@ -181,6 +197,14 @@ class CatWizard {
       }
     });
     this.canvas.addEventListener('pointermove',e=>{
+      if(e.pointerId===this.cameraPointer&&this.cameraLastPointer){
+        const deltaX=e.clientX-this.cameraLastPointer.x;
+        const deltaY=e.clientY-this.cameraLastPointer.y;
+        this.cameraOrbit=rotateCameraOrbit(this.cameraOrbit,deltaX,deltaY);
+        this.cameraLastPointer={x:e.clientX,y:e.clientY};
+        e.preventDefault();
+        return;
+      }
       if(e.pointerId===this.movePointer&&this.moveOrigin){
         const r=this.canvas.getBoundingClientRect(),radius=Math.max(50,Math.min(r.width,r.height)*.13);
         this.touchMove.set(clamp((e.clientX-this.moveOrigin.x)/radius,-1,1),clamp((e.clientY-this.moveOrigin.y)/radius,-1,1));return;
@@ -188,6 +212,11 @@ class CatWizard {
       if(e.pointerId===this.spellPointer){const p=this.stroke.at(-1);if(!p||Math.hypot(e.clientX-p.x,e.clientY-p.y)>3){this.stroke.push({x:e.clientX,y:e.clientY});this.drawStroke();}}
     });
     const release=(e,cancelled=false)=>{
+      if(e.pointerId===this.cameraPointer){
+        this.cameraPointer=null;
+        this.cameraLastPointer=null;
+        this.status('Camera orbit · WASD to explore');
+      }
       if(e.pointerId===this.movePointer){this.movePointer=null;this.moveOrigin=null;this.touchMove.set(0,0);}
       if(e.pointerId===this.spellPointer){
         if(cancelled)this.cancelGesture();
