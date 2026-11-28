@@ -166,9 +166,10 @@ export function auditGlbBuffer(input) {
   }
 
   const nodeNames = new Set(nodes.map(node => node.name).filter(Boolean));
+  const expectedBoneNames = new Set(EXPECTED_BONES);
   const missingBones = EXPECTED_BONES.filter(name => !nodeNames.has(name));
   if (missingBones.length) {
-    warnings.push('Expected rig node names not found (confirm in Blender audit): ' + missingBones.join(', ') + '.');
+    errors.push('Required rig nodes missing from GLB: ' + missingBones.join(', ') + '.');
   }
 
   const actualAnimations = animations.map(animation => animation.name || '<unnamed>');
@@ -226,8 +227,23 @@ export function auditGlbBuffer(input) {
     const childIndex = nodeIndexByName.get(childName);
     const parentIndex = nodeIndexByName.get(parentName);
     if (childIndex !== undefined && parentIndex !== undefined && nodeParent.get(childIndex) !== parentIndex) {
-      warnings.push('Rig hierarchy differs from the builder contract: ' + childName + ' should be parented to ' + parentName + '.');
+      errors.push('Rig hierarchy mismatch: ' + childName + ' must be parented to ' + parentName + '.');
     }
+  }
+
+  // Character 02 uses rigid objects parented to armature bones, not weighted
+  // meshes. In glTF those objects must be regular mesh nodes below the joint
+  // nodes, so validate the exported attachment instead of looking for skins.
+  const meshNodeIndices = nodes
+    .map((node, index) => node.mesh !== undefined ? index : -1)
+    .filter(index => index >= 0);
+  const boneBoundMeshIndices = meshNodeIndices.filter(index => {
+    const parentIndex = nodeParent.get(index);
+    return parentIndex !== undefined && expectedBoneNames.has(nodes[parentIndex]?.name);
+  });
+  const detachedMeshNodes = meshNodeIndices.filter(index => !boneBoundMeshIndices.includes(index));
+  if (detachedMeshNodes.length) {
+    errors.push(detachedMeshNodes.length + ' mesh node(s) are not direct children of an expected rig bone.');
   }
 
   return {
@@ -238,6 +254,7 @@ export function auditGlbBuffer(input) {
       bonesFound: EXPECTED_BONES.length - missingBones.length,
       expectedBones: EXPECTED_BONES.length,
       meshes: meshes.length,
+      boneBoundMeshes: boneBoundMeshIndices.length,
       primitives: primitiveCount,
       triangles: triangleCount,
       materials: (json.materials || []).length,
