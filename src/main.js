@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, buildWisps as buildArtWisps, animateWorld } from './world-art.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
+import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import './style.css';
 
 const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -38,13 +39,18 @@ class CatWizard {
     this.camera.lookAt(this.cameraLook);
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0),-.05);
+    const params = new URLSearchParams(window.location.search);
+    this.quality = resolveQualityPreset(params.get('quality'));
     this.renderer = new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,this.quality.maxPixelRatio));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = .98;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = this.quality.shadows;
+    this.renderer.shadowMap.type = this.quality.shadowMap === 'soft' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    this.performanceMonitor = params.get('perf') === '1'
+      ? new PerformanceMonitor(canvas.parentElement, this.quality.label)
+      : null;
     this.glowTexture=createGlowTexture();
 
     this.clock = new THREE.Timer();
@@ -426,6 +432,7 @@ class CatWizard {
   updateCamera(realDt,worldDt){animateWorld(this,worldDt,realDt);}
 
   frame(){
+    const frameStartedAt = this.performanceMonitor ? performance.now() : 0;
     // Preserve elapsed time on low-refresh devices while keeping simulation
     // steps small enough for stable movement, impacts, and enemy contact.
     this.clock.update();
@@ -451,9 +458,17 @@ class CatWizard {
     if(this.playerInvul>0&&this.respawn===0)this.player.visible=Math.floor((1.15-this.playerInvul)*18)%2===0;else if(!this.respawn)this.player.visible=true;
     this.updateCamera(frameDelta,worldDelta);
     this.renderer.render(this.scene,this.camera);
+    if(this.performanceMonitor){
+      this.performanceMonitor.update(
+        performance.now() - frameStartedAt,
+        this.renderer.info,
+        this.renderer.getPixelRatio()
+      );
+    }
   }
   dispose(){
     this.renderer.setAnimationLoop(null);
+    this.performanceMonitor?.dispose();
     this.resizeObserver.disconnect();
     this.clock.dispose();
     this.glowTexture.dispose();
