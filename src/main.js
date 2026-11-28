@@ -80,7 +80,23 @@ class CatWizard {
     this.resizeObserver.observe(canvas.parentElement);
     this.resize();
     this.updateHud();
-    this.renderer.setAnimationLoop(() => this.frame());
+    this.hasRendered = false;
+    this.renderer.setAnimationLoop(() => {
+      try {
+        this.frame();
+        if (!this.hasRendered) {
+          this.hasRendered = true;
+          window.__CAT_WIZARD_READY__ = true;
+          const loading = document.getElementById('loading-screen');
+          loading?.classList.remove('startup-error');
+          loading?.classList.add('loaded');
+        }
+      } catch (error) {
+        console.error('Cat Wizard render loop failed:', error);
+        this.renderer.setAnimationLoop(null);
+        window.__CAT_WIZARD_SHOW_ERROR__?.(error);
+      }
+    });
   }
 
   buildLighting() { buildArtLighting(this); }
@@ -411,16 +427,22 @@ class CatWizard {
 }
 
 function boot(){
-  const game=new CatWizard(document.getElementById('game-canvas'));
-  if(new URLSearchParams(location.search).get('debug')==='1'){
-    window.__CAT_WIZARD_DEBUG__=()=>({
-      player:{x:game.player.position.x,z:game.player.position.z,health:game.playerHealth,invulnerability:game.playerInvul,respawn:game.respawn,moveX:game.playerMove.x,moveZ:game.playerMove.y},
-      wisps:game.wisps.map(w=>({x:w.group.position.x,z:w.group.position.z,health:w.health,freeze:w.freeze,cooldown:w.cooldown,defeated:w.defeated,distance:Math.hypot(game.player.position.x-w.group.position.x,game.player.position.z-w.group.position.z)})),
-      world:{time:game.worldTime,timeScale:game.timeScale,casts:game.castCount,defeated:game.wispsDefeated}
-    });
+  try {
+    const canvas=document.getElementById('game-canvas');
+    if(!canvas)throw new Error('Game canvas #game-canvas not found.');
+    const game=new CatWizard(canvas);
+    if(new URLSearchParams(location.search).get('debug')==='1'){
+      window.__CAT_WIZARD_DEBUG__=()=>({
+        player:{x:game.player.position.x,z:game.player.position.z,health:game.playerHealth,invulnerability:game.playerInvul,respawn:game.respawn,moveX:game.playerMove.x,moveZ:game.playerMove.y},
+        wisps:game.wisps.map(w=>({x:w.group.position.x,z:w.group.position.z,health:w.health,freeze:w.freeze,cooldown:w.cooldown,defeated:w.defeated,distance:Math.hypot(game.player.position.x-w.group.position.x,game.player.position.z-w.group.position.z)})),
+        world:{time:game.worldTime,timeScale:game.timeScale,casts:game.castCount,defeated:game.wispsDefeated}
+      });
+    }
+    window.addEventListener('beforeunload',()=>game.dispose(),{once:true});
+    document.getElementById('fullscreen-button')?.addEventListener('click',()=>{const el=document.getElementById('game-shell');if(!document.fullscreenElement)el.requestFullscreen?.();else document.exitFullscreen?.();});
+  } catch(error) {
+    console.error('Cat Wizard startup failed:', error);
+    window.__CAT_WIZARD_SHOW_ERROR__?.(error);
   }
-  window.addEventListener('beforeunload',()=>game.dispose(),{once:true});
-  document.getElementById('fullscreen-button').addEventListener('click',()=>{const el=document.getElementById('game-shell');if(!document.fullscreenElement)el.requestFullscreen?.();else document.exitFullscreen?.();});
-  setTimeout(()=>document.getElementById('loading-screen').classList.add('loaded'),500);
 }
 boot();
