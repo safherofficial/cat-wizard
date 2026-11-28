@@ -343,3 +343,32 @@ kbd{
     font-size:7px;
   }
 }
+
+
+/* Right-button drag hint for the orbit camera. */
+.camera-hint{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:10px!important;
+  color:#607b71!important;
+  font-size:9px!important;
+}
+.camera-hint kbd{
+  min-width:0;
+  height:auto;
+  padding:4px 6px;
+  border-color:rgba(179,139,83,.36);
+  border-radius:5px;
+  background:linear-gradient(180deg,#fffdf4,#f0e7d5);
+  color:#946c43;
+  font-size:7px;
+  letter-spacing:.08em;
+}
+.camera-hint span{
+  color:#8a9688;
+}
+@media(pointer:coarse){
+  .camera-hint{display:none!important}
+}
