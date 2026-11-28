@@ -9,8 +9,8 @@ Cat Wizard is a top-down fantasy action prototype starring a distinguished grey 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
 - A hand-painted meadow arena with a winding dirt path, river, swaying 3D grass, wildflowers, trees, cottage, windmill, standing stones, fireflies and a floating spell core.
-- A low-poly Frog Wizard is now the main character, loaded from an optimized GLB. The runtime selects its lighter LOD1 scene (~63k triangles), normalizes its size and ground pivot, and assigns shadow casting. If the external asset cannot be reached, the original procedural cat remains as a safe fallback.
-- Desktop movement with WASD or arrow keys.
+- Frog Wizard is the main character, now loaded from a rigged GLB with a 21-joint skeleton and five animation clips: Idle, Walk, Run, Cast and Hit. The runtime normalizes model height and ground pivot, enables mesh shadows, and keeps the original procedural cat as a safe fallback if the external asset cannot be reached.
+- Desktop movement with WASD or arrow keys; hold Shift to run.
 - Touch movement on the left side and independent spell drawing on the right side.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
 - World time slows to 15% during drawing and eases back over 250 ms after release.
@@ -22,6 +22,10 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 ## Blender character source
 
 A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The current Frog Wizard GLB has no embedded animation clips or skeletal rig. Idle bobbing, facing and movement are driven by the existing runtime controller; full limb animation requires a rigged, animated export.
+
+## Frog Wizard model attribution
+
+The original 3D model is “Frog wizard with mushrooms” (title by Patch), created by Scenario. Source: https://huggingface.co/datasets/scenario-labs/3d-collection/blob/55b4c002b4c1529fc48da3dff98516c3069bfa3f/assets/scenario_asset_dyHjpX6aCe8q1eNZFekAwzj6/output.glb. Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/. Modifications for this game include rigging and the Idle, Walk, Run, Cast and Hit animation clips.
 
 ## Run locally
 
