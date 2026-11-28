@@ -41,7 +41,7 @@ class CatWizard {
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0),-.05);
     const params = new URLSearchParams(window.location.search);
     this.quality = resolveQualityPreset(params.get('quality'));
-    this.renderer = new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+    this.renderer = new THREE.WebGLRenderer({canvas,antialias:this.quality.antialias,powerPreference:'high-performance'});
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,this.quality.maxPixelRatio));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
