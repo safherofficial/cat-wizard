@@ -23,8 +23,8 @@ The deployable site is written to `dist/`.
 
 ## Controls
 
-- Desktop: WASD or arrow keys move the cat; hold the right mouse button and drag to orbit the follow camera; hold the left mouse button, draw a single glyph and release to cast.
-- Touch: hold and drag on the left 32% of the game surface to move; draw and release on the right side to cast. Pointer IDs are independent, allowing movement and spell drawing together.
+- Desktop: WASD or arrow keys move relative to the camera heading (W always moves toward the top of the view); hold the right mouse button and drag to orbit the follow camera; hold the left mouse button, draw a single glyph and release to cast. The cat turns to face its actual world-space travel direction.
+- Touch: hold and drag on the left 32% of the game surface to move relative to the camera heading; draw and release on the right side to cast. Pointer IDs are independent, allowing movement and spell drawing together.
 - Drawing reduces world simulation speed to 15%; after release it eases back to full speed over 250 ms.
 
 ## Spells
