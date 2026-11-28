@@ -42,7 +42,7 @@ export class PerformanceMonitor {
     this.frameCount = 0;
     this.frameCostTotal = 0;
 
-    this.element.textContent = 'PERF MONITOR\\nCollecting frame data…';
+    this.element.textContent = 'PERF MONITOR\nCollecting frame data…';
     container.append(this.element);
   }
 
@@ -64,7 +64,7 @@ export class PerformanceMonitor {
       `CALLS ${render.calls ?? 0}  ·  TRIS ${(render.triangles ?? 0).toLocaleString()}`,
       `GEO ${memory.geometries ?? 0}  ·  TEX ${memory.textures ?? 0}`,
       `QUALITY ${this.qualityLabel}  ·  DPR ${pixelRatio.toFixed(2)}`
-    ].join('\\n');
+    ].join('\n');
 
     this.windowStartedAt = now;
     this.frameCount = 0;
