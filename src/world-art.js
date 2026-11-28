@@ -17,7 +17,7 @@ export function buildLighting(g){
   g.sunLight=sun;
   sun.shadow.bias=-.00016;
   sun.shadow.normalBias=.022;
-  g.scene.add(sun);
+  g.scene.add(sun,sun.target);
 
   const fill=new THREE.DirectionalLight('#b8e4f2',.52);
   fill.position.set(13,10,-12);
