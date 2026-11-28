@@ -42,7 +42,7 @@ test('terrain profile is finite, bounded and gradual throughout the playable map
 
   assert.ok(minimum > -0.8);
   assert.ok(maximum < 1.7);
-  assert.ok(steepestStep < 0.2);
+  assert.ok(steepestStep < 0.19);
 });
 
 test('invalid coordinates safely resolve to the central clearing', () => {
