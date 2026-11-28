@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#100d14"><meta name="description" content="Cat Wizard — a stylized fantasy action game. Draw five magic glyphs and defend the enchanted meadow."><link rel="icon" type="image/svg+xml" href="/cat-wizard/favicon.svg">
+<meta name="theme-color" content="#100d14"><meta name="description" content="Cat Wizard — a gesture-magic physics sandbox. Draw five glyphs and experiment with a destructible meadow."><link rel="icon" type="image/svg+xml" href="/cat-wizard/favicon.svg">
 <title>Cat Wizard — Spell Lab</title>
 </head>
 <body>
@@ -16,18 +16,14 @@
   <div class="game-frame" id="game-shell">
     <canvas id="game-canvas" aria-label="Cat Wizard game canvas"></canvas>
     <div class="game-topline"><div><span class="eyebrow">WHISPERING MEADOW</span><strong>THE ENCHANTED CLEARING</strong></div><span class="world-label">THE OLD OAK VALLEY · SECTOR 01</span></div>
-    <div class="hud-left">
-      <div class="hud-card"><span class="hud-label">CAT VITALITY</span><strong id="health-value">5 / 5</strong><div class="health-track"><span id="health-fill"></span></div></div>
-      <div class="hud-card"><span class="hud-label">WISPS DISPERSED</span><strong id="wisp-value">0 / 3</strong></div>
-    </div>
-    <div class="game-bottomline"><div class="status-indicator"><span></span><p id="game-status">The meadow is waiting for its wizard.</p></div><div class="cast-counter">CASTS <strong id="cast-count">00</strong></div></div>
+    <div class="game-bottomline"><div class="status-indicator"><span></span><p id="game-status">The clearing is waiting for its wizard.</p></div><div class="cast-counter">CASTS <strong id="cast-count">00</strong></div></div>
     <div class="loading-screen" id="loading-screen"><div class="loading-mark">✧</div><div class="loading-title">Opening the spell chamber</div><div class="loading-meter"><span></span></div><div class="loading-caption">Preparing the old hall</div></div>
   </div>
   <div class="game-footnote"><span>WEBGL RENDERED · THREE.JS</span><span>DESKTOP + TOUCH INPUT</span></div>
 </section>
 <aside class="side-panel">
-  <section class="intro-block"><p class="eyebrow gold">THE DISTINGUISHED CAT</p><h1>Magic is in<br>the <em>gesture.</em></h1><p class="intro-copy">No spellbook. No shortcuts. Draw the glyph, let time slow down, and make the room regret getting in your way.</p></section>
-  <section class="control-section"><div class="section-heading"><span>01</span><h2>MOVE</h2></div><div class="control-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>or arrow keys</span></div><p>Navigate the hall. Keep an eye on the wisps.</p></section>
+  <section class="intro-block"><p class="eyebrow gold">THE DISTINGUISHED CAT</p><h1>Magic is in<br>the <em>gesture.</em></h1><p class="intro-copy">No spellbook. No shortcuts. Draw a glyph, let time slow down, and watch magic move, freeze and break the world.</p></section>
+  <section class="control-section"><div class="section-heading"><span>01</span><h2>MOVE</h2></div><div class="control-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>or arrow keys</span></div><p>Move around the clearing, line up your casts and experiment with the props.</p></section>
   <section class="control-section"><div class="section-heading"><span>02</span><h2>CAST</h2></div><div class="gesture-guide"><span class="mouse-icon">↗</span><div><strong>Hold + draw</strong><small>Hold the left mouse button and draw one continuous symbol.</small></div></div><div class="gesture-guide"><span class="touch-icon">⌁</span><div><strong>Touch + release</strong><small>Move on the left. Draw on the right.</small></div></div><p class="slow-note">◷ &nbsp; Time slows to 15% while you draw.</p></section>
   <section class="spell-section"><div class="section-heading"><span>03</span><h2>THE FIVE GLYPHS</h2></div><div class="spell-grid">
     <div class="spell-item fire"><span>○</span><div><strong>FIREBALL</strong><small>Circle</small></div></div>

@@ -2,7 +2,7 @@
 
 **A little magic. A lot of attitude.**
 
-Cat Wizard is a top-down fantasy action prototype starring a distinguished grey cat wizard. Its defining mechanic is gesture-cast magic: draw one continuous symbol with the mouse, touchscreen, or pen; the world slows while the stroke is being drawn; release to cast.
+Cat Wizard is a top-down gesture-magic physics sandbox starring a distinguished grey cat wizard. Draw one continuous symbol with the mouse, touchscreen, or pen; the world slows while the stroke is being drawn; release to cast and experiment with the physical results.
 
 ## Current build — Three.js browser edition
 
@@ -15,8 +15,9 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
 - World time slows to 15% during drawing and eases back over 250 ms after release.
 - Fireball, Thunderbolt, Frost, Gravity and Chaos effects.
-- Destructible crates, barrels, vases and stone props with knockback and debris.
-- Three pursuing cursed wisps with safe initial spacing, player health, temporary invulnerability and arena respawn.
+- Destructible crates, barrels, vases and stone props with mass-aware impulses, object collisions, wall bounce and debris.
+- No enemies, player-health system or respawn loop in this phase: the focus is spell behaviour and environmental physics.
+- Fireball follows an arcing path and detonates on its first prop impact; Thunderbolt applies directional force along its strike; Frost freezes props; Gravity pulls and swirls them; Chaos delivers an outward shockwave.
 - Responsive browser HUD and fullscreen mode.
 
 ## Blender character source

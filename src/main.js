@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, buildWisps as buildArtWisps, animateWorld } from './world-art.js';
+import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, animateWorld } from './world-art.js';
+import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortexAcceleration, resolveCircleCollision } from './spell-physics.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
 import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import './style.css';
@@ -58,7 +59,6 @@ class CatWizard {
     this.keys = new Set();
     this.props = [];
     this.obstacles = [];
-    this.wisps = [];
     this.effects = [];
     this.debris = [];
     this.stroke = [];
@@ -68,10 +68,6 @@ class CatWizard {
     this.moveOrigin = null;
     this.touchMove = new THREE.Vector2();
     this.playerMove = new THREE.Vector2();
-    this.playerHealth = 5;
-    this.playerInvul = 0;
-    this.respawn = 0;
-    this.wispsDefeated = 0;
     this.castCount = 0;
     this.lastSpell = 'No spell cast yet';
     this.worldTime = 0;
@@ -80,7 +76,6 @@ class CatWizard {
     this.buildLighting();
     this.buildArena();
     this.buildPlayer();
-    this.buildWisps();
     this.bindInput();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas.parentElement);
@@ -139,13 +134,26 @@ class CatWizard {
       const brace=new THREE.Mesh(new THREE.BoxGeometry(width*.82,height*.11,.12),new THREE.MeshStandardMaterial({color:'#c49b70'}));brace.position.y=height*.38;brace.rotation.z=Math.PI/4;group.add(brace);
     }
     const edge=new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry),new THREE.LineBasicMaterial({color:'#1e1820',transparent:true,opacity:.35}));edge.position.copy(body.position);group.add(edge);
-    const propState={group,body,mat,type,hp,radius:Math.max(.38,width*.58),velocity:new THREE.Vector2(),spin:rand(-.2,.2),frozen:0,destroyed:false};
+    const propState = {
+      group,
+      body,
+      mat,
+      type,
+      hp,
+      radius: Math.max(.38, width * .58),
+      mass: Math.max(.55, width * height * .8),
+      baseColor: mat.color.clone(),
+      baseEmissive: mat.emissive.clone(),
+      baseEmissiveIntensity: mat.emissiveIntensity,
+      velocity: new THREE.Vector2(),
+      spin: rand(-.2, .2),
+      frozen: 0,
+      destroyed: false
+    };
     this.props.push(propState);this.obstacles.push(propState);
   }
 
   buildPlayer() { this.player=buildWizardCat(this); }
-
-  buildWisps() { this.wisps=buildArtWisps(this); }
 
   bindInput() {
     window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();this.keys.add(k);});
@@ -238,35 +246,88 @@ class CatWizard {
     this.restoreWorldTime();
   }
 
-  cast(spell,target,confidence) {
-    this.castCount++;this.lastSpell=SPELLS[spell].name;this.status(this.lastSpell+' cast · '+Math.round(confidence*100)+'% match');this.updateHud();
-    if(spell==='Fireball'){
-      const orb=new THREE.Group();
-      const shell=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,1),new THREE.MeshStandardMaterial({color:'#ff6a3d',emissive:'#ff542c',emissiveIntensity:1.9,roughness:.28,flatShading:true}));
-      const core=new THREE.Mesh(new THREE.SphereGeometry(.145,12,10),new THREE.MeshBasicMaterial({color:'#fff1b4',toneMapped:false}));
-      const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:this.glowTexture,color:'#ff8a42',transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
-      glow.scale.set(1.5,1.5,1);orb.add(shell,core,glow);orb.add(new THREE.PointLight('#ff783e',6,4));
+  cast(spell, target, confidence) {
+    this.castCount++;
+    this.lastSpell = SPELLS[spell].name;
+    this.status(this.lastSpell + ' cast · ' + Math.round(confidence * 100) + '% match');
+    this.updateHud();
+
+    if (spell === 'Fireball') {
+      const orb = new THREE.Group();
+      const shell = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(.28, 1),
+        new THREE.MeshStandardMaterial({
+          color: '#ff6a3d',
+          emissive: '#ff542c',
+          emissiveIntensity: 1.9,
+          roughness: .28,
+          flatShading: true
+        })
+      );
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(.145, 12, 10),
+        new THREE.MeshBasicMaterial({ color: '#fff1b4', toneMapped: false })
+      );
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: this.glowTexture,
+        color: '#ff8a42',
+        transparent: true,
+        opacity: .95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false
+      }));
+      glow.scale.set(1.5, 1.5, 1);
+      orb.add(shell, core, glow);
+      orb.add(new THREE.PointLight('#ff783e', 6, 4));
+
+      const start = new THREE.Vector3(this.player.position.x, .95, this.player.position.z);
+      const destination = new THREE.Vector3(target.x, .95, target.z);
+      const travelDistance = Math.hypot(destination.x - start.x, destination.z - start.z);
+      const duration = clamp(travelDistance / 18, .14, 1.15);
+      orb.position.copy(start);
       this.scene.add(orb);
-      this.effects.push({kind:'fire',object:orb,start:new THREE.Vector3(this.player.position.x,.95,this.player.position.z),target:new THREE.Vector3(target.x,.95,target.z),age:0,duration:.46,lastTrail:-1});
-    }else if(spell==='Thunderbolt'){
-      const a=new THREE.Vector3(this.player.position.x,.8,this.player.position.z),b=new THREE.Vector3(target.x,1.1,target.z);
-      this.addLightning(a,b);
-      this.damageLine(a,b);this.burst(new THREE.Vector3(target.x,.65,target.z),'#ffe18a',28,2.4);
-    }else if(spell==='Frost'){
+      this.effects.push({
+        kind: 'fire',
+        object: orb,
+        start,
+        target: destination,
+        age: 0,
+        duration,
+        lastTrail: -1
+      });
+    } else if (spell === 'Thunderbolt') {
+      const start = new THREE.Vector3(this.player.position.x, .8, this.player.position.z);
+      const end = new THREE.Vector3(target.x, 1.1, target.z);
+      this.addLightning(start, end);
+      this.damageLine(start, end);
+      this.burst(new THREE.Vector3(target.x, .65, target.z), '#ffe18a', 28, 2.4);
+    } else if (spell === 'Frost') {
       this.castFrost(target);
-    }else if(spell==='Gravity'){
-      const center=new THREE.Vector2(target.x,target.z);
-      this.wisps.forEach(w=>{if(!w.defeated&&dist(w.group.position,{x:target.x,z:target.z})<=5.8){this.hitWisp(w,'Gravity',.8,center);this.pullWisp(w,center,1.6);}});
-      const ring=this.ring(target,'#b995ff');
-      const echo=this.ring(target,'#e4d7ff');echo.position.y=.24;
-      this.effects.push({kind:'ring',object:echo,age:0,duration:1.15,scale:4.7});
-      this.effects.push({kind:'gravity',object:ring,center,age:0,duration:1.15});
-      this.burst(new THREE.Vector3(target.x,.3,target.z),'#c4a4ff',16,1.8);
-    }else if(spell==='Chaos')this.radial(spell,target,3.8,2.4,'#ff9ccc',17,0);
+    } else if (spell === 'Gravity') {
+      const center = { x: target.x, z: target.z };
+      const ring = this.ring(target, '#b995ff');
+      const echo = this.ring(target, '#e4d7ff');
+      echo.position.y = .24;
+      this.effects.push({ kind: 'ring', object: echo, age: 0, duration: 1.15, scale: 4.7 });
+      this.effects.push({
+        kind: 'gravity',
+        object: ring,
+        center,
+        age: 0,
+        duration: 1.35,
+        radius: 5.8,
+        pull: 9.5,
+        swirl: 3.8
+      });
+      this.burst(new THREE.Vector3(target.x, .3, target.z), '#c4a4ff', 16, 1.8);
+    } else if (spell === 'Chaos') {
+      this.radial(spell, target, 3.8, 2.4, '#ff9ccc', 17, 0);
+    }
   }
 
   castFrost(target){
-    this.radial('Frost',target,3.25,.25,'#91dcff',0,1.4);
+    this.radial('Frost', target, 3.25, 0, '#91dcff', 0, 2.2);
     this.burst(new THREE.Vector3(target.x,.4,target.z),'#b8ecff',34,2.1);
     const material=new THREE.MeshStandardMaterial({color:'#c6f4ff',emissive:'#69c8e8',emissiveIntensity:.5,roughness:.2,metalness:.18,transparent:true,opacity:.92});
     for(let i=0;i<9;i++){
@@ -298,37 +359,123 @@ class CatWizard {
 
   ring(p,color) {const m=new THREE.Mesh(new THREE.TorusGeometry(.75,.065,8,64),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthWrite:false}));m.rotation.x=Math.PI/2;m.position.set(p.x,.22,p.z);this.scene.add(m);return m;}
   lineEffect(points,color,duration){const o=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color,transparent:true}));this.scene.add(o);this.effects.push({kind:'line',object:o,age:0,duration});}
-  radial(spell,target,radius,damage,color,impulse,freeze){
-    const ring=this.ring(target,color);this.effects.push({kind:'ring',object:ring,age:0,duration:.58,scale:radius*1.28});
-    this.burst(new THREE.Vector3(target.x,.35,target.z),color,spell==='Chaos'?46:34,radius*1.5);
-    this.props.forEach(p=>{if(!p.destroyed&&dist(p.group.position,{x:target.x,z:target.z})<=radius){this.hitProp(p,spell,target,damage,impulse);if(freeze)this.freezeProp(p,freeze);}});
-    this.wisps.forEach(w=>{if(!w.defeated&&dist(w.group.position,{x:target.x,z:target.z})<=radius+.35){this.hitWisp(w,spell,({Fireball:1.75,Thunderbolt:2.5,Frost:.7,Gravity:.8,Chaos:3.25})[spell]||1);if(freeze)w.freeze=freeze;if(impulse)this.pushWisp(w,target,impulse*.15);}});
+  radial(spell, target, radius, damage, color, impulse, freeze = 0) {
+    const ring = this.ring(target, color);
+    this.effects.push({ kind: 'ring', object: ring, age: 0, duration: .58, scale: radius * 1.28 });
+    this.burst(
+      new THREE.Vector3(target.x, .35, target.z),
+      color,
+      spell === 'Chaos' ? 46 : 34,
+      radius * 1.5
+    );
+
+    this.props.forEach(prop => {
+      if (prop.destroyed) return;
+      const distance = dist(prop.group.position, { x: target.x, z: target.z });
+      const falloff = radialFalloff(distance, radius, .06);
+      if (!falloff) return;
+      if (freeze > 0) this.freezeProp(prop, freeze);
+      else this.hitProp(prop, spell, target, damage, impulse, falloff);
+    });
   }
-  damageLine(a,b){
-    const ab=new THREE.Vector2(b.x-a.x,b.z-a.z);
-    const dTo=p=>{const ap=new THREE.Vector2(p.x-a.x,p.z-a.z),t=clamp(ap.dot(ab)/Math.max(ab.lengthSq(),1e-4),0,1);return new THREE.Vector2(p.x,p.z).distanceTo(new THREE.Vector2(a.x,a.z).addScaledVector(ab,t));};
-    this.props.forEach(p=>{if(!p.destroyed&&dTo(p.group.position)<.95)this.hitProp(p,'Thunderbolt',a,1.1,7);});
-    this.wisps.forEach(w=>{if(!w.defeated&&dTo(w.group.position)<1.05)this.hitWisp(w,'Thunderbolt',2.5);});
+
+  damageLine(start, end) {
+    const axis = new THREE.Vector2(end.x - start.x, end.z - start.z);
+    if (axis.lengthSq() < 1e-5) axis.set(0, -1);
+    axis.normalize();
+
+    this.props.forEach(prop => {
+      if (prop.destroyed) return;
+      const nearest = closestPointOnSegment(prop.group.position, start, end);
+      const falloff = radialFalloff(nearest.distance, prop.radius + .9, .05);
+      if (!falloff) return;
+
+      const offset = new THREE.Vector2(
+        prop.group.position.x - nearest.x,
+        prop.group.position.z - nearest.z
+      );
+      const direction = axis.clone();
+      if (offset.lengthSq() > 1e-5) direction.addScaledVector(offset.normalize(), .42);
+      direction.normalize();
+      this.hitProp(prop, 'Thunderbolt', start, 1.25, 8, falloff, direction);
+    });
   }
-  hitProp(p,spell,center,damage,impulse){
-    const dir=new THREE.Vector2(p.group.position.x-center.x,p.group.position.z-center.z);if(dir.lengthSq()<.001)dir.set(rand(-1,1),rand(-1,1));dir.normalize();
-    if(spell==='Gravity')dir.multiplyScalar(-1);p.velocity.addScaledVector(dir,impulse*.16);p.spin+=rand(-1,1)*Math.max(.3,impulse*.05);p.hp-=damage;
-    if(spell==='Frost')this.freezeProp(p,1.35);if(p.hp<=0)this.shatter(p,dir);
+
+  hitProp(prop, spell, center, damage, impulse, falloff = 1, direction = null) {
+    if (prop.destroyed) return;
+    this.unfreezeProp(prop);
+
+    const forceDirection = direction
+      ? direction.clone()
+      : new THREE.Vector2(
+        prop.group.position.x - center.x,
+        prop.group.position.z - center.z
+      );
+    if (forceDirection.lengthSq() < .001) forceDirection.set(rand(-1, 1), rand(-1, 1));
+    forceDirection.normalize();
+    if (spell === 'Gravity') forceDirection.multiplyScalar(-1);
+
+    const mass = Math.max(.55, prop.mass);
+    prop.velocity.addScaledVector(forceDirection, impulse * .18 * falloff / mass);
+    prop.velocity.clampLength(0, 8.5);
+    prop.spin += rand(-1, 1) * Math.max(.3, impulse * .045) * falloff / mass;
+    prop.hp -= damage * falloff;
+    if (prop.hp <= 0) this.shatter(prop, forceDirection);
   }
-  freezeProp(p,t){p.frozen=t;p.mat.color.set('#83d8ff');p.mat.emissive=new THREE.Color('#245d82');p.mat.emissiveIntensity=.45;}
-  shatter(p,dir){
-    p.destroyed=true;const pos=p.group.position.clone(),color=p.mat.color.clone();this.scene.remove(p.group);
-    for(let i=0;i<8;i++){const size=rand(.08,.2),o=new THREE.Mesh(new THREE.BoxGeometry(size,size,size),new THREE.MeshStandardMaterial({color}));o.position.set(pos.x+rand(-.28,.28),rand(.25,.9),pos.z+rand(-.28,.28));o.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));this.scene.add(o);this.debris.push({object:o,v:new THREE.Vector3(dir.x*rand(1.5,3.8)+rand(-1,1),rand(1,3),dir.y*rand(1.5,3.8)+rand(-1,1)),age:0,duration:1.5});}
-    this.burst(new THREE.Vector3(pos.x,.4,pos.z),'#d0a47b',8,1.2);
+
+  freezeProp(prop, duration) {
+    if (prop.destroyed) return;
+    prop.frozen = Math.max(prop.frozen, duration);
+    prop.velocity.set(0, 0);
+    prop.spin = 0;
+    prop.mat.color.set('#83d8ff');
+    prop.mat.emissive.set('#245d82');
+    prop.mat.emissiveIntensity = .45;
   }
-  hitWisp(w,spell,damage,center=null){
-    if(w.defeated)return;w.health-=damage;w.flash=.16;this.burst(new THREE.Vector3(w.group.position.x,1,w.group.position.z),w.color,6,.8);
-    if(spell==='Frost')w.freeze=1.4;if(spell==='Gravity')this.pullWisp(w,center||new THREE.Vector2(this.player.position.x,this.player.position.z),1.3);
-    if(w.health<=0){w.defeated=true;this.wispsDefeated++;const p=w.group.position.clone();this.scene.remove(w.group);this.burst(new THREE.Vector3(p.x,.9,p.z),w.color,28,2.8);this.status('A cursed wisp has been dispersed');}
-    this.updateHud();
+
+  unfreezeProp(prop) {
+    if (prop.frozen <= 0) return;
+    prop.frozen = 0;
+    prop.mat.color.copy(prop.baseColor);
+    prop.mat.emissive.copy(prop.baseEmissive);
+    prop.mat.emissiveIntensity = prop.baseEmissiveIntensity;
   }
-  pullWisp(w,target,force){const d=new THREE.Vector2(target.x-w.group.position.x,target.y===undefined?target.z:target.y-w.group.position.z);if(d.lengthSq()>.001)w.velocity.addScaledVector(d.normalize(),force);}
-  pushWisp(w,center,force){const d=new THREE.Vector2(w.group.position.x-center.x,w.group.position.z-center.z);if(d.lengthSq()>.001)w.velocity.addScaledVector(d.normalize(),force);}
+
+  shatter(prop, direction) {
+    if (prop.destroyed) return;
+    prop.destroyed = true;
+    const position = prop.group.position.clone();
+    const color = prop.mat.color.clone();
+    this.scene.remove(prop.group);
+    this.disposeEffectObject(prop.group);
+
+    for (let i = 0; i < 8; i++) {
+      const size = rand(.08, .2);
+      const fragment = new THREE.Mesh(
+        new THREE.BoxGeometry(size, size, size),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      fragment.position.set(
+        position.x + rand(-.28, .28),
+        rand(.25, .9),
+        position.z + rand(-.28, .28)
+      );
+      fragment.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
+      this.scene.add(fragment);
+      this.debris.push({
+        object: fragment,
+        v: new THREE.Vector3(
+          direction.x * rand(1.5, 3.8) + rand(-1, 1),
+          rand(1, 3),
+          direction.y * rand(1.5, 3.8) + rand(-1, 1)
+        ),
+        age: 0,
+        duration: 1.5
+      });
+    }
+    this.burst(new THREE.Vector3(position.x, .4, position.z), '#d0a47b', 8, 1.2);
+  }
+
   burst(p,color,count,spread){
     for(let i=0;i<count;i++){
       const size=rand(.035,.095),geometry=i%4===0?new THREE.OctahedronGeometry(size*1.25,0):new THREE.SphereGeometry(size,7,6);
@@ -353,88 +500,231 @@ class CatWizard {
   }
 
   status(text){const e=document.getElementById('game-status');if(e)e.textContent=text;}
-  updateHud(){
-    const h=document.getElementById('health-value'),bar=document.getElementById('health-fill'),w=document.getElementById('wisp-value'),last=document.getElementById('last-spell'),count=document.getElementById('cast-count');
-    if(h)h.textContent=this.playerHealth+' / 5';if(bar)bar.style.width=(this.playerHealth/5*100)+'%';if(w)w.textContent=this.wispsDefeated+' / 3';if(last)last.textContent=this.lastSpell;if(count)count.textContent=String(this.castCount).padStart(2,'0');
+  updateHud() {
+    const last = document.getElementById('last-spell');
+    const count = document.getElementById('cast-count');
+    if (last) last.textContent = this.lastSpell;
+    if (count) count.textContent = String(this.castCount).padStart(2, '0');
   }
-  updatePlayer(dt,realDt){
-    this.playerInvul=Math.max(0,this.playerInvul-realDt);
-    if(this.respawn>0){this.respawn=Math.max(0,this.respawn-realDt);this.player.visible=Math.floor(this.respawn*20)%2===0;if(this.respawn===0){this.player.position.set(0,0,-3.4);this.playerHealth=5;this.playerMove.set(0,0);this.player.visible=true;this.updateHud();}return;}
-    const m=new THREE.Vector2();if(this.keys.has('a')||this.keys.has('arrowleft'))m.x--;if(this.keys.has('d')||this.keys.has('arrowright'))m.x++;if(this.keys.has('w')||this.keys.has('arrowup'))m.y--;if(this.keys.has('s')||this.keys.has('arrowdown'))m.y++;m.add(this.touchMove);if(m.lengthSq()>1)m.normalize();
-    this.playerMove.lerp(m.multiplyScalar(5.2),1-Math.exp(-dt*12));
-    this.player.position.x=clamp(this.player.position.x+this.playerMove.x*dt,-16.7,16.7);
-    this.player.position.z=clamp(this.player.position.z+this.playerMove.y*dt,-12.2,12.2);
-    for(const obstacle of this.obstacles){
-      if(obstacle.destroyed)continue;
-      const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
-      const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
-      const dx=this.player.position.x-ox,dz=this.player.position.z-oz;
-      const minimum=.5+obstacle.radius,d2=dx*dx+dz*dz;
-      if(d2<minimum*minimum){
-        const d=Math.sqrt(Math.max(d2,.0001)),nx=d2>.0001?dx/d:1,nz=d2>.0001?dz/d:0;
-        this.player.position.x=ox+nx*minimum;
-        this.player.position.z=oz+nz*minimum;
+
+  updatePlayer(dt) {
+    const movement = new THREE.Vector2();
+    if (this.keys.has('a') || this.keys.has('arrowleft')) movement.x--;
+    if (this.keys.has('d') || this.keys.has('arrowright')) movement.x++;
+    if (this.keys.has('w') || this.keys.has('arrowup')) movement.y--;
+    if (this.keys.has('s') || this.keys.has('arrowdown')) movement.y++;
+    movement.add(this.touchMove);
+    if (movement.lengthSq() > 1) movement.normalize();
+
+    this.playerMove.lerp(movement.multiplyScalar(5.2), 1 - Math.exp(-dt * 12));
+    this.player.position.x = clamp(this.player.position.x + this.playerMove.x * dt, -16.7, 16.7);
+    this.player.position.z = clamp(this.player.position.z + this.playerMove.y * dt, -12.2, 12.2);
+
+    for (const obstacle of this.obstacles) {
+      if (obstacle.destroyed) continue;
+      const obstacleX = obstacle.fixed ? obstacle.x : obstacle.group.position.x;
+      const obstacleZ = obstacle.fixed ? obstacle.z : obstacle.group.position.z;
+      const dx = this.player.position.x - obstacleX;
+      const dz = this.player.position.z - obstacleZ;
+      const minimum = .5 + obstacle.radius;
+      const distanceSquared = dx * dx + dz * dz;
+      if (distanceSquared < minimum * minimum) {
+        const distance = Math.sqrt(Math.max(distanceSquared, .0001));
+        const nx = distanceSquared > .0001 ? dx / distance : 1;
+        const nz = distanceSquared > .0001 ? dz / distance : 0;
+        this.player.position.x = obstacleX + nx * minimum;
+        this.player.position.z = obstacleZ + nz * minimum;
       }
     }
-    this.player.position.x=clamp(this.player.position.x,-16.7,16.7);
-    this.player.position.z=clamp(this.player.position.z,-12.2,12.2);
-    if(this.catRoot){const moving=this.playerMove.length()>.24;if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);this.catRoot.position.y=.035+Math.sin(this.worldTime*(moving?12:4.2))*(moving?.065:.025);if(this.tail){this.tail.rotation.y=Math.sin(this.worldTime*2.6)*.28;this.tail.rotation.x=Math.cos(this.worldTime*2.1)*.12;}}
-  }
-  hurtPlayer(w){
-    if(this.playerInvul>0||this.respawn>0)return;this.playerHealth=Math.max(0,this.playerHealth-1);this.playerInvul=1.15;
-    const d=new THREE.Vector2(this.player.position.x-w.group.position.x,this.player.position.z-w.group.position.z);if(d.lengthSq()>.001)this.playerMove.addScaledVector(d.normalize(),4.4);
-    this.burst(new THREE.Vector3(this.player.position.x,1.1,this.player.position.z),'#ffb0a0',16,1.15);
-    this.status('Ouch. The cat has been cursed.');this.updateHud();if(this.playerHealth===0){this.respawn=1.15;this.status('The cat is returning to the chamber…');}
-  }
-  updateProps(dt){
-    this.props.forEach(p=>{if(p.destroyed)return;if(p.frozen>0){p.frozen=Math.max(0,p.frozen-dt);if(!p.frozen){p.mat.color.set(({crate:'#956342',barrel:'#70452f',vase:'#a66f70',stone:'#686b7a'})[p.type]);p.mat.emissiveIntensity=0;}return;}
-      p.group.position.x+=p.velocity.x*dt;p.group.position.z+=p.velocity.y*dt;p.group.rotation.y+=p.spin*dt;p.velocity.multiplyScalar(Math.exp(-dt*1.55));p.spin*=Math.exp(-dt*1.6);
-      if(Math.abs(p.group.position.x)>12.2){p.group.position.x=clamp(p.group.position.x,-12.2,12.2);p.velocity.x*=-.42;}if(Math.abs(p.group.position.z)>6.7){p.group.position.z=clamp(p.group.position.z,-6.7,6.7);p.velocity.y*=-.42;}
-    });
-  }
-  updateWisps(dt){
-    this.wisps.forEach(w=>{if(w.defeated)return;if(w.flash>0){w.flash=Math.max(0,w.flash-dt);w.body.material.emissiveIntensity=w.flash?2.2:.85;}
-      if(w.freeze>0){w.freeze=Math.max(0,w.freeze-dt);return;}
-      const dx=this.player.position.x-w.group.position.x,dz=this.player.position.z-w.group.position.z,d=Math.hypot(dx,dz);let tx,tz;
-      if(d<13&&this.respawn===0){tx=this.player.position.x;tz=this.player.position.z;}else{const a=this.worldTime*.7+w.phase;tx=w.home.x+Math.cos(a)*1.05;tz=w.home.y+Math.sin(a*1.25)*.68;}
-      const dir=new THREE.Vector2(tx-w.group.position.x,tz-w.group.position.z);if(dir.lengthSq()>.05){dir.normalize();w.group.position.x+=dir.x*1.55*dt;w.group.position.z+=dir.y*1.55*dt;}
-      w.velocity.multiplyScalar(Math.exp(-dt*2));w.group.position.x+=w.velocity.x*dt;w.group.position.z+=w.velocity.y*dt;
-      w.group.position.y=.08+Math.sin(this.worldTime*3.1+w.phase)*.16;w.group.rotation.y+=dt*(.45+Math.sin(this.worldTime+w.phase)*.12);w.aura.scale.setScalar(1+Math.sin(this.worldTime*3+w.phase)*.1);w.halo.rotation.z+=dt*.7;w.light.intensity=2.7+Math.sin(this.worldTime*4+w.phase)*.7;
-      if(w.cooldown>0)w.cooldown-=dt;if(d<.92&&w.cooldown<=0){this.hurtPlayer(w);w.cooldown=1;}
-    });
-  }
-  updateEffects(dt){
-    for(let i=this.effects.length-1;i>=0;i--){const e=this.effects[i];e.age+=dt;const t=clamp(e.age/e.duration,0,1);
-      if(e.kind==='fire'){
-        e.object.position.copy(e.start).lerp(e.target,t);
-        e.object.rotation.y+=dt*5;e.object.rotation.z+=dt*2.4;
-        const trailStep=Math.floor(e.age*18);
-        if(trailStep!==e.lastTrail){e.lastTrail=trailStep;this.burst(e.object.position,'#ffad5c',2,.28);}
-        if(t>=1){this.radial('Fireball',e.target,2.1,1.25,'#ff875a',11,0);this.burst(new THREE.Vector3(e.target.x,.8,e.target.z),'#fff0b3',18,1.35);this.scene.remove(e.object);this.disposeEffectObject(e.object);this.effects.splice(i,1);continue;}
+
+    this.player.position.x = clamp(this.player.position.x, -16.7, 16.7);
+    this.player.position.z = clamp(this.player.position.z, -12.2, 12.2);
+    if (this.catRoot) {
+      const moving = this.playerMove.length() > .24;
+      if (moving) this.catRoot.rotation.y = Math.atan2(this.playerMove.x, this.playerMove.y);
+      this.catRoot.position.y = .035 + Math.sin(this.worldTime * (moving ? 12 : 4.2)) * (moving ? .065 : .025);
+      if (this.tail) {
+        this.tail.rotation.y = Math.sin(this.worldTime * 2.6) * .28;
+        this.tail.rotation.x = Math.cos(this.worldTime * 2.1) * .12;
       }
-      if(e.kind==='ring'){e.object.scale.setScalar(.6+t*e.scale);e.object.material.opacity=1-t;}
-      if(e.kind==='gravity'){e.object.scale.setScalar(.8+t*4.2);e.object.rotation.y+=dt*2.7;e.object.material.opacity=.95-t*.5;
-        this.props.forEach(p=>{if(p.destroyed||p.frozen>0)return;const d=new THREE.Vector2(e.center.x-p.group.position.x,e.center.y-p.group.position.z),r=Math.max(.45,d.length());if(r<5.4&&r>.001)p.velocity.addScaledVector(d.normalize(),dt*4.8/r);});
-        this.wisps.forEach(w=>{if(w.defeated)return;const d=new THREE.Vector2(e.center.x-w.group.position.x,e.center.y-w.group.position.z);if(d.length()<5.8&&d.length()>.001)w.velocity.addScaledVector(d.normalize(),dt*4);});
+    }
+  }
+
+  updateProps(dt) {
+    for (const prop of this.props) {
+      if (prop.destroyed) continue;
+      if (prop.frozen > 0) {
+        prop.frozen = Math.max(0, prop.frozen - dt);
+        if (prop.frozen > 0) continue;
+        this.unfreezeProp(prop);
       }
-      if(e.kind==='line')e.object.material.opacity=1-t;
-      if(t>=1){this.scene.remove(e.object);this.disposeEffectObject(e.object);this.effects.splice(i,1);}
+
+      const position = prop.group.position;
+      position.x += prop.velocity.x * dt;
+      position.z += prop.velocity.y * dt;
+      prop.group.rotation.y += prop.spin * dt;
+      prop.velocity.multiplyScalar(Math.exp(-dt * 1.15));
+      prop.spin *= Math.exp(-dt * 1.45);
+
+      const minX = -12.2 + prop.radius;
+      const maxX = 12.2 - prop.radius;
+      const minZ = -6.7 + prop.radius;
+      const maxZ = 6.7 - prop.radius;
+      if (position.x < minX || position.x > maxX) {
+        position.x = clamp(position.x, minX, maxX);
+        prop.velocity.x *= -.42;
+      }
+      if (position.z < minZ || position.z > maxZ) {
+        position.z = clamp(position.z, minZ, maxZ);
+        prop.velocity.y *= -.42;
+      }
     }
-    for(let i=this.debris.length-1;i>=0;i--){
-      const p=this.debris[i];p.age+=dt;p.v.y-=(p.gravity||5)*dt;p.object.position.addScaledVector(p.v,dt);
-      p.object.rotation.x+=dt*3;p.object.rotation.z+=dt*4;
-      const life=clamp(1-p.age/p.duration,0,1);p.object.scale.setScalar(Math.max(.01,life));
-      if(p.object.material?.transparent)p.object.material.opacity=life;
-      if(p.age>=p.duration){this.scene.remove(p.object);this.disposeEffectObject(p.object);this.debris.splice(i,1);}
+
+    const bodies = this.props.filter(prop => !prop.destroyed).map(prop => ({
+      position: prop.group.position,
+      velocity: prop.velocity,
+      radius: prop.radius,
+      mass: prop.mass,
+      frozen: prop.frozen > 0
+    }));
+
+    // Pillars and frozen props act as static bodies in the collision solver.
+    for (const body of bodies) {
+      for (const obstacle of this.obstacles) {
+        if (!obstacle.fixed || obstacle.destroyed) continue;
+        resolveCircleCollision(body, {
+          position: { x: obstacle.x, z: obstacle.z },
+          velocity: { x: 0, y: 0 },
+          radius: obstacle.radius,
+          mass: 1,
+          frozen: true
+        });
+      }
     }
+
+    // Pairwise collisions transfer momentum according to each prop's mass.
+    for (let i = 0; i < bodies.length; i++) {
+      for (let j = i + 1; j < bodies.length; j++) {
+        resolveCircleCollision(bodies[i], bodies[j], .3, .16);
+      }
+    }
+  }
+
+  updateEffects(dt) {
+    for (let i = this.effects.length - 1; i >= 0; i--) {
+      const effect = this.effects[i];
+
+      if (effect.kind === 'fire') {
+        effect.age += dt;
+        const t = clamp(effect.age / effect.duration, 0, 1);
+        const previous = effect.object.position.clone();
+        const next = effect.start.clone().lerp(effect.target, t);
+        next.y += Math.sin(Math.PI * t) * 1.1;
+
+        // Swept collision prevents the projectile tunnelling through small props.
+        let firstImpactT = Infinity;
+        for (const prop of this.props) {
+          if (prop.destroyed) continue;
+          const hitT = segmentCircleIntersection(
+            previous,
+            next,
+            prop.group.position,
+            prop.radius + .34
+          );
+          if (hitT !== null && hitT < firstImpactT) firstImpactT = hitT;
+        }
+
+        if (firstImpactT < Infinity) {
+          const impact = previous.clone().lerp(next, firstImpactT);
+          this.detonateFireball(effect, impact);
+          this.effects.splice(i, 1);
+          continue;
+        }
+
+        effect.object.position.copy(next);
+        effect.object.rotation.y += dt * 5;
+        effect.object.rotation.z += dt * 2.4;
+        const trailStep = Math.floor(effect.age * 18);
+        if (trailStep !== effect.lastTrail) {
+          effect.lastTrail = trailStep;
+          this.burst(effect.object.position, '#ffad5c', 2, .28);
+        }
+
+        if (t >= 1) {
+          this.detonateFireball(effect, effect.target);
+          this.effects.splice(i, 1);
+        }
+        continue;
+      }
+
+      effect.age += dt;
+      const t = clamp(effect.age / effect.duration, 0, 1);
+      if (effect.kind === 'ring') {
+        effect.object.scale.setScalar(.6 + t * effect.scale);
+        effect.object.material.opacity = 1 - t;
+      }
+      if (effect.kind === 'gravity') {
+        effect.object.scale.setScalar(.8 + t * 4.2);
+        effect.object.rotation.y += dt * 2.7;
+        effect.object.material.opacity = .95 - t * .5;
+        this.props.forEach(prop => {
+          if (prop.destroyed || prop.frozen > 0) return;
+          const acceleration = vortexAcceleration(
+            prop.group.position,
+            effect.center,
+            effect.radius,
+            effect.pull,
+            effect.swirl
+          );
+          prop.velocity.x += acceleration.x * dt;
+          prop.velocity.y += acceleration.z * dt;
+          prop.velocity.clampLength(0, 8.5);
+        });
+      }
+      if (effect.kind === 'line') effect.object.material.opacity = 1 - t;
+      if (t >= 1) {
+        this.scene.remove(effect.object);
+        this.disposeEffectObject(effect.object);
+        this.effects.splice(i, 1);
+      }
+    }
+
+    for (let i = this.debris.length - 1; i >= 0; i--) {
+      const fragment = this.debris[i];
+      fragment.age += dt;
+      fragment.v.y -= (fragment.gravity || 5) * dt;
+      fragment.object.position.addScaledVector(fragment.v, dt);
+      fragment.object.rotation.x += dt * 3;
+      fragment.object.rotation.z += dt * 4;
+      const life = clamp(1 - fragment.age / fragment.duration, 0, 1);
+      fragment.object.scale.setScalar(Math.max(.01, life));
+      if (fragment.object.material?.transparent) fragment.object.material.opacity = life;
+      if (fragment.age >= fragment.duration) {
+        this.scene.remove(fragment.object);
+        this.disposeEffectObject(fragment.object);
+        this.debris.splice(i, 1);
+      }
+    }
+  }
+
+  detonateFireball(effect, impact) {
+    this.radial('Fireball', impact, 2.1, 1.35, '#ff875a', 11, 0);
+    this.burst(
+      new THREE.Vector3(impact.x, Math.max(.8, impact.y), impact.z),
+      '#fff0b3',
+      18,
+      1.35
+    );
+    this.scene.remove(effect.object);
+    this.disposeEffectObject(effect.object);
   }
 
   updateCamera(realDt,worldDt){animateWorld(this,worldDt,realDt);}
 
   frame(){
     const frameStartedAt = this.performanceMonitor ? performance.now() : 0;
-    // Preserve elapsed time on low-refresh devices while keeping simulation
-    // steps small enough for stable movement, impacts, and enemy contact.
+    // Preserve elapsed time on low-refresh devices while keeping movement,
+    // prop collisions and spell impacts stable.
     this.clock.update();
     const frameDelta=Math.min(this.clock.getDelta(),.25);
     const stepCount=Math.max(1,Math.ceil(frameDelta/.05));
@@ -450,12 +740,10 @@ class CatWizard {
       const dt=realStep*this.timeScale;
       worldDelta+=dt;
       this.worldTime+=dt;
-      this.updatePlayer(dt,realStep);
+      this.updatePlayer(dt);
       this.updateProps(dt);
-      this.updateWisps(dt);
       this.updateEffects(dt);
     }
-    if(this.playerInvul>0&&this.respawn===0)this.player.visible=Math.floor((1.15-this.playerInvul)*18)%2===0;else if(!this.respawn)this.player.visible=true;
     this.updateCamera(frameDelta,worldDelta);
     this.renderer.render(this.scene,this.camera);
     if(this.performanceMonitor){
@@ -482,10 +770,30 @@ function boot(){
     if(!canvas)throw new Error('Game canvas #game-canvas not found.');
     const game=new CatWizard(canvas);
     if(new URLSearchParams(location.search).get('debug')==='1'){
-      window.__CAT_WIZARD_DEBUG__=()=>({
-        player:{x:game.player.position.x,z:game.player.position.z,health:game.playerHealth,invulnerability:game.playerInvul,respawn:game.respawn,moveX:game.playerMove.x,moveZ:game.playerMove.y},
-        wisps:game.wisps.map(w=>({x:w.group.position.x,z:w.group.position.z,health:w.health,freeze:w.freeze,cooldown:w.cooldown,defeated:w.defeated,distance:Math.hypot(game.player.position.x-w.group.position.x,game.player.position.z-w.group.position.z)})),
-        world:{time:game.worldTime,timeScale:game.timeScale,casts:game.castCount,defeated:game.wispsDefeated}
+      window.__CAT_WIZARD_DEBUG__ = () => ({
+        player: {
+          x: game.player.position.x,
+          z: game.player.position.z,
+          moveX: game.playerMove.x,
+          moveZ: game.playerMove.y
+        },
+        props: game.props.map(prop => ({
+          type: prop.type,
+          x: prop.group.position.x,
+          z: prop.group.position.z,
+          velocityX: prop.velocity.x,
+          velocityZ: prop.velocity.y,
+          hp: prop.hp,
+          frozen: prop.frozen,
+          destroyed: prop.destroyed
+        })),
+        world: {
+          time: game.worldTime,
+          timeScale: game.timeScale,
+          casts: game.castCount,
+          activeEffects: game.effects.length,
+          debris: game.debris.length
+        }
       });
     }
     window.addEventListener('beforeunload',()=>game.dispose(),{once:true});

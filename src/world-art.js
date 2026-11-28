@@ -373,21 +373,6 @@ export function buildWizardCat(g){
   g.catRig={torso,head,hat:hatGroup,cape,pipe,ember,smoke,tail:tailPivot,legPivots,armPivots};
   return player;
 }
-export function buildWisps(g){
-  return [[-9.5,-1.6,'#ef8e68'],[0,-5.6,'#64c8dc'],[9.4,.8,'#aa8ee5']].map(([x,z,color])=>{
-    const group=new THREE.Group();group.position.set(x,0,z);g.scene.add(group);
-    const aura=new THREE.Mesh(new THREE.SphereGeometry(.82,14,10),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.16,depthWrite:false}));aura.position.y=1.15;group.add(aura);
-    const mat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.8,roughness:.26,flatShading:true});
-    const body=new THREE.Mesh(new THREE.IcosahedronGeometry(.48,1),mat);body.position.y=1.05;body.scale.set(.88,1.15,.84);body.castShadow=true;group.add(body);
-    const tail=new THREE.Mesh(new THREE.ConeGeometry(.3,.8,7),mat);tail.position.set(0,.45,-.02);tail.rotation.x=Math.PI;group.add(tail);
-    const core=new THREE.Mesh(new THREE.OctahedronGeometry(.22,1),new THREE.MeshBasicMaterial({color:'#fff4d4'}));core.position.set(0,1.1,.37);group.add(core);
-    const eyes=new THREE.MeshBasicMaterial({color:'#283b48'});
-    [-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),eyes);e.position.set(s*.14,1.13,.39);group.add(e);const horn=new THREE.Mesh(new THREE.ConeGeometry(.11,.24,5),new THREE.MeshStandardMaterial({color:'#e4d8c8',flatShading:true}));horn.position.set(s*.28,1.48,.02);horn.rotation.z=s*-.3;group.add(horn);});
-    const halo=new THREE.Mesh(new THREE.TorusGeometry(.62,.025,7,40),new THREE.MeshBasicMaterial({color:'#fff4d5',transparent:true,opacity:.75}));halo.position.y=1.6;halo.rotation.x=Math.PI/2.7;group.add(halo);
-    const light=new THREE.PointLight(color,3.4,4.5,2);light.position.y=1.05;group.add(light);g.addShadow(group,.72,.3,.2);
-    return {group,body,aura,light,halo,home:new THREE.Vector2(x,z),health:5,color,phase:THREE.MathUtils.randFloat(0,Math.PI*2),freeze:0,cooldown:0,velocity:new THREE.Vector2(),defeated:false,flash:0};
-  });
-}
 export function animateWorld(game,worldDt,realDt=worldDt){
   animateMeadow(game,worldDt,realDt);
   const rig=game.catRig;
@@ -415,10 +400,5 @@ export function animateWorld(game,worldDt,realDt=worldDt){
     });
     game.catRoot.position.y=.025+Math.sin(game.worldTime*(moving?11:3.6))*(moving?.055:.018);
   }
-  game.wisps?.forEach((w,i)=>{
-    if(w.defeated)return;
-    w.group.rotation.z=Math.sin(game.worldTime*1.8+w.phase)*.055;
-    w.halo.rotation.x=Math.PI/2.7+Math.sin(game.worldTime*1.1+w.phase)*.08;
-    w.body.scale.y=1.15+Math.sin(game.worldTime*2.8+w.phase)*.045;
   });
 }

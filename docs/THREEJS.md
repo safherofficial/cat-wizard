@@ -31,15 +31,15 @@ The deployable site is written to `dist/`.
 
 | Gesture | Spell | Effect |
 | --- | --- | --- |
-| Circle | Fireball | Traveling fire projectile and impact burst. |
-| Lightning | Thunderbolt | Strike that damages objects and wisps along its path. |
-| Triangle | Frost | Area pulse that chills and temporarily freezes targets. |
-| Spiral | Gravity | Temporary vortex pulling movable objects and wisps inward, with an impact pulse for wisps in range. |
-| Star | Chaos | Wide, high-impact blast. |
+| Circle | Fireball | Arcing projectile; collides with the first prop in its path, then detonates with a distance-scaled blast. |
+| Lightning | Thunderbolt | Instant strike; applies a directional impulse and damage to props along the bolt. |
+| Triangle | Frost | Area pulse that freezes props in place, stopping their movement and spin until thaw. |
+| Spiral | Gravity | Temporary vortex that pulls and swirls props; their collisions exchange momentum. |
+| Star | Chaos | Wide shockwave with distance-scaled outward impulse and destructible impact.
 
 ## Gameplay
 
-The scene is a stylized painted meadow built from a seeded 2048×1536 ground texture, 9,000 animated instanced grass blades, nearly 1,000 flower clusters, tree canopies, bushes, a winding river, a cottage, a working windmill, hills, standing stones and floating fireflies. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is a modeled 3D grey cat with the signature pink bow tie, pointed ears, violet wizard hat and pipe; the walk cycle articulates the legs and arms, with a moving cloak, secondary head and hat motion, a swaying tail and animated pipe smoke. Instanced grass bends in the wind and fireflies drift above the flowers. Three faceted cursed wisps pursue the player. Destructible props, player health, invulnerability, respawn and the five gesture spells are retained. The follow camera is closer to the character to emphasize the third-person adventure view.
+The scene is a stylized painted meadow built from a seeded 2048×1536 ground texture, 9,000 animated instanced grass blades, nearly 1,000 flower clusters, tree canopies, bushes, a winding river, a cottage, a working windmill, hills, standing stones and floating fireflies. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is a modeled 3D grey cat with the signature pink bow tie, pointed ears, violet wizard hat and pipe; the walk cycle articulates the legs and arms, with a moving cloak, secondary head and hat motion, a swaying tail and animated pipe smoke. Instanced grass bends in the wind and fireflies drift above the flowers. This phase deliberately has no enemies, health, damage-to-player or respawn loop. Instead, it isolates the five gesture spells and their interactions with destructible crates, barrels, vases and stones. Movable props have mass, damped velocity, wall and pillar collisions, and pairwise momentum exchange. The follow camera is closer to the character to emphasize the third-person view.
 
 ## Blender character asset
 
@@ -66,7 +66,7 @@ The meadow batching is intended to lower draw-call overhead without reducing the
 
 ## Runtime timing
 
-- The animation loop subdivides larger frame deltas into small simulation steps, preserving elapsed gameplay time on slower-refresh devices while keeping motion and impact updates stable.
+- The animation loop subdivides larger frame deltas into small simulation steps, preserving elapsed gameplay time on slower-refresh devices while keeping player movement, prop collisions and spell impacts stable.
 
 ## Deployment
 
