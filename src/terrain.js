@@ -103,5 +103,5 @@ export function terrainElevationAt(x, z) {
     height += gaussianLandform(worldX, worldZ, landform);
   }
 
-  return height * terrainMask(worldX, worldZ) * 0.82;
+  return height * terrainMask(worldX, worldZ) * 0.78;
 }
