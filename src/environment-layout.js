@@ -123,6 +123,99 @@ export function createPeripheralPineLayout(seed = 0x51a7f017) {
   );
 }
 
+
+const WOODLAND_CENTERS = Object.freeze([
+  [-60, 39], [-59, -39], [60, 39], [60, -39]
+]);
+
+export function createWoodlandFloorLayout(seed = 0xf3a41d) {
+  const random = seeded(seed);
+  const ferns = [];
+  const fallenLogs = [];
+  const stumps = [];
+
+  WOODLAND_CENTERS.forEach(([centerX, centerZ], clusterIndex) => {
+    for (let index = 0; index < 14; index++) {
+      const angle = random() * TAU;
+      const radius = 2.6 + random() * 5.1;
+      ferns.push({
+        x: centerX + Math.cos(angle) * radius,
+        z: centerZ + Math.sin(angle) * radius * 0.84,
+        scale: 0.68 + random() * 0.62,
+        rotationY: random() * TAU,
+        tintIndex: Math.floor(random() * 4),
+        clusterIndex
+      });
+    }
+
+    for (let index = 0; index < 2; index++) {
+      const angle = random() * TAU;
+      const radius = 2.8 + random() * 3.8;
+      fallenLogs.push({
+        x: centerX + Math.cos(angle) * radius,
+        z: centerZ + Math.sin(angle) * radius * 0.84,
+        length: 1.8 + random() * 1.8,
+        radius: 0.19 + random() * 0.1,
+        rotationY: random() * TAU,
+        clusterIndex
+      });
+      const stumpAngle = angle + (random() - 0.5) * 1.4;
+      const stumpRadius = 3.2 + random() * 3.6;
+      stumps.push({
+        x: centerX + Math.cos(stumpAngle) * stumpRadius,
+        z: centerZ + Math.sin(stumpAngle) * stumpRadius * 0.84,
+        height: 0.35 + random() * 0.28,
+        radius: 0.22 + random() * 0.1,
+        rotationY: random() * TAU,
+        clusterIndex
+      });
+    }
+  });
+
+  return { ferns, fallenLogs, stumps };
+}
+
+const CRYSTAL_MOTE_CENTERS = Object.freeze([
+  [55, -38, 28],
+  [-55, -35, 24]
+]);
+
+export function createCrystalMoteLayout(seed = 0xc715a1) {
+  const random = seeded(seed);
+  return CRYSTAL_MOTE_CENTERS.flatMap(([centerX, centerZ, count], clusterIndex) =>
+    Array.from({ length: count }, () => {
+      const angle = random() * TAU;
+      const radius = 1.7 + random() * 5.1;
+      return {
+        x: centerX + Math.cos(angle) * radius,
+        z: centerZ + Math.sin(angle) * radius * 0.78,
+        height: 0.35 + random() * 1.65,
+        phase: random() * TAU,
+        size: 0.1 + random() * 0.12,
+        tintIndex: Math.floor(random() * 4),
+        clusterIndex
+      };
+    })
+  );
+}
+
+export function createPondReedLayout(seed = 0x9eed51) {
+  const random = seeded(seed);
+  const centerX = -31;
+  const centerZ = -8;
+  return Array.from({ length: 12 }, (_, index) => {
+    const angle = (index + 0.5) / 12 * TAU;
+    return {
+      x: centerX + Math.cos(angle) * (8.65 + random() * 0.42),
+      z: centerZ + Math.sin(angle) * (6.18 + random() * 0.38),
+      height: 0.62 + random() * 0.42,
+      lean: (random() - 0.5) * 0.36,
+      rotationY: random() * TAU,
+      tintIndex: Math.floor(random() * 3)
+    };
+  });
+}
+
 const CRYSTAL_GROVE_CENTERS = Object.freeze([
   [55, -38, 26],
   [-55, -35, 18]
