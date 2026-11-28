@@ -43,4 +43,42 @@
 <footer class="footer"><span>CAT WIZARD</span><span>A prototype with questionable manners.</span><span>BUILT FOR THE BROWSER</span></footer>
 </div>
 <script type="module" src="/src/main.js"></script>
+<script>
+(() => {
+  const showError = (reason) => {
+    const panel = document.getElementById('loading-screen');
+    if (!panel || window.__CAT_WIZARD_READY__) return;
+    panel.classList.remove('loaded');
+    panel.classList.add('startup-error');
+    panel.replaceChildren();
+    const mark = document.createElement('div');
+    mark.className = 'loading-mark';
+    mark.textContent = '!';
+    const title = document.createElement('div');
+    title.className = 'loading-error-title';
+    title.textContent = 'The spell chamber could not start';
+    const detail = document.createElement('pre');
+    detail.className = 'loading-error-detail';
+    const message = reason instanceof Error ? (reason.stack || reason.message) : String(reason || 'Unknown startup error');
+    detail.textContent = message;
+    panel.append(mark, title, detail);
+  };
+  window.__CAT_WIZARD_SHOW_ERROR__ = showError;
+  window.addEventListener('error', (event) => {
+    if (event.target instanceof HTMLScriptElement) {
+      showError('Could not load game script: ' + event.target.src);
+    } else if (event.target === window && !window.__CAT_WIZARD_READY__) {
+      showError(event.error || event.message);
+    }
+  }, true);
+  window.addEventListener('unhandledrejection', (event) => {
+    showError(event.reason || 'Unhandled promise rejection');
+  });
+  window.setTimeout(() => {
+    if (!window.__CAT_WIZARD_READY__ && !document.getElementById('loading-screen')?.classList.contains('startup-error')) {
+      showError('The game did not complete startup within 12 seconds. Check WebGL support and the browser console.');
+    }
+  }, 12000);
+})();
+</script>
 </body></html>
