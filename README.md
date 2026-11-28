@@ -22,7 +22,7 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 
 ## Frog Wizard character asset
 
-The browser runtime loads the optimized two-scene GLB at `public/assets/frog-wizard-lods.glb`. The near representation contains 253,449 triangles; the far representation contains 63,362. Both share the original embedded WebP material textures. The optimized file is approximately 17.7 MB, compared with 77.5 MB for the supplied source.
+The browser runtime is configured to load the optimized two-scene GLB from `public/assets/frog-wizard-lods.glb`. The near representation contains 253,449 triangles; the far representation contains 63,362. Both share the original embedded WebP material textures. The optimized file is approximately 17.7 MB, compared with 77.5 MB for the supplied source.
 
 The source is one fused static mesh with no skeleton and no animation clips. Runtime movement turns and gently bobs the complete character; it does not yet animate individual limbs. A rigged version can be introduced later without changing the gameplay controls.
 
