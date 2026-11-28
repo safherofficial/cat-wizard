@@ -8,9 +8,9 @@ Cat Wizard is a top-down gesture-magic physics sandbox starring a distinguished 
 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
-- A 100 × 80 walkable enchanted valley with connected hand-painted footpaths, a moon pond, mushroom groves, an old oak, ancient standing-stone ruins, winding river, cottage, windmill, animated grass, wildflowers and fireflies.
+- A 100 × 80 walkable enchanted valley with connected hand-painted footpaths, a moon pond, mushroom groves, an old oak, ancient standing-stone ruins, a timber footbridge, mossy rock outcrops, winding river, cottage, windmill, animated grass, wildflowers and fireflies.
 - A 3D modeled grey cat wizard with the signature pink bow tie, pointed ears, violet wizard hat, pipe and articulated walk cycle.
-- Free-roam desktop movement across the full valley with WASD or arrow keys; the follow camera and directional shadows travel with the wizard.
+- Free-roam desktop movement across the full valley with WASD or arrow keys; hold the right mouse button and drag to orbit the follow camera around the wizard. Touch movement remains available on the left side.
 - Touch movement on the left side and independent spell drawing on the right side.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
 - World time slows to 15% during drawing and eases back over 250 ms after release.
