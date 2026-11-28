@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { WORLD_BOUNDS, WORLD_SIZE } from './world-map.js';
-import { createCloudPuffLayout, createDistantMountainLayout } from './environment-layout.js';
+import {
+  createCloudPuffLayout,
+  createCrystalGroveLayout,
+  createDistantMountainLayout,
+  createPeripheralPineLayout
+} from './environment-layout.js';
 
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -20,10 +25,12 @@ function distanceToSegment(x,z,a,b){
 
 const PATHS=[
   [[0,12],[-1.8,8],[-1.1,5],[.2,2],[0,-1.5],[-2.8,-5],[-6.5,-9.8]],
-  [[-6.5,-9.8],[-14,-13],[-22,-15],[-31,-11],[-39,-4]],
-  [[-1,-3],[8,-8],[17,-14],[26,-18],[37,-16]],
-  [[0,12],[-2,19],[2,27],[0,35]],
-  [[-2,-10],[3,-18],[1,-27],[-4,-35]]
+  [[-6.5,-9.8],[-14,-13],[-22,-15],[-31,-11],[-39,-4],[-51,-8],[-61,-20],[-66,-36]],
+  [[-1,-3],[8,-8],[17,-14],[26,-18],[37,-16],[49,-19],[60,-15],[66,-27]],
+  [[0,12],[-2,19],[2,27],[0,35],[-1,42],[0,49]],
+  [[-2,-10],[3,-18],[1,-27],[-4,-35],[5,-44],[19,-51],[37,-49],[51,-42]],
+  [[0,35],[-12,42],[-26,48],[-42,47],[-51,43]],
+  [[37,-16],[45,-7],[54,2],[65,8]]
 ];
 function distanceToPath(x,z){
   let d=Infinity;
@@ -34,7 +41,7 @@ function distanceToPath(x,z){
 }
 
 function meadowTexture(){
-  const canvas=document.createElement('canvas');canvas.width=3072;canvas.height=2458;
+  const canvas=document.createElement('canvas');canvas.width=3584;canvas.height=2816;
   const ctx=canvas.getContext('2d');
   const r=seeded(91217);
   const base=ctx.createLinearGradient(0,0,0,canvas.height);
@@ -67,19 +74,19 @@ function meadowTexture(){
     ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
   };
   PATHS.forEach(path=>{
-    drawPath(path,'rgba(70,83,52,.22)',90);
-    drawPath(path,'#b59a69',74);
-    drawPath(path,'rgba(219,192,139,.55)',57);
+    drawPath(path,'rgba(70,83,52,.22)',73);
+    drawPath(path,'#b59a69',60);
+    drawPath(path,'rgba(219,192,139,.55)',46);
     drawPath(path,'rgba(239,217,167,.34)',3);
   });
 
   // Warm, irregular worn earth around the central spell clearing.
   const cx=canvas.width*.5,cy=canvas.height*.5;
-  const clearing=ctx.createRadialGradient(cx,cy,180,cx,cy,390);
+  const clearing=ctx.createRadialGradient(cx,cy,120,cx,cy,310);
   clearing.addColorStop(0,'rgba(189,158,105,.34)');
   clearing.addColorStop(.68,'rgba(184,158,112,.17)');
   clearing.addColorStop(1,'rgba(184,158,112,0)');
-  ctx.fillStyle=clearing;ctx.fillRect(cx-320,cy-320,640,640);
+  ctx.fillStyle=clearing;ctx.fillRect(cx-260,cy-260,520,520);
 
   // Small directional strokes, not pixel noise: the surface reads as painted grass.
   const strokes=['rgba(43,94,52,.25)','rgba(220,221,157,.32)','rgba(76,132,72,.25)','rgba(183,194,116,.35)','rgba(242,218,156,.22)'];
@@ -121,7 +128,7 @@ function makeBladeGeometry(){
 }
 
 function addGrass(game){
-  const random=seeded(48821),count=25000;
+  const random=seeded(48821),count=56000;
   const geometry=makeBladeGeometry();
   const material=new THREE.MeshLambertMaterial({color:'#ffffff',side:THREE.DoubleSide});
   material.onBeforeCompile=shader=>{
@@ -145,8 +152,8 @@ function addGrass(game){
   let placed=0,attempts=0;
   while(placed<count&&attempts<count*5){
     attempts++;
-    const x=random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX)-48;
-    const z=random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ)-38;
+    const x=WORLD_BOUNDS.minX+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX);
+    const z=WORLD_BOUNDS.minZ+random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ);
     if(Math.hypot(x,z)<4.2)continue;
     if(distanceToPath(x,z)<1.02)continue;
     const nearLandmark=(game.obstacles||[]).some(obstacle=>
@@ -168,9 +175,11 @@ function addGrass(game){
 }
 
 function addFireflies(game){
-  const random=seeded(66021),count=260,positions=new Float32Array(count*3),phases=new Float32Array(count),base=new Float32Array(count*3);
+  const random=seeded(66021),count=520,positions=new Float32Array(count*3),phases=new Float32Array(count),base=new Float32Array(count*3);
   for(let i=0;i<count;i++){
-    const x=random()*92-46,z=random()*72-36,y=.55+random()*2.2;
+    const x=WORLD_BOUNDS.minX+2+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX-4);
+    const z=WORLD_BOUNDS.minZ+2+random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ-4);
+    const y=.55+random()*2.2;
     base[i*3]=x;base[i*3+1]=y;base[i*3+2]=z;
     phases[i]=random()*TAU;
     positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;
@@ -185,7 +194,7 @@ function addFireflies(game){
 }
 
 function addFlowers(game){
-  const random=seeded(7788),count=2700;
+  const random=seeded(7788),count=6000;
   const stemGeometry=new THREE.CylinderGeometry(.012,.018,.23,4);
   const stemMaterial=new THREE.MeshStandardMaterial({color:'#4c8952',roughness:1});
   const stems=new THREE.InstancedMesh(stemGeometry,stemMaterial,count);
@@ -200,7 +209,8 @@ function addFlowers(game){
   const colors=['#fff2d4','#f2a4a0','#f4c86e','#b6a2dc','#e9a5c4','#d9e8a4'];
   let n=0,p=0;
   for(let i=0;i<count*8&&n<count;i++){
-    const x=random()*92-46,z=random()*72-36;
+    const x=WORLD_BOUNDS.minX+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX);
+    const z=WORLD_BOUNDS.minZ+random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ);
     if(Math.hypot(x,z)<4.5||distanceToPath(x,z)<1.35)continue;
     const nearLandmark=(game.obstacles||[]).some(obstacle=>
       obstacle.fixed&&!obstacle.destroyed&&
@@ -296,6 +306,193 @@ function addBushes(game,placements){
   instances.receiveShadow=false;
   instances.computeBoundingSphere();
   game.scene.add(instances);
+}
+
+
+function addPeripheralPineForest(game){
+  const layout=createPeripheralPineLayout();
+  const trunkGeometry=new THREE.CylinderGeometry(.13,.22,2.25,6);
+  const trunkMaterial=new THREE.MeshStandardMaterial({color:'#73543d',roughness:.96,flatShading:true});
+  const trunks=new THREE.InstancedMesh(trunkGeometry,trunkMaterial,layout.length);
+  const coneGeometry=new THREE.ConeGeometry(1,1,7,1);
+  const coneMaterial=new THREE.MeshStandardMaterial({
+    color:'#ffffff',vertexColors:true,roughness:.94,flatShading:true
+  });
+  const layers=[0,1,2].map(()=>new THREE.InstancedMesh(coneGeometry,coneMaterial,layout.length));
+  const palettes=[
+    ['#315f4c','#3d7654','#477f5c'],
+    ['#38694d','#4b8055','#568b5d'],
+    ['#426f52','#5b8b5a','#659763'],
+    ['#315b4a','#477a56','#55875b']
+  ];
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+
+  layout.forEach((tree,index)=>{
+    const s=tree.scale;
+    dummy.position.set(tree.x,1.14*s,tree.z);
+    dummy.rotation.set(0,tree.rotationY,0);
+    dummy.scale.set(s,s,s);
+    dummy.updateMatrix();
+    trunks.setMatrixAt(index,dummy.matrix);
+
+    const levels=[
+      {y:1.55,w:1.32,h:2.25},
+      {y:2.58,w:1.02,h:1.95},
+      {y:3.48,w:.70,h:1.55}
+    ];
+    levels.forEach((level,layerIndex)=>{
+      dummy.position.set(tree.x,level.y*s,tree.z);
+      dummy.rotation.set(0,tree.rotationY+layerIndex*.18,0);
+      dummy.scale.set(level.w*s,level.h*s,level.w*s);
+      dummy.updateMatrix();
+      layers[layerIndex].setMatrixAt(index,dummy.matrix);
+      color.set(palettes[tree.tintIndex][layerIndex]);
+      layers[layerIndex].setColorAt(index,color);
+    });
+    game.obstacles.push({x:tree.x,z:tree.z,radius:.58*s,fixed:true});
+  });
+
+  trunks.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  trunks.castShadow=true;
+  trunks.receiveShadow=true;
+  trunks.computeBoundingSphere();
+  game.scene.add(trunks);
+  layers.forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+  game.pineForest={trunks,layers};
+}
+
+function addCrystalGroves(game){
+  const layout=createCrystalGroveLayout();
+  const geometry=new THREE.OctahedronGeometry(1,0);
+  const material=new THREE.MeshStandardMaterial({
+    color:'#ffffff',
+    vertexColors:true,
+    emissive:'#285e72',
+    emissiveIntensity:.42,
+    metalness:.16,
+    roughness:.27,
+    flatShading:true
+  });
+  const crystals=new THREE.InstancedMesh(geometry,material,layout.length);
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+  const palette=['#66cdbb','#84b9df','#a993de','#b2d8ca'];
+
+  layout.forEach((crystal,index)=>{
+    dummy.position.set(crystal.x,crystal.height*.49,crystal.z);
+    dummy.rotation.set(crystal.lean,crystal.rotationY,-crystal.lean*.55);
+    dummy.scale.set(crystal.width,crystal.height,crystal.width*.78);
+    dummy.updateMatrix();
+    crystals.setMatrixAt(index,dummy.matrix);
+    color.set(palette[crystal.tintIndex]);
+    crystals.setColorAt(index,color);
+    game.obstacles.push({
+      x:crystal.x,z:crystal.z,radius:.22+crystal.width*.42,fixed:true
+    });
+  });
+  crystals.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  crystals.castShadow=true;
+  crystals.receiveShadow=true;
+  crystals.computeBoundingSphere();
+  game.scene.add(crystals);
+
+  const groveCenters=[[55,-38],[-55,-35]];
+  groveCenters.forEach(([x,z],index)=>{
+    const groundRing=new THREE.Mesh(
+      new THREE.TorusGeometry(index===0?4.8:3.9,.055,8,64),
+      new THREE.MeshStandardMaterial({
+        color:'#69cbb9',emissive:'#246f70',emissiveIntensity:.32,
+        roughness:.42,metalness:.18
+      })
+    );
+    groundRing.rotation.x=Math.PI/2;
+    groundRing.position.set(x,.055,z);
+    game.scene.add(groundRing);
+    const light=new THREE.PointLight('#77d9cf',1.25,11,2);
+    light.position.set(x,2.2,z);
+    game.scene.add(light);
+  });
+  game.crystalGroves=crystals;
+}
+
+function addStarlightShrine(game,x=0,z=50){
+  const stone=new THREE.MeshStandardMaterial({
+    color:'#b8b19c',roughness:.9,flatShading:true
+  });
+  const trim=new THREE.MeshStandardMaterial({
+    color:'#d5b879',metalness:.3,roughness:.46
+  });
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(4.15,4.45,.34,16),stone);
+  base.position.set(x,.17,z);
+  base.receiveShadow=true;
+  base.castShadow=true;
+  game.scene.add(base);
+
+  const border=new THREE.Mesh(
+    new THREE.TorusGeometry(3.95,.09,8,64),
+    trim
+  );
+  border.rotation.x=Math.PI/2;
+  border.position.set(x,.34,z);
+  game.scene.add(border);
+
+  for(const side of [-1,1]){
+    const pillar=new THREE.Mesh(
+      new THREE.CylinderGeometry(.31,.43,3.15,8),
+      stone
+    );
+    pillar.position.set(x+side*2.52,1.82,z+.18);
+    pillar.castShadow=true;
+    pillar.receiveShadow=true;
+    game.scene.add(pillar);
+
+    const capital=new THREE.Mesh(
+      new THREE.BoxGeometry(.92,.24,.82),
+      trim
+    );
+    capital.position.set(x+side*2.52,3.48,z+.18);
+    game.scene.add(capital);
+    game.obstacles.push({x:x+side*2.52,z:z+.18,radius:.48,fixed:true});
+  }
+
+  const portal=new THREE.Mesh(
+    new THREE.TorusGeometry(2.28,.19,10,48),
+    trim
+  );
+  portal.position.set(x,3.42,z+.2);
+  portal.castShadow=true;
+  game.scene.add(portal);
+
+  const crystal=new THREE.Mesh(
+    new THREE.OctahedronGeometry(.62,1),
+    new THREE.MeshStandardMaterial({
+      color:'#b6eee0',emissive:'#4baf9c',emissiveIntensity:.72,
+      roughness:.2,metalness:.18
+    })
+  );
+  crystal.position.set(x,2.05,z+.05);
+  crystal.scale.set(.72,1.6,.72);
+  game.scene.add(crystal);
+
+  const innerRing=new THREE.Mesh(
+    new THREE.TorusGeometry(.92,.035,8,48),
+    new THREE.MeshBasicMaterial({color:'#a9e6d6'})
+  );
+  innerRing.position.set(x,2.05,z+.05);
+  innerRing.rotation.set(.65,.35,.15);
+  game.scene.add(innerRing);
+
+  const light=new THREE.PointLight('#a2e8d9',2.2,13,2);
+  light.position.set(x,2.5,z+.65);
+  game.scene.add(light);
+  game.starlightShrine={crystal,portal};
 }
 
 function addStandingStone(game,x,z,height=2.1,lean=0){
@@ -528,9 +725,12 @@ function addMushrooms(game){
     [-31,-8,14],[-34,-20,10],[-25,-25,10],
     [30,-15,15],[36,-22,12],[25,-27,9],
     [-12,29,11],[0,35,12],[14,28,11],
-    [-20,16,8],[22,14,9],[0,-31,10]
+    [-20,16,8],[22,14,9],[0,-31,10],
+    [-62,26,10],[-65,10,9],[-55,-46,9],
+    [57,26,10],[64,14,9],[56,-47,10],
+    [-29,49,9],[29,49,9],[0,-51,9]
   ];
-  const capacity=190;
+  const capacity=320;
   const stemGeometry=new THREE.CylinderGeometry(.058,.092,.34,7);
   const capGeometry=new THREE.SphereGeometry(.24,9,6,0,TAU,0,Math.PI/2);
   const spotGeometry=new THREE.SphereGeometry(.031,6,5);
@@ -828,9 +1028,11 @@ function addRockOutcrops(game){
   const clusters=[
     [-41,23,11],[40,22,11],[-41,-28,10],[41,-29,10],
     [-22,32,9],[24,32,9],[-22,-31,9],[24,-31,9],
-    [-45,2,7],[45,3,7]
+    [-45,2,7],[45,3,7],
+    [-64,43,11],[64,43,11],[-64,-43,11],[64,-43,11],
+    [-31,53,8],[31,53,8],[-31,-53,8],[31,-53,8]
   ];
-  const capacity=112;
+  const capacity=220;
   const geometry=new THREE.IcosahedronGeometry(.72,1);
   const material=new THREE.MeshStandardMaterial({
     color:'#ffffff',vertexColors:true,roughness:.96,flatShading:true
@@ -938,7 +1140,7 @@ function addSkyDome(game){
     depthWrite:false,
     toneMapped:false
   });
-  const dome=new THREE.Mesh(new THREE.SphereGeometry(178,40,24),material);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(280,48,28),material);
   dome.frustumCulled=false;
   dome.renderOrder=-1000;
   game.scene.add(dome);
@@ -1031,7 +1233,10 @@ export function buildMeadowArena(game){
   );
   ground.rotation.x=-Math.PI/2;ground.position.y=-.09;ground.receiveShadow=true;game.scene.add(ground);
 
-  const outerGrass=new THREE.Mesh(new THREE.PlaneGeometry(140,120),new THREE.MeshStandardMaterial({color:'#6e9862',roughness:1}));
+  const outerGrass=new THREE.Mesh(
+    new THREE.PlaneGeometry(WORLD_SIZE.width+44,WORLD_SIZE.depth+44),
+    new THREE.MeshStandardMaterial({color:'#6e9862',roughness:1})
+  );
   outerGrass.rotation.x=-Math.PI/2;outerGrass.position.set(0,-.12,0);outerGrass.receiveShadow=true;game.scene.add(outerGrass);
 
   // A low, broken ring of old stones makes a natural magical clearing, not a boxed arena.
@@ -1072,7 +1277,10 @@ export function buildMeadowArena(game){
     [-17,-13,7,4,8],[0,-18,11,5,7],[18,-14,8,4,9],[-22,0,7,6,8],[24,3,8,5,8],
     [-63,-52,15,5,13],[0,-53,18,6,10],[63,-52,15,5,13],
     [-64,0,16,6,18],[64,0,16,6,18],
-    [-63,52,15,5,13],[0,53,18,6,10],[63,52,15,5,13]
+    [-63,52,15,5,13],[0,53,18,6,10],[63,52,15,5,13],
+    [-80,-60,19,7,16],[0,-72,21,7,13],[80,-60,19,7,16],
+    [-82,0,18,8,20],[82,0,18,8,20],
+    [-80,60,19,7,16],[0,72,21,7,13],[80,60,19,7,16]
   ].forEach(([x,z,sx,sy,sz])=>{
     const hill=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),hillMat);
     hill.position.set(x,sy*.35,z);hill.scale.set(sx,sy,sz);hill.receiveShadow=true;game.scene.add(hill);
@@ -1094,15 +1302,22 @@ export function buildMeadowArena(game){
     [-50,-29,1.25,.2],[-50,-10,1.3,.8],[-50,10,1.3,1.4],[-50,29,1.25,2.0],
     [50,-29,1.25,2.6],[50,-10,1.3,3.2],[50,10,1.3,3.8],[50,29,1.25,4.4],
     [-33,-40,1.2,5.0],[-12,-40,1.2,5.6],[12,-40,1.2,6.2],[33,-40,1.2,6.8],
-    [-33,40,1.2,7.4],[-12,40,1.2,8.0],[12,40,1.2,8.6],[33,40,1.2,9.2]
+    [-33,40,1.2,7.4],[-12,40,1.2,8.0],[12,40,1.2,8.6],[33,40,1.2,9.2],
+    [-68,-18,1.3,9.8],[-68,18,1.25,10.4],[68,-18,1.3,11.0],[68,18,1.25,11.6],
+    [-42,-52,1.25,12.2],[42,-52,1.25,12.8],[-42,52,1.25,13.4],[42,52,1.25,14.0]
   ];
   trees.forEach(([x,z,s,p])=>addTree(game,x,z,s,p));
   addTree(game,0,30,1.85,5.5);
+  addStarlightShrine(game,0,50);
+  addPeripheralPineForest(game);
+  addCrystalGroves(game);
   addBushes(game,[
     [-8.8,-1.8,.8],[8.6,-2.8,.92],[-8.9,5.9,1.04],[8.7,5.8,.8],
     [-13,3.2,.92],[13,-4.5,1.04],[-4.8,9.3,.8],[3.4,9.5,.92],
     [-36,-2,.95],[-25,-18,.9],[-23,13,1.0],[20,-3,.9],
-    [37,-2,1.0],[25,-25,.92],[-18,31,.9],[18,31,1.0]
+    [37,-2,1.0],[25,-25,.92],[-18,31,.9],[18,31,1.0],
+    [-63,-17,1.0],[-57,15,.9],[62,15,1.0],[58,-27,.9],
+    [-31,50,1.05],[31,50,1.0],[-31,-49,.95],[31,-49,1.0]
   ]);
 
   addGrass(game);
