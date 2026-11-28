@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WORLD_BOUNDS, WORLD_SIZE } from './world-map.js';
+import { createCloudPuffLayout, createDistantMountainLayout } from './environment-layout.js';
 
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -903,8 +904,127 @@ function addRockOutcrops(game){
   });
 }
 
+
+function addSkyDome(game){
+  const material=new THREE.ShaderMaterial({
+    vertexShader:`
+      varying vec3 vSkyDirection;
+      void main(){
+        vSkyDirection=normalize(position);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+      }
+    `,
+    fragmentShader:`
+      varying vec3 vSkyDirection;
+      void main(){
+        float elevation=clamp(normalize(vSkyDirection).y,-0.18,1.0);
+        float blend=smoothstep(-0.14,0.82,elevation);
+        vec3 horizon=vec3(0.82,0.88,0.78);
+        vec3 zenith=vec3(0.31,0.59,0.74);
+        vec3 sky=mix(horizon,zenith,blend);
+        vec3 sunDirection=normalize(vec3(-0.36,0.82,0.42));
+        float sunDot=max(dot(normalize(vSkyDirection),sunDirection),0.0);
+        float halo=pow(sunDot,9.0)*0.12;
+        float sunDisc=pow(sunDot,62.0)*0.24;
+        sky=mix(sky,vec3(1.0,0.91,0.72),halo);
+        sky+=vec3(1.0,0.74,0.48)*sunDisc;
+        gl_FragColor=vec4(sky,1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `,
+    side:THREE.BackSide,
+    depthTest:false,
+    depthWrite:false,
+    toneMapped:false
+  });
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(178,40,24),material);
+  dome.frustumCulled=false;
+  dome.renderOrder=-1000;
+  game.scene.add(dome);
+  game.skyDome=dome;
+}
+
+function addDistantMountainBackdrop(game){
+  const layout=createDistantMountainLayout();
+  const geometry=new THREE.ConeGeometry(1,1,8,3);
+  const position=geometry.attributes.position;
+  for(let i=0;i<position.count;i++){
+    const x=position.getX(i),z=position.getZ(i),y=position.getY(i);
+    const angle=Math.atan2(z,x);
+    const variation=1+Math.sin(angle*3.0+y*13.0)*0.11;
+    position.setX(i,x*variation);
+    position.setZ(i,z*variation);
+  }
+  geometry.computeVertexNormals();
+  const material=new THREE.MeshStandardMaterial({
+    color:'#ffffff',
+    roughness:1,
+    metalness:0,
+    flatShading:true
+  });
+  const peaks=new THREE.InstancedMesh(geometry,material,layout.length);
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+  layout.forEach((mountain,index)=>{
+    dummy.position.set(
+      mountain.x,
+      mountain.baseY+mountain.height*.5,
+      mountain.z
+    );
+    dummy.scale.set(mountain.width,mountain.height,mountain.depth);
+    dummy.rotation.set(0,mountain.rotationY,0);
+    dummy.updateMatrix();
+    peaks.setMatrixAt(index,dummy.matrix);
+    color.set(mountain.tint);
+    peaks.setColorAt(index,color);
+  });
+  peaks.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  peaks.castShadow=false;
+  peaks.receiveShadow=false;
+  peaks.frustumCulled=false;
+  game.scene.add(peaks);
+  game.distantMountains=peaks;
+}
+
+function addCloudLayer(game){
+  const layout=createCloudPuffLayout();
+  const geometry=new THREE.SphereGeometry(1,14,9);
+  const material=new THREE.MeshStandardMaterial({
+    color:'#ffffff',
+    roughness:1,
+    metalness:0,
+    flatShading:false
+  });
+  const mesh=new THREE.InstancedMesh(geometry,material,layout.length);
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+  layout.forEach((puff,index)=>{
+    dummy.position.set(
+      puff.x+puff.offsetX,
+      puff.y+puff.offsetY,
+      puff.z+puff.offsetZ
+    );
+    dummy.scale.set(puff.scaleX,puff.scaleY,puff.scaleZ);
+    dummy.rotation.set(0,puff.rotationY,0);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index,dummy.matrix);
+    color.set(puff.tint);
+    mesh.setColorAt(index,color);
+  });
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  mesh.castShadow=false;
+  mesh.receiveShadow=false;
+  mesh.frustumCulled=false;
+  game.scene.add(mesh);
+  game.cloudLayer={mesh,layout,dummy};
+}
+
 export function buildMeadowArena(game){
   game.treeTops=[];game.windmills=[];game.windShaders=[];game.effectsGround=[];
+  addSkyDome(game);
+  addCloudLayer(game);
+  addDistantMountainBackdrop(game);
   const ground=new THREE.Mesh(
     new THREE.PlaneGeometry(WORLD_SIZE.width,WORLD_SIZE.depth),
     new THREE.MeshStandardMaterial({map:meadowTexture(),roughness:1,metalness:0})
@@ -1032,6 +1152,22 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
   if(waterShader?.uniforms?.uWaterTime)waterShader.uniforms.uWaterTime.value=game.worldTime;
   const pondShader=game.pondMaterial?.userData?.shader;
   if(pondShader?.uniforms?.uPondTime)pondShader.uniforms.uPondTime.value=game.worldTime;
+  if(game.cloudLayer){
+    const {mesh,layout,dummy}=game.cloudLayer;
+    layout.forEach((puff,index)=>{
+      const phase=game.worldTime*.035+puff.phase;
+      dummy.position.set(
+        puff.x+puff.offsetX+Math.sin(phase)*puff.driftX,
+        puff.y+puff.offsetY,
+        puff.z+puff.offsetZ+Math.cos(phase)*puff.driftZ
+      );
+      dummy.scale.set(puff.scaleX,puff.scaleY,puff.scaleZ);
+      dummy.rotation.set(0,puff.rotationY,0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(index,dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate=true;
+  }
   game.treeTops?.forEach(t=>{t.group.rotation.z=Math.sin(game.worldTime*.72+t.phase)*t.amount;t.group.rotation.x=Math.cos(game.worldTime*.58+t.phase)*t.amount*.55;});
   game.windmills?.forEach((m,i)=>{m.rotation.z+=worldDt*(.34+i*.025);});
   if(game.magicCore){
