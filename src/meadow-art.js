@@ -854,10 +854,18 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     const p=game.player.position;
     const target=game.cameraTarget||(game.cameraTarget=new THREE.Vector3());
     const look=game.cameraLookTarget||(game.cameraLookTarget=new THREE.Vector3());
-    target.set(p.x,7.25,p.z+7.8);
-    look.set(p.x,1.2,p.z-2.45);
-    const a=1-Math.exp(-realDt*2.8);
-    game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
+    const orbit=game.cameraOrbit||{yaw:0,pitch:.533,distance:11.9};
+    look.set(p.x,1.35,p.z-.85);
+    const horizontal=Math.cos(orbit.pitch)*orbit.distance;
+    target.set(
+      look.x+Math.sin(orbit.yaw)*horizontal,
+      look.y+Math.sin(orbit.pitch)*orbit.distance,
+      look.z+Math.cos(orbit.yaw)*horizontal
+    );
+    const a=1-Math.exp(-realDt*3.4);
+    game.camera.position.lerp(target,a);
+    game.cameraLook.lerp(look,a);
+    game.camera.lookAt(game.cameraLook);
     if(game.sunLight){
       game.sunLight.position.set(p.x-12,24,p.z+10);
       game.sunLight.target.position.set(p.x,0,p.z);
