@@ -1260,7 +1260,7 @@ export function buildMeadowArena(game){
     groundGeometry,
     new THREE.MeshStandardMaterial({map:meadowTexture(),roughness:1,metalness:0})
   );
-  ground.rotation.x=-Math.PI/2;ground.position.y=-.09;ground.receiveShadow=true;game.scene.add(ground);
+  ground.rotation.x=-Math.PI/2;ground.position.y=-.09;ground.receiveShadow=true;game.scene.add(ground);game.terrainMesh=ground;
 
   const outerGrass=new THREE.Mesh(
     new THREE.PlaneGeometry(WORLD_SIZE.width+44,WORLD_SIZE.depth+44),
