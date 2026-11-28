@@ -105,3 +105,11 @@ Examples:
 - `?perf=1&quality=low`
 
 These presets are diagnostic controls, not automatic quality switching. Compare the same scene and actions on each preset before changing the default or optimizing individual assets.
+
+
+## Atmospheric valley backdrop
+
+- Replaces the flat sky-only horizon with a lightweight gradient sky dome and a warm, low-intensity sun halo.
+- Adds 30 distant, irregular mountain peaks as one instanced draw, softened by the existing scene fog to create a layered valley silhouette.
+- Adds nine drifting storybook cloud formations (54 instanced puffs total); their slow movement follows world time and therefore eases during spell drawing.
+- Keeps the backdrop free of shadow casting and uses deterministic layout helpers with unit tests so the horizon remains stable between launches.
