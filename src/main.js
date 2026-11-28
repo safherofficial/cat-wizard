@@ -423,7 +423,7 @@ class CatWizard {
     }
   }
 
-  updateCamera(realDt){animateWorld(this,realDt);}
+  updateCamera(realDt,worldDt){animateWorld(this,worldDt,realDt);}
 
   frame(){
     // Preserve elapsed time on low-refresh devices while keeping simulation
@@ -432,6 +432,7 @@ class CatWizard {
     const frameDelta=Math.min(this.clock.getDelta(),.25);
     const stepCount=Math.max(1,Math.ceil(frameDelta/.05));
     const realStep=frameDelta/stepCount;
+    let worldDelta=0;
     for(let i=0;i<stepCount;i++){
       if(this.restore){
         this.restore.elapsed+=realStep;
@@ -440,6 +441,7 @@ class CatWizard {
         if(t>=1){this.timeScale=1;this.restore=null;}
       }
       const dt=realStep*this.timeScale;
+      worldDelta+=dt;
       this.worldTime+=dt;
       this.updatePlayer(dt,realStep);
       this.updateProps(dt);
@@ -447,7 +449,7 @@ class CatWizard {
       this.updateEffects(dt);
     }
     if(this.playerInvul>0&&this.respawn===0)this.player.visible=Math.floor((1.15-this.playerInvul)*18)%2===0;else if(!this.respawn)this.player.visible=true;
-    this.updateCamera(frameDelta);
+    this.updateCamera(frameDelta,worldDelta);
     this.renderer.render(this.scene,this.camera);
   }
   dispose(){
