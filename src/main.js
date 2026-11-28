@@ -4,7 +4,7 @@ import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortex
 import { recognizeGesture, SPELLS } from './gesture.js';
 import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import { clampWorldPosition } from './world-map.js';
-import { CAMERA_ORBIT_DEFAULTS, rotateCameraOrbit } from './camera-controls.js';
+import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, rotateCameraOrbit } from './camera-controls.js';
 import './style.css';
 
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -547,6 +547,14 @@ class CatWizard {
     movement.add(this.touchMove);
     if (movement.lengthSq() > 1) movement.normalize();
 
+    // WASD and the touch stick are camera-local: rotating the orbit camera
+    // also rotates the player's movement basis on the horizontal plane.
+    const worldMovement = cameraRelativeMovement(
+      movement.x,
+      movement.y,
+      this.cameraOrbit.yaw
+    );
+    movement.set(worldMovement.x, worldMovement.z);
     this.playerMove.lerp(movement.multiplyScalar(5.2), 1 - Math.exp(-dt * 12));
     const nextPosition = clampWorldPosition(
       this.player.position.x + this.playerMove.x * dt,
