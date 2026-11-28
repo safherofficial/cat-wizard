@@ -21,7 +21,15 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 
 ## Blender character source
 
-The current Blender candidate is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), accompanied by `blender/CatWizard_GLBAudit_Blender293.py`. The builder creates an editable `.blend`, a GLB and a preview under `~/CatWizard_Art_v2/`; the rig has 13 bones and five NLA clips (Idle, Walk, Run, Cast and Hit). The parts are rigidly parented to bones rather than bound as one weighted skin. Run the separate audit helper and inspect its front/side/rear renders before considering runtime integration. The GLB is not part of the browser build and the procedural Three.js character remains active. The older `blender/CatWizard_Blender293_CharacterBuilder.zip` is retained as Character 01 legacy material.
+The current Blender candidate is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), accompanied by `blender/CatWizard_GLBAudit_Blender293.py`. The builder creates an editable `.blend`, a GLB and a preview under `~/CatWizard_Art_v2/`; the rig has 13 bones and five NLA clips (Idle, Walk, Run, Cast and Hit). The parts are rigidly parented to bones rather than bound as one weighted skin.
+
+After generating the GLB, run both the Blender audit helper and the standalone container audit:
+
+```bash
+npm run audit:character -- ~/CatWizard_Art_v2/cat-wizard-character-v2.glb
+```
+
+The standalone audit checks GLB container integrity, embedded buffers, mesh and accessor references, animation channels and required clip names. Missing rig node names or hierarchy differences are flagged for confirmation in Blender. It does not replace visual inspection or a Three.js playtest. The GLB is not part of the browser build and the procedural Three.js character remains active. The older `blender/CatWizard_Blender293_CharacterBuilder.zip` is retained as Character 01 legacy material.
 
 ## Performance diagnostics
 
@@ -52,7 +60,7 @@ Vite writes the deployable static site into `dist/`.
 
 ## Browser deployment
 
-GitHub Actions runs gesture tests, builds the static site and publishes it to GitHub Pages on every push to `main`. Enable **Settings → Pages → Build and deployment → Source → GitHub Actions** on the repository for the first publication.
+GitHub Actions runs JavaScript tests, Blender source-contract checks, builds the static site and publishes it to GitHub Pages on pushes to `main`. Pull requests to `main` run the same checks without publishing the game. Enable **Settings → Pages → Build and deployment → Source → GitHub Actions** on the repository for the first publication.
 
 Expected URL: https://safherofficial.github.io/cat-wizard/
 
@@ -64,11 +72,15 @@ src/
   gesture.js        one-stroke recognizer and spell templates
   performance.js    render quality presets and optional runtime diagnostics
   style.css         responsive browser shell and HUD
+scripts/
+  audit-catwizard-glb.js   standalone GLB container and scene contract audit
 public/assets/
-  cat-wizard.webp  full original cat artwork, transparent WebP
+  cat-wizard.webp   full original cat artwork, transparent WebP
 tests/
-  gesture.test.js   gesture classification checks
-  performance.test.js render quality preset checks
+  gesture.test.js          gesture classification checks
+  performance.test.js      render quality preset checks
+  glb-audit.test.js        standalone GLB audit tests
+  blender_source_test.py   Blender builder/audit source contract checks
 docs/
   THREEJS.md        development, gameplay and deployment notes
 .github/workflows/
@@ -77,4 +89,4 @@ docs/
 
 ## Verification boundary
 
-The project includes executable Node tests and a Vite production build workflow. Passing those checks validates gesture logic and static bundling; it does not replace a real browser playtest for graphics, controls, device performance or balancing.
+The project includes executable Node tests, Python source-contract checks and a Vite production build workflow. Passing those checks validates gesture logic, the Blender scripts' source contracts, GLB package structure when an asset is supplied, and static bundling. It does not replace running Blender 2.93, visually inspecting the generated character, or a real browser playtest for graphics, controls, device performance and balancing.
