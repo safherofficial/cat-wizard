@@ -86,7 +86,7 @@ test('rejects a malformed GLB header', () => {
 
 test('reports missing expected rig nodes as a warning, not a false pass/fail for packaging', () => {
   const document = validDocument();
-  document.nodes = document.nodes.filter(node => node.name !== 'Tail.Tip');
+  document.nodes.find(node => node.name === 'Tail.Tip').name = undefined;
   const report = auditGlbBuffer(makeGlb(document));
   assert.equal(report.ok, true);
   assert.ok(report.warnings.some(warning => warning.includes('Tail.Tip')));
