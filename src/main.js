@@ -413,7 +413,7 @@ class CatWizard {
       const dir=new THREE.Vector2(tx-w.group.position.x,tz-w.group.position.z);if(dir.lengthSq()>.05){dir.normalize();w.group.position.x+=dir.x*1.55*dt;w.group.position.z+=dir.y*1.55*dt;}
       w.velocity.multiplyScalar(Math.exp(-dt*2));w.group.position.x+=w.velocity.x*dt;w.group.position.z+=w.velocity.y*dt;
       w.group.position.y=.08+Math.sin(this.worldTime*3.1+w.phase)*.16;w.group.rotation.y+=dt*(.45+Math.sin(this.worldTime+w.phase)*.12);w.aura.scale.setScalar(1+Math.sin(this.worldTime*3+w.phase)*.1);w.halo.rotation.z+=dt*.7;w.light.intensity=2.7+Math.sin(this.worldTime*4+w.phase)*.7;
-      if(w.cooldown>0)w.cooldown-=dt;if(d<.92&&w.cooldown<=0){this.hurtPlayer(w);w.cooldown=1;}
+      if(w.cooldown>0)w.cooldown-=dt;if(d<1.05&&w.cooldown<=0){this.hurtPlayer(w);w.cooldown=1;}
     });
   }
   updateEffects(dt){
