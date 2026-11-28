@@ -387,8 +387,8 @@ export function buildWisps(g){
     return {group,body,aura,light,halo,home:new THREE.Vector2(x,z),health:5,color,phase:THREE.MathUtils.randFloat(0,Math.PI*2),freeze:0,cooldown:0,velocity:new THREE.Vector2(),defeated:false,flash:0};
   });
 }
-export function animateWorld(game,dt){
-  animateMeadow(game,dt);
+export function animateWorld(game,worldDt,realDt=worldDt){
+  animateMeadow(game,worldDt,realDt);
   const rig=game.catRig;
   if(rig){
     const moving=game.playerMove.length()>.24;
