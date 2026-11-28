@@ -395,23 +395,23 @@ export function buildMeadowArena(game){
   props.forEach(p=>game.addProp(...p));
 }
 
-export function animateMeadow(game,dt){
+export function animateMeadow(game,worldDt,realDt=worldDt){
   if(game.player){
     const p=game.player.position;
     const target=new THREE.Vector3(p.x*.12,7.25,p.z+7.8);
     const look=new THREE.Vector3(p.x,1.2,p.z-2.45);
-    const a=1-Math.exp(-dt*2.8);
+    const a=1-Math.exp(-realDt*2.8);
     game.camera.position.lerp(target,a);game.cameraLook.lerp(look,a);game.camera.lookAt(game.cameraLook);
   }
   const shader=game.grassMaterial?.userData?.shader;
   if(shader?.uniforms?.uMeadowTime)shader.uniforms.uMeadowTime.value=game.worldTime;
   game.treeTops?.forEach(t=>{t.group.rotation.z=Math.sin(game.worldTime*.72+t.phase)*t.amount;t.group.rotation.x=Math.cos(game.worldTime*.58+t.phase)*t.amount*.55;});
-  game.windmills?.forEach((m,i)=>{m.rotation.z+=dt*(.34+i*.025);});
+  game.windmills?.forEach((m,i)=>{m.rotation.z+=worldDt*(.34+i*.025);});
   if(game.magicCore){
-    game.magicCore.rotation.y+=dt*.24;
+    game.magicCore.rotation.y+=worldDt*.24;
     game.magicCore.rotation.x=Math.sin(game.worldTime*.35)*.09;
     game.magicCore.position.y=2.55+Math.sin(game.worldTime*1.6)*.1;
-    game.magicOrbits[0].rotation.z+=dt*.55;game.magicOrbits[1].rotation.y-=dt*.42;
+    game.magicOrbits[0].rotation.z+=worldDt*.55;game.magicOrbits[1].rotation.y-=worldDt*.42;
   }
   if(game.cottageSmoke)game.cottageSmoke.position.y=4.1+Math.sin(game.worldTime*.45)*.13;
   if(game.fireflies){
