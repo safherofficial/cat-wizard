@@ -1380,7 +1380,7 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     const speed=Math.min(1,Math.hypot(move.x,move.y)/5.2);
     look.set(
       p.x+move.x*.085,
-      1.32,
+      terrainElevationAt(p.x,p.z)+1.32,
       p.z+move.y*.085
     );
     const horizontal=Math.cos(orbit.pitch)*orbit.distance;
@@ -1397,8 +1397,8 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     game.cameraLook.lerp(look,focusAlpha);
     game.camera.lookAt(game.cameraLook);
     if(game.sunLight){
-      game.sunLight.position.set(p.x-12,24,p.z+10);
-      game.sunLight.target.position.set(p.x,0,p.z);
+      game.sunLight.position.set(p.x-12,p.y+24,p.z+10);
+      game.sunLight.target.position.set(p.x,p.y,p.z);
     }
   }
   const shader=game.grassMaterial?.userData?.shader;
