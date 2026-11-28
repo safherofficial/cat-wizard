@@ -32,3 +32,36 @@ test('non-finite mouse deltas do not corrupt the camera orbit', () => {
   assert.equal(next.yaw, CAMERA_ORBIT_DEFAULTS.yaw);
   assert.equal(next.pitch, CAMERA_ORBIT_DEFAULTS.pitch);
 });
+
+
+import { cameraRelativeMovement } from '../src/camera-controls.js';
+
+test('camera-relative WASD preserves the original forward and right directions at zero yaw', () => {
+  assert.deepEqual(cameraRelativeMovement(0, -1, 0), { x: 0, z: -1 });
+  assert.deepEqual(cameraRelativeMovement(1, 0, 0), { x: 1, z: 0 });
+  assert.deepEqual(cameraRelativeMovement(0, 1, 0), { x: 0, z: 1 });
+  assert.deepEqual(cameraRelativeMovement(-1, 0, 0), { x: -1, z: 0 });
+});
+
+test('forward and strafe rotate with the camera yaw', () => {
+  const quarterTurnForward = cameraRelativeMovement(0, -1, Math.PI / 2);
+  const quarterTurnRight = cameraRelativeMovement(1, 0, Math.PI / 2);
+
+  assert.ok(Math.abs(quarterTurnForward.x + 1) < 1e-10);
+  assert.ok(Math.abs(quarterTurnForward.z) < 1e-10);
+  assert.ok(Math.abs(quarterTurnRight.x) < 1e-10);
+  assert.ok(Math.abs(quarterTurnRight.z + 1) < 1e-10);
+});
+
+test('diagonal camera-relative movement keeps its magnitude', () => {
+  const input = { x: Math.SQRT1_2, y: -Math.SQRT1_2 };
+  for (const yaw of [0, Math.PI / 4, Math.PI / 2, -Math.PI / 2, Math.PI]) {
+    const output = cameraRelativeMovement(input.x, input.y, yaw);
+    assert.ok(Math.abs(Math.hypot(output.x, output.z) - 1) < 1e-10);
+  }
+});
+
+test('non-finite movement input or yaw safely falls back to neutral values', () => {
+  assert.deepEqual(cameraRelativeMovement(Number.NaN, Number.POSITIVE_INFINITY, Math.PI / 2), { x: 0, z: 0 });
+  assert.deepEqual(cameraRelativeMovement(0, -1, Number.NaN), { x: 0, z: -1 });
+});
