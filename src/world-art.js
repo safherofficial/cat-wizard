@@ -13,7 +13,8 @@ export function buildLighting(g){
   sun.castShadow=true;
   const shadowResolution=g.quality?.shadowMapSize||2048;
   sun.shadow.mapSize.set(shadowResolution,shadowResolution);
-  Object.assign(sun.shadow.camera,{left:-22,right:22,top:20,bottom:-20,near:.5,far:90});
+  Object.assign(sun.shadow.camera,{left:-18,right:18,top:17,bottom:-17,near:.5,far:72});
+  sun.shadow.camera.updateProjectionMatrix();
   g.sunLight=sun;
   sun.shadow.bias=-.00016;
   sun.shadow.normalBias=.022;

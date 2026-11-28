@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, animateWorld } from './world-art.js';
 import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortexAcceleration, resolveCircleCollision } from './spell-physics.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
-import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
+import { AdaptivePixelRatioController, PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import { clampWorldPosition } from './world-map.js';
 import { terrainElevationAt } from './terrain.js';
 import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, dampAngle, rotateCameraOrbit, zoomCameraOrbit } from './camera-controls.js';
@@ -44,9 +44,15 @@ class CatWizard {
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0),-.05);
     const params = new URLSearchParams(window.location.search);
-    this.quality = resolveQualityPreset(params.get('quality'));
+    const deviceHints={
+      hardwareConcurrency:globalThis.navigator?.hardwareConcurrency||0,
+      deviceMemory:globalThis.navigator?.deviceMemory||0,
+      isMobile:window.matchMedia?.('(pointer: coarse)').matches||false
+    };
+    this.quality = resolveQualityPreset(params.get('quality'),deviceHints);
     this.renderer = new THREE.WebGLRenderer({canvas,antialias:this.quality.antialias,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1,this.quality.maxPixelRatio));
+    this.pixelRatioController=new AdaptivePixelRatioController(window.devicePixelRatio||1,this.quality.maxPixelRatio);
+    this.renderer.setPixelRatio(this.pixelRatioController.current);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = .98;
@@ -820,6 +826,8 @@ class CatWizard {
       this.updateEffects(dt);
     }
     this.updateCamera(frameDelta,worldDelta);
+    const adaptivePixelRatio=this.pixelRatioController.update(frameDelta*1000);
+    if(adaptivePixelRatio!==null)this.renderer.setPixelRatio(adaptivePixelRatio);
     this.renderer.render(this.scene,this.camera);
     if(this.performanceMonitor){
       this.performanceMonitor.update(

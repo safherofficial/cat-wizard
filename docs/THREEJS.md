@@ -113,9 +113,9 @@ Three manual quality presets are available for comparison:
 
 | Query value | Pixel-ratio cap | Shadow map | Antialiasing |
 | --- | ---: | ---: | --- |
-| `high` (default) | 1.5 | 2048 × 2048, soft | On |
-| `medium` | 1.25 | 1024 × 1024, standard | On |
-| `low` | 1.0 | Shadows disabled | Off |
+| `high` | 1.3 | 1024 × 1024, standard PCF | On |
+| `medium` | 1.1 | 768 × 768, standard PCF | On |
+| `low` | 0.9 | Shadows disabled | Off |
 
 Examples:
 
@@ -123,7 +123,9 @@ Examples:
 - `?perf=1&quality=medium`
 - `?perf=1&quality=low`
 
-These presets are diagnostic controls, not automatic quality switching. Compare the same scene and actions on each preset before changing the default or optimizing individual assets.
+Without a `quality` query parameter the game selects a preset from available CPU, memory and coarse-pointer hints. `?quality=high`, `medium` or `low` remains an explicit override. A hysteresis-based pixel-ratio controller also lowers internal resolution after sustained slow frames and restores it only after sustained headroom, avoiding rapid quality oscillation.
+
+The large grass and flower fields are divided into 32-world-unit instanced cells so the camera can cull off-screen vegetation. Terrain tessellation is reduced to approximately one vertex per world unit, while the painted ground texture is 2048 × 1664. Fireflies and crystal motes now animate in the vertex shader rather than uploading new point positions from JavaScript every frame. Decorative tree branches and leaf crowns no longer cast expensive shadow-map passes.
 
 
 ## Atmospheric valley backdrop

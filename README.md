@@ -39,8 +39,10 @@ Open the game with `?perf=1` to display FPS, average CPU frame cost, draw calls,
 ## Rendering and performance
 
 - Use `?perf=1` to inspect FPS, average CPU frame cost, draw calls, triangles, geometry/texture counts and the active quality preset.
-- Compare `?perf=1&quality=high`, `medium` and `low`; the default remains High.
-- The meadow uses instanced bush and river-bank batches, a lightweight animated river shader and a dynamic firefly position buffer.
+- The default quality is selected from device hints; an adaptive pixel-ratio controller lowers resolution under sustained frame pressure and recovers gradually when headroom returns.
+- Compare `?perf=1&quality=high`, `medium` and `low` to override the automatic selection.
+- Grass and flowers are split into spatially culled instanced batches; terrain tessellation and the painted ground texture use a reduced GPU budget.
+- Fireflies and crystal motes animate in the vertex shader, avoiding per-frame CPU position-buffer uploads.
 
 ## Run locally
 
@@ -74,7 +76,8 @@ src/
   world-map.js      shared playable world bounds and clamping
   terrain.js        deterministic meadow heightfield and smooth terrain sampling
   gesture.js        one-stroke recognizer and spell templates
-  performance.js    render quality presets and optional runtime diagnostics
+  performance.js    adaptive quality presets, pixel-ratio scaling and runtime diagnostics
+  spatial-chunks.js  deterministic spatial cell keys for vegetation culling
   style.css         responsive browser shell and HUD
 scripts/
   audit-catwizard-glb.js   standalone GLB container and scene contract audit
@@ -85,7 +88,8 @@ tests/
   gesture.test.js          gesture classification checks
   world-map.test.js        expanded world-bound checks
   terrain.test.js           height, slope and flat landmark checks
-  performance.test.js      render quality preset checks
+  performance.test.js      quality selection and adaptive scaling checks
+  spatial-chunks.test.js   deterministic vegetation chunk checks
   glb-audit.test.js        standalone GLB audit tests
   blender_source_test.py   Blender builder/audit source contract checks
 docs/

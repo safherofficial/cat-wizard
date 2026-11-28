@@ -10,6 +10,7 @@ import {
   createPondReedLayout
 } from './environment-layout.js';
 import { terrainElevationAt } from './terrain.js';
+import { spatialChunkKey } from './spatial-chunks.js';
 
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -45,7 +46,7 @@ function distanceToPath(x,z){
 }
 
 function meadowTexture(){
-  const canvas=document.createElement('canvas');canvas.width=3584;canvas.height=2816;
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1664;
   const ctx=canvas.getContext('2d');
   const r=seeded(91217);
   const base=ctx.createLinearGradient(0,0,0,canvas.height);
@@ -131,8 +132,32 @@ function makeBladeGeometry(){
   return geometry;
 }
 
+function appendInstanceMatrix(target,matrix){
+  matrix.toArray(target,target.length);
+}
+
+function createChunkedInstancedMesh(game,geometry,material,matrices,colors=null){
+  const count=matrices.length/16;
+  if(!count)return null;
+  const mesh=new THREE.InstancedMesh(geometry,material,count);
+  mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  mesh.instanceMatrix.array.set(matrices);
+  mesh.instanceMatrix.needsUpdate=true;
+  if(colors){
+    mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(count*3),3);
+    mesh.instanceColor.array.set(colors);
+    mesh.instanceColor.needsUpdate=true;
+  }
+  mesh.castShadow=false;
+  mesh.receiveShadow=false;
+  mesh.frustumCulled=true;
+  mesh.computeBoundingSphere();
+  game.scene.add(mesh);
+  return mesh;
+}
+
 function addGrass(game){
-  const random=seeded(48821),count=56000;
+  const random=seeded(48821),count=56000,chunkSize=32;
   const geometry=makeBladeGeometry();
   const material=new THREE.MeshLambertMaterial({color:'#ffffff',side:THREE.DoubleSide});
   material.onBeforeCompile=shader=>{
@@ -148,11 +173,10 @@ function addGrass(game){
 `);
     material.userData.shader=shader;
   };
-  const mesh=new THREE.InstancedMesh(geometry,material,count);
-  mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
   const dummy=new THREE.Object3D();
   const palette=['#4f8a4c','#629c53','#7eac61','#a3b96f','#477b49','#92ad60'];
   const color=new THREE.Color();
+  const chunks=new Map();
   let placed=0,attempts=0;
   while(placed<count&&attempts<count*5){
     attempts++;
@@ -170,51 +194,92 @@ function addGrass(game){
     const height=.46+random()*.66;
     const width=.62+random()*.76;
     dummy.scale.set(width,height,width);
-    dummy.updateMatrix();mesh.setMatrixAt(placed,dummy.matrix);
-    color.set(palette[Math.floor(random()*palette.length)]);mesh.setColorAt(placed,color);
+    dummy.updateMatrix();
+    const key=spatialChunkKey(x,z,chunkSize);
+    let chunk=chunks.get(key);
+    if(!chunk){chunk={matrices:[],colorIndices:[]};chunks.set(key,chunk);}
+    appendInstanceMatrix(chunk.matrices,dummy.matrix);
+    chunk.colorIndices.push(Math.floor(random()*palette.length));
     placed++;
   }
-  mesh.count=placed;mesh.frustumCulled=false;mesh.receiveShadow=false;mesh.castShadow=false;
-  game.scene.add(mesh);game.grassMaterial=material;
+
+  game.grassMeshes=[];
+  for(const chunk of chunks.values()){
+    const mesh=new THREE.InstancedMesh(geometry,material,chunk.colorIndices.length);
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.instanceMatrix.array.set(chunk.matrices);
+    mesh.instanceMatrix.needsUpdate=true;
+    chunk.colorIndices.forEach((paletteIndex,index)=>{
+      color.set(palette[paletteIndex]);
+      mesh.setColorAt(index,color);
+    });
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.frustumCulled=true;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+    game.grassMeshes.push(mesh);
+  }
+  game.grassMaterial=material;
+}
+function configureAmbientPointMotion(material,amplitude,frequency){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.uAmbientTime={value:0};
+    shader.uniforms.uAmbientAmplitude={value:new THREE.Vector3(...amplitude)};
+    shader.uniforms.uAmbientFrequency={value:new THREE.Vector3(...frequency)};
+    shader.vertexShader=shader.vertexShader.replace(
+      '#include <common>',
+      '#include <common>\nuniform float uAmbientTime;\nuniform vec3 uAmbientAmplitude;\nuniform vec3 uAmbientFrequency;'
+    );
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      float ambientPhase=dot(position.xz,vec2(0.43,0.27));
+      transformed.x+=sin(uAmbientTime*uAmbientFrequency.x+ambientPhase)*uAmbientAmplitude.x;
+      transformed.y+=sin(uAmbientTime*uAmbientFrequency.y+ambientPhase*1.2)*uAmbientAmplitude.y;
+      transformed.z+=cos(uAmbientTime*uAmbientFrequency.z+ambientPhase)*uAmbientAmplitude.z;
+`);
+    material.userData.ambientShader=shader;
+  };
+  return material;
 }
 
 function addFireflies(game){
-  const random=seeded(66021),count=520,positions=new Float32Array(count*3),phases=new Float32Array(count),base=new Float32Array(count*3);
+  const random=seeded(66021),count=520,positions=new Float32Array(count*3);
   for(let i=0;i<count;i++){
     const x=WORLD_BOUNDS.minX+2+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX-4);
     const z=WORLD_BOUNDS.minZ+2+random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ-4);
     const y=terrainElevationAt(x,z)+.55+random()*2.2;
-    base[i*3]=x;base[i*3+1]=y;base[i*3+2]=z;
-    phases[i]=random()*TAU;
-    positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;
+    positions[i*3]=x;
+    positions[i*3+1]=y;
+    positions[i*3+2]=z;
   }
   const geometry=new THREE.BufferGeometry();
-  const positionAttribute=new THREE.BufferAttribute(positions,3);
-  positionAttribute.setUsage(THREE.DynamicDrawUsage);
-  geometry.setAttribute('position',positionAttribute);
-  const material=new THREE.PointsMaterial({color:'#fff0b0',size:.13,transparent:true,opacity:.72,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  const material=configureAmbientPointMotion(
+    new THREE.PointsMaterial({color:'#fff0b0',size:.13,transparent:true,opacity:.72,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}),
+    [.16,.28,.14],
+    [.42,1.35,.36]
+  );
   const points=new THREE.Points(geometry,material);
-  points.frustumCulled=false;game.scene.add(points);game.fireflies={points,base,phases};
+  points.frustumCulled=false;
+  game.scene.add(points);
+  game.fireflies={points};
 }
-
 function addFlowers(game){
-  const random=seeded(7788),count=6000;
+  const random=seeded(7788),count=6000,chunkSize=32;
   const stemGeometry=new THREE.CylinderGeometry(.012,.018,.23,4);
   const stemMaterial=new THREE.MeshStandardMaterial({color:'#4c8952',roughness:1});
-  const stems=new THREE.InstancedMesh(stemGeometry,stemMaterial,count);
   const petalGeometry=new THREE.SphereGeometry(.052,5,4);
   petalGeometry.scale(1.25,.72,1);
   const petalMaterial=new THREE.MeshStandardMaterial({color:'#fff',roughness:.82,flatShading:true});
-  const petals=new THREE.InstancedMesh(petalGeometry,petalMaterial,count*5);
   const centerGeometry=new THREE.IcosahedronGeometry(.035,0);
   const centerMaterial=new THREE.MeshStandardMaterial({color:'#f4d16e',roughness:.7,flatShading:true});
-  const centers=new THREE.InstancedMesh(centerGeometry,centerMaterial,count);
   const dummy=new THREE.Object3D(),col=new THREE.Color();
   const colors=['#fff2d4','#f2a4a0','#f4c86e','#b6a2dc','#e9a5c4','#d9e8a4'];
   const woodlandColors=['#f1e8c9','#d9c99c','#c6d9a1','#eadcbf'];
   const crystalColors=['#d7f1f0','#b9d8f4','#cdbce9','#f3e5ff'];
   const shrineColors=['#fff0c8','#f4d18c','#f0e2b2','#d7dfbd'];
-  let n=0,p=0;
+  const chunks=new Map();
+  let n=0;
   for(let i=0;i<count*8&&n<count;i++){
     const x=WORLD_BOUNDS.minX+random()*(WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX);
     const z=WORLD_BOUNDS.minZ+random()*(WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ);
@@ -224,8 +289,20 @@ function addFlowers(game){
       Math.hypot(x-obstacle.x,z-obstacle.z)<(obstacle.radius||.6)+.5
     );
     if(nearLandmark||random()<.18)continue;
+
     const y=terrainElevationAt(x,z)+.115+random()*.035,scale=.72+random()*.9;
-    dummy.position.set(x,y,z);dummy.scale.setScalar(scale);dummy.rotation.set(0,random()*TAU,0);dummy.updateMatrix();stems.setMatrixAt(n,dummy.matrix);
+    const key=spatialChunkKey(x,z,chunkSize);
+    let chunk=chunks.get(key);
+    if(!chunk){
+      chunk={stems:[],petals:[],petalColors:[],centers:[]};
+      chunks.set(key,chunk);
+    }
+    dummy.position.set(x,y,z);
+    dummy.scale.setScalar(scale);
+    dummy.rotation.set(0,random()*TAU,0);
+    dummy.updateMatrix();
+    appendInstanceMatrix(chunk.stems,dummy.matrix);
+
     const inCrystalGrove=Math.min(
       Math.hypot(x-55,z+38),
       Math.hypot(x+55,z+35)
@@ -242,25 +319,36 @@ function addFlowers(game){
           :colors;
     col.set(flowerPalette[Math.floor(random()*flowerPalette.length)]);
     for(let j=0;j<5;j++){
-      const a=j*TAU/5,idx=p++;
+      const a=j*TAU/5;
       dummy.position.set(x+Math.cos(a)*.075*scale,y+.13*scale,z+Math.sin(a)*.075*scale);
-      dummy.scale.set(.9*scale,.9*scale,.9*scale);dummy.rotation.set(0,a,0);dummy.updateMatrix();
-      petals.setMatrixAt(idx,dummy.matrix);petals.setColorAt(idx,col);
+      dummy.scale.set(.9*scale,.9*scale,.9*scale);
+      dummy.rotation.set(0,a,0);
+      dummy.updateMatrix();
+      appendInstanceMatrix(chunk.petals,dummy.matrix);
+      chunk.petalColors.push(col.r,col.g,col.b);
     }
-    dummy.position.set(x,y+.14*scale,z);dummy.scale.setScalar(scale);dummy.rotation.set(0,random()*TAU,0);dummy.updateMatrix();
-    centers.setMatrixAt(n,dummy.matrix);n++;
+    dummy.position.set(x,y+.14*scale,z);
+    dummy.scale.setScalar(scale);
+    dummy.rotation.set(0,random()*TAU,0);
+    dummy.updateMatrix();
+    appendInstanceMatrix(chunk.centers,dummy.matrix);
+    n++;
   }
-  stems.count=n;centers.count=n;petals.count=p;
-  stems.receiveShadow=true;petals.castShadow=false;centers.castShadow=false;
-  game.scene.add(stems,petals,centers);
-}
 
+  game.flowerMeshes=[];
+  for(const chunk of chunks.values()){
+    const stems=createChunkedInstancedMesh(game,stemGeometry,stemMaterial,chunk.stems);
+    const petals=createChunkedInstancedMesh(game,petalGeometry,petalMaterial,chunk.petals,chunk.petalColors);
+    const centers=createChunkedInstancedMesh(game,centerGeometry,centerMaterial,chunk.centers);
+    game.flowerMeshes.push(stems,petals,centers);
+  }
+}
 function branch(parent,start,end,radius,material){
   const a=new THREE.Vector3(...start),b=new THREE.Vector3(...end),delta=b.clone().sub(a);
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius*.62,radius,delta.length(),6),material);
   mesh.position.copy(a).add(b).multiplyScalar(.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
-  mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);
+  mesh.castShadow=false;mesh.receiveShadow=false;parent.add(mesh);
 }
 
 function addTree(game,x,z,scale=1,phase=0){
@@ -268,7 +356,7 @@ function addTree(game,x,z,scale=1,phase=0){
   const trunkMaterial=new THREE.MeshStandardMaterial({color:'#8d6243',roughness:.96,flatShading:true});
   const barkLight=new THREE.MeshStandardMaterial({color:'#bb8b5c',roughness:.93,flatShading:true});
   const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.2,.37,2.9,7),trunkMaterial);
-  trunk.position.y=1.42;trunk.castShadow=true;trunk.receiveShadow=true;group.add(trunk);
+  trunk.position.y=1.42;trunk.castShadow=true;trunk.receiveShadow=false;group.add(trunk);
   branch(group,[-.04,1.9,0],[-.85,3.1,.12],.18,trunkMaterial);
   branch(group,[.02,2.0,0],[.82,3.05,-.16],.17,barkLight);
   branch(group,[0,2.05,0],[.16,3.45,.42],.15,trunkMaterial);
@@ -288,7 +376,7 @@ function addTree(game,x,z,scale=1,phase=0){
     dummy.rotation.set(r()*TAU,r()*TAU,r()*TAU);dummy.updateMatrix();leafMesh.setMatrixAt(i,dummy.matrix);
     col.set(palette[Math.floor(r()*palette.length)]);leafMesh.setColorAt(i,col);
   }
-  leafMesh.castShadow=true;leafMesh.receiveShadow=true;crown.add(leafMesh);
+  leafMesh.castShadow=false;leafMesh.receiveShadow=false;crown.add(leafMesh);
   game.treeTops.push({group:crown,phase,amount:.035+r()*.035});
   game.obstacles.push({x,z,radius:.72*scale,fixed:true});
 }
@@ -527,46 +615,41 @@ function addWoodlandUnderstory(game){
 function addCrystalMotes(game){
   const layout=createCrystalMoteLayout();
   const positions=new Float32Array(layout.length*3);
-  const base=new Float32Array(layout.length*3);
   const colors=new Float32Array(layout.length*3);
-  const phases=new Float32Array(layout.length);
   const palette=['#9cebd9','#b3dcff','#d7b8ff','#e1fff0'];
 
   layout.forEach((mote,index)=>{
     const offset=index*3;
     const groundY=terrainElevationAt(mote.x,mote.z);
-    base[offset]=mote.x;
-    base[offset+1]=groundY+mote.height;
-    base[offset+2]=mote.z;
-    positions[offset]=base[offset];
-    positions[offset+1]=base[offset+1];
-    positions[offset+2]=base[offset+2];
+    positions[offset]=mote.x;
+    positions[offset+1]=groundY+mote.height;
+    positions[offset+2]=mote.z;
     const tint=new THREE.Color(palette[mote.tintIndex]);
     tint.toArray(colors,offset);
-    phases[index]=mote.phase;
   });
 
   const geometry=new THREE.BufferGeometry();
-  const positionAttribute=new THREE.BufferAttribute(positions,3);
-  positionAttribute.setUsage(THREE.DynamicDrawUsage);
-  geometry.setAttribute('position',positionAttribute);
+  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
-  const material=new THREE.PointsMaterial({
-    color:'#ffffff',
-    size:.16,
-    sizeAttenuation:true,
-    vertexColors:true,
-    transparent:true,
-    opacity:.76,
-    depthWrite:false,
-    blending:THREE.AdditiveBlending
-  });
+  const material=configureAmbientPointMotion(
+    new THREE.PointsMaterial({
+      color:'#ffffff',
+      size:.16,
+      sizeAttenuation:true,
+      vertexColors:true,
+      transparent:true,
+      opacity:.76,
+      depthWrite:false,
+      blending:THREE.AdditiveBlending
+    }),
+    [.11,.22,.1],
+    [.62,1.35,.55]
+  );
   const points=new THREE.Points(geometry,material);
   points.frustumCulled=false;
   game.scene.add(points);
-  game.biomeMotes={points,base,phases,sizes};
+  game.biomeMotes={points};
 }
-
 function addPondReeds(game){
   const layout=createPondReedLayout();
   const stalkCount=layout.length*3;
@@ -1568,8 +1651,8 @@ export function buildMeadowArena(game){
   const groundGeometry=new THREE.PlaneGeometry(
     WORLD_SIZE.width,
     WORLD_SIZE.depth,
-    Math.round(WORLD_SIZE.width*2),
-    Math.round(WORLD_SIZE.depth*2)
+    Math.round(WORLD_SIZE.width),
+    Math.round(WORLD_SIZE.depth)
   );
   const groundPositions=groundGeometry.attributes.position;
   for(let index=0;index<groundPositions.count;index++){
@@ -1701,8 +1784,6 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
     const target=game.cameraTarget||(game.cameraTarget=new THREE.Vector3());
     const look=game.cameraLookTarget||(game.cameraLookTarget=new THREE.Vector3());
     const orbit=game.cameraOrbit||{yaw:0,pitch:.533,distance:11.9};
-    // Keep the orbit pivot on the player, with a small movement-aware lead.
-    // This avoids the world-fixed focus offset drifting sideways after camera orbit.
     const move=game.playerMove||{x:0,y:0};
     const speed=Math.min(1,Math.hypot(move.x,move.y)/5.2);
     look.set(
@@ -1716,8 +1797,6 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
       look.y+Math.sin(orbit.pitch)*orbit.distance,
       look.z+Math.cos(orbit.yaw)*horizontal
     );
-    // The focus point reacts slightly faster than the camera body to keep
-    // the wizard visually anchored during turns and direction changes.
     const positionAlpha=1-Math.exp(-realDt*4.8);
     const focusAlpha=1-Math.exp(-realDt*(5.8+speed*.8));
     game.camera.position.lerp(target,positionAlpha);
@@ -1728,57 +1807,54 @@ export function animateMeadow(game,worldDt,realDt=worldDt){
       game.sunLight.target.position.set(p.x,p.y,p.z);
     }
   }
+
   const shader=game.grassMaterial?.userData?.shader;
   if(shader?.uniforms?.uMeadowTime)shader.uniforms.uMeadowTime.value=game.worldTime;
   const waterShader=game.waterMaterial?.userData?.shader;
   if(waterShader?.uniforms?.uWaterTime)waterShader.uniforms.uWaterTime.value=game.worldTime;
   const pondShader=game.pondMaterial?.userData?.shader;
   if(pondShader?.uniforms?.uPondTime)pondShader.uniforms.uPondTime.value=game.worldTime;
+
   if(game.cloudLayer){
-    const {mesh,layout,dummy}=game.cloudLayer;
-    layout.forEach((puff,index)=>{
-      const phase=game.worldTime*.035+puff.phase;
-      dummy.position.set(
-        puff.x+puff.offsetX+Math.sin(phase)*puff.driftX,
-        puff.y+puff.offsetY,
-        puff.z+puff.offsetZ+Math.cos(phase)*puff.driftZ
-      );
-      dummy.scale.set(puff.scaleX,puff.scaleY,puff.scaleZ);
-      dummy.rotation.set(0,puff.rotationY,0);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(index,dummy.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate=true;
+    game.cloudUpdateElapsed=(game.cloudUpdateElapsed||0)+realDt;
+    if(game.cloudUpdateElapsed>=1/12){
+      game.cloudUpdateElapsed%=1/12;
+      const {mesh,layout,dummy}=game.cloudLayer;
+      layout.forEach((puff,index)=>{
+        const phase=game.worldTime*.035+puff.phase;
+        dummy.position.set(
+          puff.x+puff.offsetX+Math.sin(phase)*puff.driftX,
+          puff.y+puff.offsetY,
+          puff.z+puff.offsetZ+Math.cos(phase)*puff.driftZ
+        );
+        dummy.scale.set(puff.scaleX,puff.scaleY,puff.scaleZ);
+        dummy.rotation.set(0,puff.rotationY,0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(index,dummy.matrix);
+      });
+      mesh.instanceMatrix.needsUpdate=true;
+    }
   }
-  game.treeTops?.forEach(t=>{t.group.rotation.z=Math.sin(game.worldTime*.72+t.phase)*t.amount;t.group.rotation.x=Math.cos(game.worldTime*.58+t.phase)*t.amount*.55;});
+
+  game.treeTops?.forEach(t=>{
+    t.group.rotation.z=Math.sin(game.worldTime*.72+t.phase)*t.amount;
+    t.group.rotation.x=Math.cos(game.worldTime*.58+t.phase)*t.amount*.55;
+  });
   game.windmills?.forEach((m,i)=>{m.rotation.z+=worldDt*(.34+i*.025);});
   if(game.magicCore){
     game.magicCore.rotation.y+=worldDt*.24;
     game.magicCore.rotation.x=Math.sin(game.worldTime*.35)*.09;
     game.magicCore.position.y=2.55+Math.sin(game.worldTime*1.6)*.1;
-    game.magicOrbits[0].rotation.z+=worldDt*.55;game.magicOrbits[1].rotation.y-=worldDt*.42;
+    game.magicOrbits[0].rotation.z+=worldDt*.55;
+    game.magicOrbits[1].rotation.y-=worldDt*.42;
   }
   if(game.cottageSmoke)game.cottageSmoke.position.y=4.1+Math.sin(game.worldTime*.45)*.13;
-  if(game.biomeMotes){
-    const attribute=game.biomeMotes.points.geometry.attributes.position;
-    for(let i=0;i<game.biomeMotes.phases.length;i++){
-      const phase=game.biomeMotes.phases[i],k=i*3;
-      attribute.array[k]=game.biomeMotes.base[k]+Math.sin(game.worldTime*.62+phase)*.11;
-      attribute.array[k+1]=game.biomeMotes.base[k+1]+Math.sin(game.worldTime*1.35+phase)*.22;
-      attribute.array[k+2]=game.biomeMotes.base[k+2]+Math.cos(game.worldTime*.55+phase)*.1;
-    }
-    attribute.needsUpdate=true;
-    game.biomeMotes.points.material.opacity=.58+Math.sin(game.worldTime*1.8)*.16;
-  }
-  if(game.fireflies){
-    const attribute=game.fireflies.points.geometry.attributes.position;
-    for(let i=0;i<game.fireflies.phases.length;i++){
-      const phase=game.fireflies.phases[i],k=i*3;
-      attribute.array[k]=game.fireflies.base[k]+Math.sin(game.worldTime*.42+phase)*.16;
-      attribute.array[k+1]=game.fireflies.base[k+1]+Math.sin(game.worldTime*1.35+phase)*.28;
-      attribute.array[k+2]=game.fireflies.base[k+2]+Math.cos(game.worldTime*.36+phase)*.14;
-    }
-    attribute.needsUpdate=true;
-    game.fireflies.points.material.opacity=.52+Math.sin(game.worldTime*2.1)*.16;
-  }
+
+  const moteShader=game.biomeMotes?.points.material.userData.ambientShader;
+  if(moteShader?.uniforms?.uAmbientTime)moteShader.uniforms.uAmbientTime.value=game.worldTime;
+  if(game.biomeMotes)game.biomeMotes.points.material.opacity=.58+Math.sin(game.worldTime*1.8)*.16;
+
+  const fireflyShader=game.fireflies?.points.material.userData.ambientShader;
+  if(fireflyShader?.uniforms?.uAmbientTime)fireflyShader.uniforms.uAmbientTime.value=game.worldTime;
+  if(game.fireflies)game.fireflies.points.material.opacity=.52+Math.sin(game.worldTime*2.1)*.16;
 }
