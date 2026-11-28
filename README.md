@@ -70,6 +70,8 @@ Expected URL: https://safherofficial.github.io/cat-wizard/
 ```text
 src/
   main.js           Three.js scene, controls, combat and runtime loop
+  camera-controls.js right-button orbit camera math and pitch limits
+  world-map.js      shared playable world bounds and clamping
   gesture.js        one-stroke recognizer and spell templates
   performance.js    render quality presets and optional runtime diagnostics
   style.css         responsive browser shell and HUD
@@ -78,7 +80,9 @@ scripts/
 public/assets/
   cat-wizard.webp   full original cat artwork, transparent WebP
 tests/
+  camera-controls.test.js  camera orbit interaction math checks
   gesture.test.js          gesture classification checks
+  world-map.test.js        expanded world-bound checks
   performance.test.js      render quality preset checks
   glb-audit.test.js        standalone GLB audit tests
   blender_source_test.py   Blender builder/audit source contract checks
