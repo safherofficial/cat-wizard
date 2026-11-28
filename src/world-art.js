@@ -5,7 +5,7 @@ const TAU = Math.PI * 2;
 
 export function buildLighting(g){
   g.scene.background=new THREE.Color('#a9d8e5');
-  g.scene.fog=new THREE.Fog('#d7e8dc',40,90);
+  g.scene.fog=new THREE.Fog('#d7e8dc',70,158);
   g.scene.add(new THREE.HemisphereLight('#f6fbf1','#718b66',1.48));
 
   const sun=new THREE.DirectionalLight('#ffe5bd',2.25);
@@ -13,7 +13,8 @@ export function buildLighting(g){
   sun.castShadow=true;
   const shadowResolution=g.quality?.shadowMapSize||2048;
   sun.shadow.mapSize.set(shadowResolution,shadowResolution);
-  Object.assign(sun.shadow.camera,{left:-19,right:19,top:17,bottom:-17,near:.5,far:60});
+  Object.assign(sun.shadow.camera,{left:-22,right:22,top:20,bottom:-20,near:.5,far:90});
+  g.sunLight=sun;
   sun.shadow.bias=-.00016;
   sun.shadow.normalBias=.022;
   g.scene.add(sun);
