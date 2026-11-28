@@ -144,7 +144,15 @@ class CatWizard {
   bindInput() {
     window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();this.keys.add(k);});
     window.addEventListener('keyup',e=>this.keys.delete(e.key.toLowerCase()));
-    window.addEventListener('blur',()=>{this.keys.clear();this.touchMove.set(0,0);this.movePointer=null;if(this.spellPointer!==null)this.endGesture();});
+    const cancelActiveInput=()=>{
+      this.keys.clear();
+      this.movePointer=null;
+      this.moveOrigin=null;
+      this.touchMove.set(0,0);
+      if(this.spellPointer!==null)this.cancelGesture();
+    };
+    window.addEventListener('blur',cancelActiveInput);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelActiveInput();});
     this.canvas.addEventListener('contextmenu',e=>e.preventDefault());
     this.canvas.addEventListener('pointerdown',e=>{
       if(e.pointerType==='mouse'&&e.button!==0)return;
@@ -164,8 +172,16 @@ class CatWizard {
       }
       if(e.pointerId===this.spellPointer){const p=this.stroke.at(-1);if(!p||Math.hypot(e.clientX-p.x,e.clientY-p.y)>3){this.stroke.push({x:e.clientX,y:e.clientY});this.drawStroke();}}
     });
-    const release=e=>{if(e.pointerId===this.movePointer){this.movePointer=null;this.moveOrigin=null;this.touchMove.set(0,0);}if(e.pointerId===this.spellPointer)this.endGesture();};
-    this.canvas.addEventListener('pointerup',release);this.canvas.addEventListener('pointercancel',release);this.canvas.addEventListener('lostpointercapture',release);
+    const release=(e,cancelled=false)=>{
+      if(e.pointerId===this.movePointer){this.movePointer=null;this.moveOrigin=null;this.touchMove.set(0,0);}
+      if(e.pointerId===this.spellPointer){
+        if(cancelled)this.cancelGesture();
+        else this.endGesture();
+      }
+    };
+    this.canvas.addEventListener('pointerup',e=>release(e,false));
+    this.canvas.addEventListener('pointercancel',e=>release(e,true));
+    this.canvas.addEventListener('lostpointercapture',e=>release(e,true));
   }
 
   resize() {
@@ -188,6 +204,23 @@ class CatWizard {
     this.strokeLine.frustumCulled=false;this.scene.add(this.strokeLine);
   }
 
+  clearGestureStroke() {
+    if(this.strokeLine){this.scene.remove(this.strokeLine);this.strokeLine.geometry.dispose();this.strokeLine.material.dispose();this.strokeLine=null;}
+    this.stroke=[];
+  }
+
+  restoreWorldTime() {
+    this.restore={from:this.timeScale,elapsed:0,duration:.25};
+  }
+
+  cancelGesture() {
+    if(this.spellPointer===null)return;
+    this.spellPointer=null;
+    this.clearGestureStroke();
+    this.restoreWorldTime();
+    this.status('Gesture cancelled · time returning to normal');
+  }
+
   endGesture() {
     if(this.spellPointer===null)return;
     this.spellPointer=null;
@@ -195,8 +228,8 @@ class CatWizard {
     const target=this.stroke.length?this.screenToWorld(this.stroke.at(-1)):this.player.position.clone();
     if(result)this.cast(result.spell,target,result.confidence);
     else{this.lastSpell='Unrecognized glyph';this.status('The glyph slipped. Draw one clear, continuous stroke.');this.updateHud();}
-    if(this.strokeLine){this.scene.remove(this.strokeLine);this.strokeLine.geometry.dispose();this.strokeLine.material.dispose();this.strokeLine=null;}
-    this.stroke=[];this.restore={from:this.timeScale,elapsed:0,duration:.25};
+    this.clearGestureStroke();
+    this.restoreWorldTime();
   }
 
   cast(spell,target,confidence) {
