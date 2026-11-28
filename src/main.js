@@ -5,7 +5,7 @@ import { recognizeGesture, SPELLS } from './gesture.js';
 import './style.css';
 
 const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/f818428d-8664-4dc0-be27-ac4785e0ccbe.glb';
+const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/17373543-4bfb-4953-9977-285d5ce9a224.glb';
 const rand = (a,b) => a + Math.random() * (b-a);
 const dist = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 
@@ -142,8 +142,8 @@ class CatWizard {
     this.frogModel=null;
     const loader=new GLTFLoader();
     loader.load(FROG_WIZARD_MODEL_URL,gltf=>{
-      // The file contains two complete scenes. LOD1 is ~63k triangles instead of ~253k:
-      // use the lighter scene at runtime to protect frame rate without changing the world.
+      // The hosted runtime asset contains only the optimized LOD1 scene (~63k triangles),
+      // avoiding the original high-detail mesh and cutting the download by roughly 67%.
       const source=gltf.scenes?.find(scene=>scene.name?.includes('LOD1'))||gltf.scenes?.[1]||gltf.scene;
       if(!source)throw new Error('The Frog Wizard GLB has no usable scene.');
       const model=source.clone(true);
