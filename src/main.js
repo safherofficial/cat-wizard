@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createFrogWizardLod, disposeCharacterObject } from './frog-wizard.js';
 import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWizardCat, animateWorld } from './world-art.js';
 import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortexAcceleration, resolveCircleCollision } from './spell-physics.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
@@ -34,6 +36,7 @@ function createGlowTexture(){
 class CatWizard {
   constructor(canvas) {
     this.canvas = canvas;
+    this.disposed = false;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#83d1ed');
     this.scene.fog = new THREE.Fog('#b9e2e8',42,92);
@@ -165,7 +168,47 @@ class CatWizard {
     this.props.push(propState);this.obstacles.push(propState);
   }
 
-  buildPlayer() { this.player=buildWizardCat(this); }
+  buildPlayer() {
+    this.player=buildWizardCat(this);
+    this.characterLoadState='loading';
+    const loader=new GLTFLoader();
+    const assetUrl=`${import.meta.env.BASE_URL}assets/frog-wizard-lods.glb`;
+
+    loader.load(assetUrl,gltf=>{
+      let frogWizard;
+      try {
+        frogWizard=createFrogWizardLod(gltf);
+      } catch(error) {
+        this.characterLoadState='fallback';
+        console.error('Frog Wizard GLB could not be prepared; retaining the fallback character.',error);
+        return;
+      }
+
+      if(this.disposed) {
+        disposeCharacterObject(frogWizard);
+        return;
+      }
+
+      const previousCharacter=this.catRoot;
+      this.player.add(frogWizard);
+      this.catRoot=frogWizard;
+      this.catRig=null;
+      this.tail=null;
+      this.frogWizard=frogWizard;
+      this.characterLoadState='ready';
+
+      if(previousCharacter) {
+        this.player.remove(previousCharacter);
+        disposeCharacterObject(previousCharacter);
+      }
+      this.status('Frog Wizard ready · explore the enchanted wilds');
+    },undefined,error=>{
+      if(this.disposed)return;
+      this.characterLoadState='fallback';
+      this.status('Frog Wizard asset unavailable · fallback character active');
+      console.warn('Could not load Frog Wizard model from '+assetUrl,error);
+    });
+  }
 
   bindInput() {
     window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();this.keys.add(k);});
@@ -838,7 +881,9 @@ class CatWizard {
     }
   }
   dispose(){
+    this.disposed=true;
     this.renderer.setAnimationLoop(null);
+    if(this.frogWizard){disposeCharacterObject(this.frogWizard);this.frogWizard=null;}
     this.performanceMonitor?.dispose();
     this.resizeObserver.disconnect();
     this.clock.dispose();
@@ -875,7 +920,8 @@ function boot(){
           timeScale: game.timeScale,
           casts: game.castCount,
           activeEffects: game.effects.length,
-          debris: game.debris.length
+          debris: game.debris.length,
+          character: game.characterLoadState||'fallback'
         }
       });
     }

@@ -1,6 +1,6 @@
-# Cat Wizard — Three.js browser edition
+# Frog Wizard — Three.js browser edition
 
-Cat Wizard now runs as a native browser game built with Three.js. Unity is no longer part of the production runtime or web build pipeline.
+Frog Wizard now runs as a native browser game built with Three.js. Unity is no longer part of the production runtime or web build pipeline.
 
 ## Stack
 
@@ -39,7 +39,7 @@ The deployable site is written to `dist/`.
 
 ## Gameplay
 
-The scene is a 148 × 120 free-roam enchanted valley built from a seeded 3584×2816 painted ground texture, 56,000 animated instanced grass blades, 6,000 wildflower clusters, 520 floating fireflies, four peripheral pine groves, two moonlit crystal beds, a northern starlight shrine, tree canopies, bushes, a winding river, a west-side moon pond, expanded mushroom hollows, an old oak grove, a southern ring of ancient stones, a timber footbridge, moss-covered rocky outcrops, a cottage, a working windmill and a wider ring of distant hills. Hand-painted trails lead from the central spell clearing into the new outer biomes. The 148 × 120 ground is a subdivided, deterministic heightfield: broad, low-relief rises and shallow basins blend into level walking trails, the central spell clearing, the river corridor and landmark pads. Grass, flowers, trees, mushrooms, rocks and crystals are anchored to their local surface height; the player, camera, directional light and spell-picking ray follow the same profile. The camera and directional shadow light follow the player across the expanded bounds. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is a modeled 3D grey cat with the signature pink bow tie, pointed ears, violet wizard hat and pipe; the walk cycle articulates the legs and arms, with a moving cloak, secondary head and hat motion, a swaying tail and animated pipe smoke. Instanced grass bends in the wind and fireflies drift above the flowers. This phase deliberately has no enemies, health, damage-to-player or respawn loop. Instead, it isolates the five gesture spells and their interactions with destructible crates, barrels, vases and stones. Movable props have mass, damped velocity, wall and pillar collisions, and pairwise momentum exchange. The follow camera is closer to the character to emphasize the third-person view.
+The scene is a 148 × 120 free-roam enchanted valley built from a seeded 3584×2816 painted ground texture, 56,000 animated instanced grass blades, 6,000 wildflower clusters, 520 floating fireflies, four peripheral pine groves, two moonlit crystal beds, a northern starlight shrine, tree canopies, bushes, a winding river, a west-side moon pond, expanded mushroom hollows, an old oak grove, a southern ring of ancient stones, a timber footbridge, moss-covered rocky outcrops, a cottage, a working windmill and a wider ring of distant hills. Hand-painted trails lead from the central spell clearing into the new outer biomes. The 148 × 120 ground is a subdivided, deterministic heightfield: broad, low-relief rises and shallow basins blend into level walking trails, the central spell clearing, the river corridor and landmark pads. Grass, flowers, trees, mushrooms, rocks and crystals are anchored to their local surface height; the player, camera, directional light and spell-picking ray follow the same profile. The camera and directional shadow light follow the player across the expanded bounds. At its centre, a broken stone ring surrounds a levitating mana core. The protagonist is the Frog Wizard: a textured static GLB with mushroom accessories. Its two-scene LOD pair renders 253,449 triangles at close range and 63,362 beyond 14 world units. The source contains no skeleton or animation clips, so runtime motion is currently handled by character-facing rotation and a subtle whole-body bob rather than limb articulation. Instanced grass bends in the wind and fireflies drift above the flowers. This phase deliberately has no enemies, health, damage-to-player or respawn loop. Instead, it isolates the five gesture spells and their interactions with destructible crates, barrels, vases and stones. Movable props have mass, damped velocity, wall and pillar collisions, and pairwise momentum exchange. The follow camera is closer to the character to emphasize the third-person view.
 
 
 ## Sculpted meadow terrain
@@ -89,7 +89,7 @@ The meadow batching is intended to lower draw-call overhead without reducing the
 
 ## Deployment
 
-Pull requests targeting `main` run JavaScript tests, Blender source-contract tests and the production build, but do not publish the game. Pushes to `main`, or a manual run of **Cat Wizard Web**, run the same checks and publish `dist/` through GitHub Pages.
+Pull requests targeting `main` run JavaScript tests, Blender source-contract tests and the production build, but do not publish the game. Pushes to `main`, or a manual run of **Frog Wizard Web**, run the same checks and publish `dist/` through GitHub Pages.
 
 The first Pages deployment requires **Repository → Settings → Pages → Build and deployment → Source → GitHub Actions**. No Unity license or Vercel integration is involved.
 
@@ -135,3 +135,12 @@ The large grass and flower fields are divided into 32-world-unit instanced cells
 - Adds sixteen drifting storybook cloud formations (96 instanced puffs total); their slow movement follows world time and therefore eases during spell drawing.
 - Adds four instanced pine groves, two emissive crystal beds and a northern starlight shrine as new outer-map destinations.
 - Keeps the backdrop free of shadow casting and uses deterministic layout helpers with unit tests so the horizon remains stable between launches.
+
+
+## Frog Wizard model and LOD
+
+The runtime expects `public/assets/frog-wizard-lods.glb`. Vite serves it from the correct base path on both GitHub Pages and Vercel. The GLB contains two scenes sharing the original PBR material and embedded WebP maps. Near LOD: 253,449 triangles. Far LOD: 63,362 triangles, selected at 14 world units with 12% hysteresis. Meshes do not cast or receive shadow-map shadows; the existing soft ground shadow remains separate.
+
+The original model is one fused mesh with no skin, bones or animation channels. The character is scaled to approximately the former protagonist's height and animated as a single root while moving. The procedural cat remains a temporary fallback if the GLB has not been added or fails to load.
+
+The asset metadata preserves its **CC BY 4.0** source attribution. “Frog wizard with mushrooms” by Scenario, title by Patch; source URL is retained in the GLB and in the project README.

@@ -1,15 +1,15 @@
-# Cat Wizard
+# Frog Wizard
 
 **A little magic. A lot of attitude.**
 
-Cat Wizard is a top-down gesture-magic physics sandbox starring a distinguished grey cat wizard. Draw one continuous symbol with the mouse, touchscreen, or pen; the world slows while the stroke is being drawn; release to cast and experiment with the physical results.
+Frog Wizard is a top-down gesture-magic physics sandbox starring a mysterious frog wizard. Draw one continuous symbol with the mouse, touchscreen, or pen; the world slows while the stroke is being drawn; release to cast and experiment with the physical results.
 
 ## Current build — Three.js browser edition
 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
 - A 148 × 120 walkable enchanted valley with connected hand-painted trails, four peripheral pine groves, moonlit crystal beds, a northern starlight shrine, a moon pond, mushroom groves, an old oak, ancient standing-stone ruins, a timber footbridge, mossy rock outcrops, a winding river, cottage, windmill, 56,000 animated grass blades, 6,000 flower clusters and 520 fireflies. Its sculpted low-relief terrain adds broad rises and shallow basins while keeping footpaths and landmark pads level. Each biome now has its own ground dressing: fern-covered pine floors with fallen timber, floating crystal motes, marsh reeds and color-tuned flower palettes.
-- A 3D modeled grey cat wizard with the signature pink bow tie, pointed ears, violet wizard hat, pipe and articulated walk cycle.
+- The Frog Wizard is the new main character: a detailed textured 3D frog wizard with mushroom accessories, a near/far LOD pair and lightweight root-level movement animation. The supplied source mesh has no skeleton or animation clips, so limb articulation is not claimed.
 - Free-roam movement with WASD, arrow keys or touch relative to the camera heading; the cat turns smoothly toward its travel direction. Hold the right mouse button and drag to orbit the follow camera, or use the mouse wheel to zoom.
 - Touch movement on the left side and independent spell drawing on the right side.
 - Five normalized one-stroke gesture templates with forward/reverse recognition and rejection of short or straight strokes.
@@ -20,21 +20,25 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 - Fireball follows an arcing path and detonates on its first prop impact; Thunderbolt applies directional force along its strike; Frost freezes props; Gravity pulls and swirls them; Chaos delivers an outward shockwave.
 - Responsive browser HUD and fullscreen mode.
 
-## Blender character source
+## Frog Wizard character asset
 
-The current Blender candidate is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), accompanied by `blender/CatWizard_GLBAudit_Blender293.py`. The builder creates an editable `.blend`, a GLB and a preview under `~/CatWizard_Art_v2/`; the rig has 13 bones and five NLA clips (Idle, Walk, Run, Cast and Hit). The parts are rigidly parented to bones rather than bound as one weighted skin.
+The browser runtime loads the optimized two-scene GLB at `public/assets/frog-wizard-lods.glb`. The near representation contains 253,449 triangles; the far representation contains 63,362. Both share the original embedded WebP material textures. The optimized file is approximately 17.7 MB, compared with 77.5 MB for the supplied source.
 
-After generating the GLB, run both the Blender audit helper and the standalone container audit:
+The source is one fused static mesh with no skeleton and no animation clips. Runtime movement turns and gently bobs the complete character; it does not yet animate individual limbs. A rigged version can be introduced later without changing the gameplay controls.
+
+To include the binary in a checkout, place the optimized file at exactly `public/assets/frog-wizard-lods.glb`. Run its structural audit with:
 
 ```bash
-npm run audit:character -- ~/CatWizard_Art_v2/cat-wizard-character-v2.glb
+npm run audit:frog-wizard -- public/assets/frog-wizard-lods.glb
 ```
 
-The standalone audit checks GLB container integrity, embedded buffers, mesh and accessor references, animation channels and required clip names. Missing rig node names or hierarchy differences are flagged for confirmation in Blender. It does not replace visual inspection or a Three.js playtest. The GLB is not part of the browser build and the procedural Three.js character remains active. The older `blender/CatWizard_Blender293_CharacterBuilder.zip` is retained as Character 01 legacy material.
+Attribution: “Frog wizard with mushrooms” by Scenario, title by Patch; AI-generated with TRELLIS 2; licensed under **Creative Commons Attribution 4.0 International (CC BY 4.0)**. Source: https://huggingface.co/datasets/scenario-labs/3d-collection/blob/55b4c002b4c1529fc48da3dff98516c3069bfa3f/assets/scenario_asset_dyHjpX6aCe8q1eNZFekAwzj6/output.glb.
+
+The previous procedural cat and the Blender Cat Wizard builder remain as fallback/legacy material. The Frog Wizard GLB is the intended runtime protagonist.
 
 ## Performance diagnostics
 
-Open the game with `?perf=1` to display FPS, average CPU frame cost, draw calls, triangles, geometry/texture counts and the active quality preset. Compare manual profiles with `?perf=1&quality=medium` or `?perf=1&quality=low`. High quality remains the default; these profiles do not switch automatically.
+Open the game with `?perf=1` to display FPS, average CPU frame cost, draw calls, triangles, geometry/texture counts and the active quality preset. The initial preset is selected from device hints; sustained slow frames lower the internal pixel ratio gradually, while sustained headroom restores it in small steps. Use `?perf=1&quality=high`, `medium` or `low` to override the automatic selection.
 
 ## Rendering and performance
 

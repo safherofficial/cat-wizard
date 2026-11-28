@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
-    "audit:character": "node scripts/audit-catwizard-glb.js"
+    "audit:character": "node scripts/audit-catwizard-glb.js",
+    "audit:frog-wizard": "node scripts/audit-frog-wizard-glb.js"
   },
   "dependencies": {
     "three": "0.187.0"
