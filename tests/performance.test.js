@@ -27,8 +27,20 @@ test('medium and high presets progressively raise the rendering budget', () => {
   const high = resolveQualityPreset('high');
   assert.equal(medium.shadows, true);
   assert.equal(medium.shadowMap, 'pcf');
+  assert.equal(medium.shadowMapSize, 1024);
+  assert.equal(medium.antialias, true);
   assert.ok(high.maxPixelRatio > medium.maxPixelRatio);
   assert.equal(high.shadowMap, 'soft');
+  assert.equal(high.shadowMapSize, 2048);
+  assert.equal(high.antialias, true);
+});
+
+test('low quality uses a smaller shadow budget and disables antialiasing', () => {
+  const low = resolveQualityPreset('low');
+  const medium = resolveQualityPreset('medium');
+  assert.equal(low.shadowMapSize, 512);
+  assert.equal(low.antialias, false);
+  assert.ok(low.shadowMapSize < medium.shadowMapSize);
 });
 
 test('unknown quality values safely fall back to high', () => {
