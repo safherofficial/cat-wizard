@@ -4,6 +4,7 @@ import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortex
 import { recognizeGesture, SPELLS } from './gesture.js';
 import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
 import { clampWorldPosition } from './world-map.js';
+import { terrainElevationAt } from './terrain.js';
 import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, dampAngle, rotateCameraOrbit, zoomCameraOrbit } from './camera-controls.js';
 import './style.css';
 
@@ -110,7 +111,7 @@ class CatWizard {
   buildArena() { buildArtArena(this); }
 
   addPillar(x,z) {
-    const group=new THREE.Group();group.position.set(x,0,z);this.scene.add(group);
+    const group=new THREE.Group();group.position.set(x,terrainElevationAt(x,z),z);this.scene.add(group);
     this.obstacles.push({x,z,radius:.74,fixed:true});
     const mat=new THREE.MeshStandardMaterial({color:'#565462',roughness:.94});
     const base=new THREE.Mesh(new THREE.BoxGeometry(1.05,.25,1.05),mat);base.position.y=.13;group.add(base);
@@ -241,9 +242,9 @@ class CatWizard {
   screenToWorld(p) {
     const r=this.canvas.getBoundingClientRect(),ndc=new THREE.Vector2(((p.x-r.left)/r.width)*2-1,-(((p.y-r.top)/r.height)*2-1));
     this.raycaster.setFromCamera(ndc,this.camera);const hit=new THREE.Vector3();
-    if(!this.raycaster.ray.intersectPlane(this.groundPlane,hit))return new THREE.Vector3(this.player.position.x,.12,this.player.position.z);
+    if(!this.raycaster.ray.intersectPlane(this.groundPlane,hit))return new THREE.Vector3(this.player.position.x,this.player.position.y+.12,this.player.position.z);
     const target=clampWorldPosition(hit.x,hit.z,.35);
-    hit.x=target.x;hit.z=target.z;hit.y=.12;return hit;
+    hit.x=target.x;hit.z=target.z;hit.y=terrainElevationAt(hit.x,hit.z)+.12;return hit;
   }
 
   drawStroke() {
@@ -317,8 +318,8 @@ class CatWizard {
       orb.add(shell, core, glow);
       orb.add(new THREE.PointLight('#ff783e', 6, 4));
 
-      const start = new THREE.Vector3(this.player.position.x, .95, this.player.position.z);
-      const destination = new THREE.Vector3(target.x, .95, target.z);
+      const start = new THREE.Vector3(this.player.position.x, this.player.position.y+.95, this.player.position.z);
+      const destination = new THREE.Vector3(target.x, terrainElevationAt(target.x,target.z)+.95, target.z);
       const travelDistance = Math.hypot(destination.x - start.x, destination.z - start.z);
       const duration = clamp(travelDistance / 18, .14, 1.15);
       orb.position.copy(start);
@@ -333,18 +334,18 @@ class CatWizard {
         lastTrail: -1
       });
     } else if (spell === 'Thunderbolt') {
-      const start = new THREE.Vector3(this.player.position.x, .8, this.player.position.z);
-      const end = new THREE.Vector3(target.x, 1.1, target.z);
+      const start = new THREE.Vector3(this.player.position.x, this.player.position.y+.8, this.player.position.z);
+      const end = new THREE.Vector3(target.x, terrainElevationAt(target.x,target.z)+1.1, target.z);
       this.addLightning(start, end);
       this.damageLine(start, end);
-      this.burst(new THREE.Vector3(target.x, .65, target.z), '#ffe18a', 28, 2.4);
+      this.burst(new THREE.Vector3(target.x, terrainElevationAt(target.x,target.z)+.65, target.z), '#ffe18a', 28, 2.4);
     } else if (spell === 'Frost') {
       this.castFrost(target);
     } else if (spell === 'Gravity') {
       const center = { x: target.x, z: target.z };
       const ring = this.ring(target, '#b995ff');
       const echo = this.ring(target, '#e4d7ff');
-      echo.position.y = .24;
+      echo.position.y = terrainElevationAt(target.x,target.z)+.24;
       this.effects.push({ kind: 'ring', object: echo, age: 0, duration: 1.15, scale: 4.7 });
       this.effects.push({
         kind: 'gravity',
@@ -356,7 +357,7 @@ class CatWizard {
         pull: 9.5,
         swirl: 3.8
       });
-      this.burst(new THREE.Vector3(target.x, .3, target.z), '#c4a4ff', 16, 1.8);
+      this.burst(new THREE.Vector3(target.x, terrainElevationAt(target.x,target.z)+.3, target.z), '#c4a4ff', 16, 1.8);
     } else if (spell === 'Chaos') {
       this.radial(spell, target, 3.8, 2.4, '#ff9ccc', 17, 0);
     }
@@ -364,11 +365,13 @@ class CatWizard {
 
   castFrost(target){
     this.radial('Frost', target, 3.25, 0, '#91dcff', 0, 2.2);
-    this.burst(new THREE.Vector3(target.x,.4,target.z),'#b8ecff',34,2.1);
+    this.burst(new THREE.Vector3(target.x,terrainElevationAt(target.x,target.z)+.4,target.z),'#b8ecff',34,2.1);
     const material=new THREE.MeshStandardMaterial({color:'#c6f4ff',emissive:'#69c8e8',emissiveIntensity:.5,roughness:.2,metalness:.18,transparent:true,opacity:.92});
     for(let i=0;i<9;i++){
       const a=i*Math.PI*2/9,r=rand(.8,2.7),shard=new THREE.Mesh(new THREE.OctahedronGeometry(rand(.14,.25),0),material.clone());
-      shard.position.set(target.x+Math.cos(a)*r,rand(.65,1.25),target.z+Math.sin(a)*r);
+      const shardX=target.x+Math.cos(a)*r;
+      const shardZ=target.z+Math.sin(a)*r;
+      shard.position.set(shardX,terrainElevationAt(shardX,shardZ)+rand(.65,1.25),shardZ);
       shard.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));this.scene.add(shard);
       this.debris.push({object:shard,v:new THREE.Vector3(Math.cos(a)*rand(.15,.55),rand(1.4,2.8),Math.sin(a)*rand(.15,.55)),age:0,duration:rand(.8,1.35),gravity:1.7});
     }
@@ -393,13 +396,13 @@ class CatWizard {
     });
   }
 
-  ring(p,color) {const m=new THREE.Mesh(new THREE.TorusGeometry(.75,.065,8,64),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthWrite:false}));m.rotation.x=Math.PI/2;m.position.set(p.x,.22,p.z);this.scene.add(m);return m;}
+  ring(p,color) {const m=new THREE.Mesh(new THREE.TorusGeometry(.75,.065,8,64),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthWrite:false}));m.rotation.x=Math.PI/2;m.position.set(p.x,terrainElevationAt(p.x,p.z)+.22,p.z);this.scene.add(m);return m;}
   lineEffect(points,color,duration){const o=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color,transparent:true}));this.scene.add(o);this.effects.push({kind:'line',object:o,age:0,duration});}
   radial(spell, target, radius, damage, color, impulse, freeze = 0) {
     const ring = this.ring(target, color);
     this.effects.push({ kind: 'ring', object: ring, age: 0, duration: .58, scale: radius * 1.28 });
     this.burst(
-      new THREE.Vector3(target.x, .35, target.z),
+      new THREE.Vector3(target.x, terrainElevationAt(target.x,target.z)+.35, target.z),
       color,
       spell === 'Chaos' ? 46 : 34,
       radius * 1.5
@@ -491,10 +494,12 @@ class CatWizard {
         new THREE.BoxGeometry(size, size, size),
         new THREE.MeshStandardMaterial({ color })
       );
+      const fragmentX=position.x+rand(-.28,.28);
+      const fragmentZ=position.z+rand(-.28,.28);
       fragment.position.set(
-        position.x + rand(-.28, .28),
-        rand(.25, .9),
-        position.z + rand(-.28, .28)
+        fragmentX,
+        terrainElevationAt(fragmentX,fragmentZ)+rand(.25,.9),
+        fragmentZ
       );
       fragment.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
       this.scene.add(fragment);
@@ -509,7 +514,7 @@ class CatWizard {
         duration: 1.5
       });
     }
-    this.burst(new THREE.Vector3(position.x, .4, position.z), '#d0a47b', 8, 1.2);
+    this.burst(new THREE.Vector3(position.x, terrainElevationAt(position.x,position.z)+.4, position.z), '#d0a47b', 8, 1.2);
   }
 
   burst(p,color,count,spread){
@@ -517,7 +522,12 @@ class CatWizard {
       const size=rand(.035,.095),geometry=i%4===0?new THREE.OctahedronGeometry(size*1.25,0):new THREE.SphereGeometry(size,7,6);
       const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
       const particle=new THREE.Mesh(geometry,material);
-      particle.position.set(p.x+rand(-.12,.12),Math.max(.12,(p.y||0)+rand(-.12,.12)),p.z+rand(-.12,.12));
+      const particleX=p.x+rand(-.12,.12),particleZ=p.z+rand(-.12,.12);
+      particle.position.set(
+        particleX,
+        Math.max(terrainElevationAt(particleX,particleZ)+.12,(p.y||0)+rand(-.12,.12)),
+        particleZ
+      );
       particle.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));this.scene.add(particle);
       this.debris.push({object:particle,v:new THREE.Vector3(rand(-spread,spread),rand(.4,2.1),rand(-spread,spread)),age:0,duration:rand(.42,1.05),gravity:1.05});
     }
@@ -589,6 +599,7 @@ class CatWizard {
     const safePosition = clampWorldPosition(this.player.position.x, this.player.position.z, .65);
     this.player.position.x = safePosition.x;
     this.player.position.z = safePosition.z;
+    this.player.position.y = terrainElevationAt(safePosition.x,safePosition.z);
     if (this.catRoot) {
       const moving = this.playerMove.length() > .24;
       if (moving) {
