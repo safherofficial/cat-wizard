@@ -412,6 +412,7 @@ class CatWizard {
   }
   updatePlayer(dt,realDt){
     this.playerInvul=Math.max(0,this.playerInvul-realDt);
+    if(this.frogActionLock>0)this.frogActionLock=Math.max(0,this.frogActionLock-dt);
     if(this.respawn>0){this.respawn=Math.max(0,this.respawn-realDt);this.player.visible=Math.floor(this.respawn*20)%2===0;if(this.respawn===0){this.player.position.set(0,0,-3.4);this.playerHealth=5;this.playerMove.set(0,0);this.player.visible=true;this.updateHud();}return;}
     const m=new THREE.Vector2();if(this.keys.has('a')||this.keys.has('arrowleft'))m.x--;if(this.keys.has('d')||this.keys.has('arrowright'))m.x++;if(this.keys.has('w')||this.keys.has('arrowup'))m.y--;if(this.keys.has('s')||this.keys.has('arrowdown'))m.y++;m.add(this.touchMove);if(m.lengthSq()>1)m.normalize();
     const targetSpeed=this.keys.has('shift')?7:5.2;
@@ -436,7 +437,6 @@ class CatWizard {
       const moving=this.playerMove.length()>.24;
       if(moving)this.catRoot.rotation.y=Math.atan2(this.playerMove.x,this.playerMove.y);
       if(this.frogMixer){
-        if(this.frogActionLock>0)this.frogActionLock=Math.max(0,this.frogActionLock-dt);
         if(this.frogActionLock<=0){
           const desired=moving?(this.keys.has('shift')?'Run':'Walk'):'Idle';
           this.playFrogAnimation(desired);
