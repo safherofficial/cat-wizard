@@ -51,6 +51,15 @@ The scene is a 148 × 120 free-roam enchanted valley built from a seeded 3584×2
 - Player elevation, camera follow, directional-light tracking, spell rings, projectiles and terrain ray-picking follow the surface.
 - Dedicated tests check flat gameplay areas, positive and negative landforms, finite bounds and gradual height changes.
 
+## Distinct woodland, crystal and marsh micro-biomes
+
+- Adds a low-poly fern understorey to the four pine groves, with fallen logs, moss-covered timber and cut stumps placed away from the trails and existing collision landmarks.
+- Adds 52 softly glowing, drifting motes around the two crystal beds. Their color palette follows the crystal tones and their movement is driven by world time, so it slows during spell drawing.
+- Adds twelve marsh-reed clumps around the moon pond, with separate instanced stalks, seed heads and leaves.
+- Gives the flower fields region-aware color palettes: cool and luminous tones near the crystals, muted woodland colors beneath the pines, and warm pale-gold colors around the northern shrine.
+- Batches the new fern, log, stump, reed and mote details with instanced meshes or point geometry to keep the additional environment dressing lightweight.
+- Keeps all grounded details aligned to the shared terrain heightfield.
+
 ## Blender character asset
 
 The current candidate source is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), with a companion `blender/CatWizard_GLBAudit_Blender293.py`. Character 02 adds dedicated Hat, Ear.L, Ear.R and Tail.Tip bones to a 13-bone rigid-part rig; it includes Idle, Walk, Run, Cast and Hit NLA clips. Bevelled curve details are converted to meshes before GLB export, and the builder validates expected bones, mesh bindings and clips before saving/exporting. The Blender audit helper checks the exported GLB's structure and produces front/side/rear previews.
