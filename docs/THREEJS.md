@@ -42,7 +42,7 @@ The scene is a stylized painted meadow built from a seeded 2048×1536 ground tex
 
 ## Blender character asset
 
-The repository includes `blender/CatWizard_Blender293_CharacterBuilder.zip`, a self-contained Blender 2.93 Python builder for the first Cat Wizard character asset. It generates an editable Blender project, a GLB export and a preview render, with separate NLA clips for idle, walk, run, cast and hit. The script has been statically syntax-checked, but it has not yet been executed in the user's local Blender installation. The existing Three.js character remains active until the exported GLB is reviewed, copied into `public/assets/cat-wizard-character.glb`, and connected to the runtime loader.
+The current candidate source is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), with a companion `blender/CatWizard_GLBAudit_Blender293.py`. Character 02 adds dedicated Hat, Ear.L, Ear.R and Tail.Tip bones to a 13-bone rigid-part rig; it includes Idle, Walk, Run, Cast and Hit NLA clips. Bevelled curve details are converted to meshes before GLB export, and the builder validates expected bones, mesh bindings and clips before saving/exporting. The audit helper checks the exported GLB's structure and produces front/side/rear previews. The source has been statically syntax-checked only: it has not been run inside Blender 2.93 here, so no generated .blend/.glb or visual render has been verified. The browser continues to use the current procedural Three.js cat until the generated candidate is reviewed and explicitly approved. The older ZIP remains as Character 01 legacy material.
 
 
 ## Meadow visual and draw-call pass
