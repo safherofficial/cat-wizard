@@ -21,7 +21,7 @@ The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.
 
 ## Blender character source
 
-A Blender 2.93-compatible character builder is included in `blender/CatWizard_Blender293_CharacterBuilder.zip`. Run the Python script from Blender's **Scripting** workspace to generate an editable `.blend`, a game-ready `.glb`, and a preview render under `~/CatWizard_Art/`. The builder creates a rigid-bone character rig with Idle, Walk, Run, Cast and Hit animation clips. The resulting GLB is not part of the browser build until it is reviewed and added under `public/assets/`.
+The current Blender candidate is `blender/CatWizard_CreateCharacter_Blender293.py` (Character 02, Blender 2.93 LTS), accompanied by `blender/CatWizard_GLBAudit_Blender293.py`. The builder creates an editable `.blend`, a GLB and a preview under `~/CatWizard_Art_v2/`; the rig has 13 bones and five NLA clips (Idle, Walk, Run, Cast and Hit). The parts are rigidly parented to bones rather than bound as one weighted skin. Run the separate audit helper and inspect its front/side/rear renders before considering runtime integration. The GLB is not part of the browser build and the procedural Three.js character remains active. The older `blender/CatWizard_Blender293_CharacterBuilder.zip` is retained as Character 01 legacy material.
 
 ## Performance diagnostics
 
