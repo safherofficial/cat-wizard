@@ -8,7 +8,10 @@ export const CAMERA_ORBIT_DEFAULTS = Object.freeze({
   yaw: 0,
   pitch: 0.533,
   distance: 11.9,
-  sensitivity: 0.006
+  minDistance: 7.5,
+  maxDistance: 18.5,
+  sensitivity: 0.006,
+  zoomSensitivity: 0.0012
 });
 
 export function rotateCameraOrbit(orbit, deltaX, deltaY, sensitivity = CAMERA_ORBIT_DEFAULTS.sensitivity) {
@@ -47,4 +50,43 @@ export function cameraRelativeMovement(inputX, inputY, yaw = CAMERA_ORBIT_DEFAUL
     x: x * cosine + y * sine,
     z: -x * sine + y * cosine
   };
+}
+
+
+export function zoomCameraOrbit(
+  orbit,
+  deltaY,
+  sensitivity = CAMERA_ORBIT_DEFAULTS.zoomSensitivity
+) {
+  const currentDistance = Number.isFinite(orbit?.distance)
+    ? orbit.distance
+    : CAMERA_ORBIT_DEFAULTS.distance;
+  const safeDelta = Number.isFinite(deltaY) ? deltaY : 0;
+  const safeSensitivity = Number.isFinite(sensitivity) && sensitivity >= 0
+    ? sensitivity
+    : CAMERA_ORBIT_DEFAULTS.zoomSensitivity;
+  const nextDistance = currentDistance * Math.exp(safeDelta * safeSensitivity);
+  return {
+    ...orbit,
+    distance: clamp(
+      nextDistance,
+      CAMERA_ORBIT_DEFAULTS.minDistance,
+      CAMERA_ORBIT_DEFAULTS.maxDistance
+    )
+  };
+}
+
+/** Smoothly approaches a target heading using the shortest angular route. */
+export function dampAngle(current, target, deltaTime, response = 14) {
+  const safeCurrent = Number.isFinite(current) ? current : 0;
+  const safeTarget = Number.isFinite(target) ? target : safeCurrent;
+  const safeDelta = Number.isFinite(deltaTime) ? Math.max(0, deltaTime) : 0;
+  const safeResponse = Number.isFinite(response) ? Math.max(0, response) : 0;
+  const difference = Math.atan2(
+    Math.sin(safeTarget - safeCurrent),
+    Math.cos(safeTarget - safeCurrent)
+  );
+  const amount = 1 - Math.exp(-safeResponse * safeDelta);
+  const next = safeCurrent + difference * amount;
+  return Math.atan2(Math.sin(next), Math.cos(next));
 }
