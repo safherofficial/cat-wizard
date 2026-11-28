@@ -422,7 +422,7 @@ function addRiverBankLife(game){
       dummy.updateMatrix();
       reeds.setMatrixAt(reedIndex,dummy.matrix);
 
-      dummy.position.set(location.x+Math.sin(lean)*height*.42,height*.76,location.z);
+      dummy.position.set(location.x+Math.sin(lean)*height*.42,height+.025,location.z);
       dummy.rotation.set(0,0,lean);
       dummy.scale.set(.72,1.05,.72);
       dummy.updateMatrix();
