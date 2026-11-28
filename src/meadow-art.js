@@ -485,14 +485,23 @@ function addWoodlandUnderstory(game){
   const stumpMaterial=new THREE.MeshStandardMaterial({
     color:'#77543d',roughness:.98,flatShading:true
   });
-  const stumps=new THREE.InstancedMesh(stumpGeometry,stumpMaterial,layout.stumps.length);
   const stumpTopGeometry=new THREE.CylinderGeometry(.78,.78,.025,8);
   const stumpTopMaterial=new THREE.MeshStandardMaterial({
     color:'#b38b61',roughness:.94,flatShading:true
   });
-  const stumpTops=new THREE.InstancedMesh(stumpTopGeometry,stumpTopMaterial,layout.stumps.length);
+  const stumpCandidates=layout.stumps.filter(stump=>
+    distanceToPath(stump.x,stump.z)>2.35
+    &&!(game.obstacles||[]).some(obstacle=>{
+      if(obstacle.destroyed)return false;
+      const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
+      const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
+      return Math.hypot(stump.x-ox,stump.z-oz)<(obstacle.radius||.55)+.65;
+    })
+  );
+  const stumps=new THREE.InstancedMesh(stumpGeometry,stumpMaterial,stumpCandidates.length);
+  const stumpTops=new THREE.InstancedMesh(stumpTopGeometry,stumpTopMaterial,stumpCandidates.length);
 
-  layout.stumps.forEach((stump,index)=>{
+  stumpCandidates.forEach((stump,index)=>{
     const groundY=terrainElevationAt(stump.x,stump.z);
     dummy.position.set(stump.x,groundY+stump.height*.5,stump.z);
     dummy.rotation.set(0,stump.rotationY,0);
@@ -1576,7 +1585,7 @@ export function buildMeadowArena(game){
     groundGeometry,
     new THREE.MeshStandardMaterial({map:meadowTexture(),roughness:1,metalness:0})
   );
-  ground.rotation.x=-Math.PI/2;ground.position.y=-.09;ground.receiveShadow=true;game.scene.add(ground);game.terrainMesh=ground;
+  ground.rotation.x=-Math.PI/2;ground.position.y=0;ground.receiveShadow=true;game.scene.add(ground);game.terrainMesh=ground;
 
   const outerGrass=new THREE.Mesh(
     new THREE.PlaneGeometry(WORLD_SIZE.width+44,WORLD_SIZE.depth+44),
