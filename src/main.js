@@ -6,7 +6,7 @@ import { recognizeGesture, SPELLS } from './gesture.js';
 import './style.css';
 
 const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/fae37236-0570-4773-a03d-d726c3026985.glb';
+const FROG_WIZARD_MODEL_URL = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3KgyI3TC522YMA8UXOhj8mLE6dq/37363773-56ae-4734-9a97-d8639492c452.glb';
 const rand = (a,b) => a + Math.random() * (b-a);
 const dist = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 
