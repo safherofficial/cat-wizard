@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, rotateCameraOrbit } from '../src/camera-controls.js';
+import { CAMERA_ORBIT_DEFAULTS, cameraRelativeMovement, dampAngle, rotateCameraOrbit, zoomCameraOrbit } from '../src/camera-controls.js';
 
 test('camera starts at a stable, elevated follow angle', () => {
   assert.equal(CAMERA_ORBIT_DEFAULTS.yaw, 0);
@@ -62,4 +62,38 @@ test('diagonal camera-relative movement keeps its magnitude', () => {
 test('non-finite movement input or yaw safely falls back to neutral values', () => {
   assert.deepEqual(cameraRelativeMovement(Number.NaN, Number.POSITIVE_INFINITY, Math.PI / 2), { x: 0, z: 0 });
   assert.deepEqual(cameraRelativeMovement(0, -1, Number.NaN), { x: 0, z: -1 });
+});
+
+
+test('mouse wheel zoom moves the camera smoothly within safe distances', () => {
+  const closer = zoomCameraOrbit(CAMERA_ORBIT_DEFAULTS, -120);
+  const farther = zoomCameraOrbit(CAMERA_ORBIT_DEFAULTS, 120);
+  assert.ok(closer.distance < CAMERA_ORBIT_DEFAULTS.distance);
+  assert.ok(farther.distance > CAMERA_ORBIT_DEFAULTS.distance);
+  assert.ok(closer.distance >= CAMERA_ORBIT_DEFAULTS.minDistance);
+  assert.ok(farther.distance <= CAMERA_ORBIT_DEFAULTS.maxDistance);
+});
+
+test('camera zoom clamps at both distance limits and ignores invalid wheel input', () => {
+  const closeLimit = zoomCameraOrbit({ ...CAMERA_ORBIT_DEFAULTS, distance: 2 }, -1000);
+  const farLimit = zoomCameraOrbit({ ...CAMERA_ORBIT_DEFAULTS, distance: 60 }, 1000);
+  const unchanged = zoomCameraOrbit(CAMERA_ORBIT_DEFAULTS, Number.NaN);
+  assert.equal(closeLimit.distance, CAMERA_ORBIT_DEFAULTS.minDistance);
+  assert.equal(farLimit.distance, CAMERA_ORBIT_DEFAULTS.maxDistance);
+  assert.equal(unchanged.distance, CAMERA_ORBIT_DEFAULTS.distance);
+});
+
+test('character heading damping takes the shortest route across the angle wrap', () => {
+  const current = Math.PI - 0.08;
+  const target = -Math.PI + 0.08;
+  const next = dampAngle(current, target, 0.05, 14);
+  const remaining = Math.atan2(Math.sin(target-next),Math.cos(target-next));
+  assert.ok(Math.abs(remaining) < 0.16);
+  assert.ok(Math.abs(next) > 3);
+});
+
+test('character heading damping is stable for zero time and invalid targets', () => {
+  assert.equal(dampAngle(1.2, 2.4, 0), 1.2);
+  assert.equal(dampAngle(1.2, Number.NaN, 0.1), 1.2);
+  assert.equal(dampAngle(Number.NaN, 2.4, 0), 0);
 });
