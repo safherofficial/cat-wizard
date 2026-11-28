@@ -57,3 +57,31 @@ The first Pages deployment requires **Repository → Settings → Pages → Buil
 Expected URL: https://safherofficial.github.io/cat-wizard/
 
 A successful workflow build confirms static compilation and packaging. Graphics, browser input, device performance and real playability still require hands-on browser testing.
+
+## Performance diagnostics
+
+Append `?perf=1` to the Preview URL to show a compact runtime overlay. It reports:
+
+- Approximate frames per second over a rolling measurement window.
+- Average JavaScript frame cost, including simulation and WebGL command submission.
+- Draw calls and triangles from the most recent render.
+- Active geometry and texture counts tracked by Three.js.
+- The selected quality preset and renderer pixel ratio.
+
+The CPU figure is not a GPU execution timer; WebGL work may complete asynchronously. Use browser performance tools or a GPU profiler for deeper investigation.
+
+Three manual quality presets are available for comparison:
+
+| Query value | Pixel-ratio cap | Shadows |
+| --- | ---: | --- |
+| `high` (default) | 1.5 | Soft shadow maps |
+| `medium` | 1.25 | Standard shadow maps |
+| `low` | 1.0 | Disabled |
+
+Examples:
+
+- `?perf=1`
+- `?perf=1&quality=medium`
+- `?perf=1&quality=low`
+
+These presets are diagnostic controls, not automatic quality switching. Compare the same scene and actions on each preset before changing the default or optimizing individual assets.
