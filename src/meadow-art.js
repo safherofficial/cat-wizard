@@ -384,6 +384,222 @@ function addWater(game){
   game.riverCurve=curve;
 }
 
+
+function addRiverBankLife(game){
+  const curve=game.riverCurve;
+  if(!curve)return;
+
+  const random=seeded(28471);
+  const stemGeometry=new THREE.CylinderGeometry(.018,.033,.55,5);
+  const stemMaterial=new THREE.MeshStandardMaterial({color:'#6e9a67',roughness:1,flatShading:true});
+  const leafGeometry=new THREE.ConeGeometry(.045,.36,5);
+  const leafMaterial=new THREE.MeshStandardMaterial({color:'#83a96e',roughness:1,flatShading:true});
+  const seedGeometry=new THREE.SphereGeometry(.052,6,5);
+  const seedMaterial=new THREE.MeshStandardMaterial({color:'#bd9563',roughness:.92,flatShading:true});
+  const reedCount=24;
+  const reeds=new THREE.InstancedMesh(stemGeometry,stemMaterial,reedCount);
+  const leaves=new THREE.InstancedMesh(leafGeometry,leafMaterial,reedCount*2);
+  const seedHeads=new THREE.InstancedMesh(seedGeometry,seedMaterial,reedCount);
+  const dummy=new THREE.Object3D();
+  let reedIndex=0,leafIndex=0;
+
+  [0.08,.22,.37,.55,.72,.9].forEach((t,index)=>{
+    const point=curve.getPointAt(t);
+    const tangent=curve.getTangentAt(t).normalize();
+    const side=new THREE.Vector3(tangent.z,0,-tangent.x).normalize();
+    const bankSign=index%2===0?1:-1;
+    for(let j=0;j<4;j++){
+      if(reedIndex>=reedCount)break;
+      const along=(j-1.5)*.14;
+      const location=point.clone()
+        .addScaledVector(side,bankSign*(1.22+random()*.2))
+        .addScaledVector(tangent,along);
+      const height=.42+random()*.34;
+      const lean=(random()-.5)*.26;
+      dummy.position.set(location.x,height*.5,location.z);
+      dummy.rotation.set(0,random()*TAU,lean);
+      dummy.scale.set(1,height/.55,1);
+      dummy.updateMatrix();
+      reeds.setMatrixAt(reedIndex,dummy.matrix);
+
+      dummy.position.set(location.x+Math.sin(lean)*height*.42,height*.76,location.z);
+      dummy.rotation.set(0,0,lean);
+      dummy.scale.set(.72,1.05,.72);
+      dummy.updateMatrix();
+      seedHeads.setMatrixAt(reedIndex,dummy.matrix);
+
+      for(let leaf=0;leaf<2;leaf++){
+        const direction=leaf===0?-1:1;
+        dummy.position.set(location.x+direction*.075,height*.43,location.z+direction*.045);
+        dummy.rotation.set(direction*.35,random()*TAU,direction*(.58+random()*.2));
+        dummy.scale.set(1,.75+random()*.4,1);
+        dummy.updateMatrix();
+        leaves.setMatrixAt(leafIndex++,dummy.matrix);
+      }
+      reedIndex++;
+    }
+  });
+  reeds.count=reedIndex;
+  seedHeads.count=reedIndex;
+  leaves.count=leafIndex;
+  [reeds,leaves,seedHeads].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+
+  // A few restrained lily pads break up the reflective ribbon without hiding it.
+  const padGeometry=new THREE.CircleGeometry(.23,10,.34,TAU-.55);
+  const padMaterial=new THREE.MeshStandardMaterial({
+    color:'#659b70',roughness:.86,side:THREE.DoubleSide,flatShading:true
+  });
+  const pads=new THREE.InstancedMesh(padGeometry,padMaterial,10);
+  const bloomGeometry=new THREE.SphereGeometry(.045,7,5);
+  const bloomMaterial=new THREE.MeshStandardMaterial({
+    color:'#f1d58a',emissive:'#8d642c',emissiveIntensity:.08,roughness:.7,flatShading:true
+  });
+  const blooms=new THREE.InstancedMesh(bloomGeometry,bloomMaterial,6);
+  let padIndex=0,bloomIndex=0;
+  [.16,.27,.43,.58,.76,.87].forEach((t,index)=>{
+    const point=curve.getPointAt(t);
+    const tangent=curve.getTangentAt(t).normalize();
+    const side=new THREE.Vector3(tangent.z,0,-tangent.x).normalize();
+    const offset=(random()-.5)*.8;
+    const x=point.x+side.x*offset,z=point.z+side.z*offset;
+    dummy.position.set(x,.012,z);
+    dummy.rotation.set(-Math.PI/2,random()*TAU,0);
+    const scale=.78+random()*.48;
+    dummy.scale.set(scale,scale,.82*scale);
+    dummy.updateMatrix();
+    pads.setMatrixAt(padIndex++,dummy.matrix);
+    if(index%2===0){
+      dummy.position.set(x,.075,z);
+      dummy.scale.setScalar(.85+random()*.3);
+      dummy.rotation.set(0,0,0);
+      dummy.updateMatrix();
+      blooms.setMatrixAt(bloomIndex++,dummy.matrix);
+    }
+  });
+  pads.count=padIndex;
+  blooms.count=bloomIndex;
+  [pads,blooms].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+}
+
+function addMushrooms(game){
+  const random=seeded(73621);
+  const clusters=[
+    [-13.25,-7.0,8],[13.2,-6.4,8],[-13.65,6.2,8],[13.5,6.25,8],
+    [-7.55,10.35,7],[7.35,10.3,7],[-16.0,-2.7,7],[16.0,.15,7],
+    [-14.0,-11.05,6],[14.0,-10.9,6]
+  ];
+  const capacity=72;
+  const stemGeometry=new THREE.CylinderGeometry(.058,.092,.34,7);
+  const capGeometry=new THREE.SphereGeometry(.24,9,6,0,TAU,0,Math.PI/2);
+  const spotGeometry=new THREE.SphereGeometry(.031,6,5);
+  const mossGeometry=new THREE.SphereGeometry(1,7,5);
+  const stemMaterial=new THREE.MeshStandardMaterial({
+    color:'#e7d8bd',roughness:.9,flatShading:true
+  });
+  const capMaterial=new THREE.MeshStandardMaterial({
+    color:'#ffffff',vertexColors:true,roughness:.62,flatShading:true
+  });
+  const spotMaterial=new THREE.MeshStandardMaterial({
+    color:'#f8edcf',roughness:.82,flatShading:true
+  });
+  const mossMaterial=new THREE.MeshStandardMaterial({
+    color:'#ffffff',vertexColors:true,roughness:1,flatShading:true
+  });
+  const stems=new THREE.InstancedMesh(stemGeometry,stemMaterial,capacity);
+  const caps=new THREE.InstancedMesh(capGeometry,capMaterial,capacity);
+  const spots=new THREE.InstancedMesh(spotGeometry,spotMaterial,capacity*3);
+  const moss=new THREE.InstancedMesh(mossGeometry,mossMaterial,clusters.length*2);
+  const dummy=new THREE.Object3D();
+  const color=new THREE.Color();
+  const capColors=['#cf7659','#b986a4','#d4a967','#809e7d','#bd795d'];
+  const mossColors=['#668b5b','#789866','#8da56b'];
+  let count=0,spotCount=0,mossCount=0,attempts=0;
+
+  clusters.forEach(([cx,cz,wanted],clusterIndex)=>{
+    // Soft moss at the foot of each group visually anchors the small mushrooms.
+    for(let patch=0;patch<2;patch++){
+      const angle=patch*Math.PI+clusterIndex*.43;
+      dummy.position.set(cx+Math.cos(angle)*.34,.018,cz+Math.sin(angle)*.28);
+      dummy.scale.set(.48+random()*.2,.035,.32+random()*.16);
+      dummy.rotation.set(0,random()*TAU,0);
+      dummy.updateMatrix();
+      moss.setMatrixAt(mossCount,dummy.matrix);
+      color.set(mossColors[Math.floor(random()*mossColors.length)]);
+      moss.setColorAt(mossCount++,color);
+    }
+
+    let placed=0,localAttempts=0;
+    while(placed<wanted&&count<capacity&&localAttempts<48){
+      localAttempts++;attempts++;
+      const angle=random()*TAU;
+      const radius=.24+random()*.92;
+      const x=cx+Math.cos(angle)*radius;
+      const z=cz+Math.sin(angle)*radius*.78;
+      if(Math.abs(x)>17.1||Math.abs(z)>14.2||Math.hypot(x,z)<5.25)continue;
+      if(distanceToPath(x,z)<1.38)continue;
+      const blocked=(game.obstacles||[]).some(obstacle=>{
+        if(obstacle.destroyed)return false;
+        const ox=obstacle.fixed?obstacle.x:obstacle.group.position.x;
+        const oz=obstacle.fixed?obstacle.z:obstacle.group.position.z;
+        return Math.hypot(x-ox,z-oz)<(obstacle.radius||.5)+.46;
+      });
+      if(blocked)continue;
+
+      const scale=.72+random()*.62;
+      const stemHeight=.34*scale;
+      dummy.position.set(x,stemHeight*.5,z);
+      dummy.rotation.set(0,random()*TAU,(random()-.5)*.08);
+      dummy.scale.setScalar(scale);
+      dummy.updateMatrix();
+      stems.setMatrixAt(count,dummy.matrix);
+
+      dummy.position.set(x,stemHeight,z);
+      dummy.rotation.set(0,random()*TAU,0);
+      dummy.scale.set(scale,scale*.82,scale);
+      dummy.updateMatrix();
+      caps.setMatrixAt(count,dummy.matrix);
+      color.set(capColors[Math.floor(random()*capColors.length)]);
+      caps.setColorAt(count,color);
+
+      for(let dot=0;dot<3;dot++){
+        const dotAngle=dot*TAU/3+random()*.25;
+        const radial=.105*scale;
+        const surfaceY=stemHeight+Math.sqrt(Math.max(.01,.24*.24-.105*.105))*scale+.009;
+        dummy.position.set(x+Math.cos(dotAngle)*radial,surfaceY,z+Math.sin(dotAngle)*radial);
+        dummy.scale.setScalar(.9+random()*.35);
+        dummy.rotation.set(0,0,0);
+        dummy.updateMatrix();
+        spots.setMatrixAt(spotCount++,dummy.matrix);
+      }
+      count++;placed++;
+    }
+  });
+
+  stems.count=count;
+  caps.count=count;
+  spots.count=spotCount;
+  moss.count=mossCount;
+  [stems,caps,spots,moss].forEach(mesh=>{
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+  });
+}
+
 export function buildMeadowArena(game){
   game.treeTops=[];game.windmills=[];game.windShaders=[];game.effectsGround=[];
   const ground=new THREE.Mesh(
@@ -425,6 +641,7 @@ export function buildMeadowArena(game){
   coreGroup.add(new THREE.PointLight('#80dcca',3.2,6,2));game.magicCore=coreGroup;game.magicOrbits=[orbitA,orbitB];
 
   addWater(game);
+  addRiverBankLife(game);
   const hillMat=new THREE.MeshStandardMaterial({color:'#8eaf78',roughness:1,flatShading:true});
   [[-17,-13,7,4,8],[0,-18,11,5,7],[18,-14,8,4,9],[-22,0,7,6,8],[24,3,8,5,8]].forEach(([x,z,sx,sy,sz])=>{
     const hill=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),hillMat);
@@ -458,6 +675,7 @@ export function buildMeadowArena(game){
     ['barrel',1.8,5.9,.78,1.15,2.1],['crate',6.1,-1.5,1.1,1.1,2.6]
   ];
   props.forEach(p=>game.addProp(...p));
+  addMushrooms(game);
 }
 
 export function animateMeadow(game,worldDt,realDt=worldDt){
