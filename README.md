@@ -8,7 +8,7 @@ Cat Wizard is a top-down gesture-magic physics sandbox starring a distinguished 
 
 The game now runs natively in the browser on **Three.js 0.187.0** with **Vite 8.4.0**. Unity is no longer used for the game runtime or browser build.
 
-- A 148 × 120 walkable enchanted valley with connected hand-painted trails, four peripheral pine groves, moonlit crystal beds, a northern starlight shrine, a moon pond, mushroom groves, an old oak, ancient standing-stone ruins, a timber footbridge, mossy rock outcrops, a winding river, cottage, windmill, 56,000 animated grass blades, 6,000 flower clusters and 520 fireflies.
+- A 148 × 120 walkable enchanted valley with connected hand-painted trails, four peripheral pine groves, moonlit crystal beds, a northern starlight shrine, a moon pond, mushroom groves, an old oak, ancient standing-stone ruins, a timber footbridge, mossy rock outcrops, a winding river, cottage, windmill, 56,000 animated grass blades, 6,000 flower clusters and 520 fireflies. Its sculpted low-relief terrain adds broad rises and shallow basins while keeping footpaths and landmark pads level.
 - A 3D modeled grey cat wizard with the signature pink bow tie, pointed ears, violet wizard hat, pipe and articulated walk cycle.
 - Free-roam movement with WASD, arrow keys or touch relative to the camera heading; the cat turns smoothly toward its travel direction. Hold the right mouse button and drag to orbit the follow camera, or use the mouse wheel to zoom.
 - Touch movement on the left side and independent spell drawing on the right side.
@@ -72,6 +72,7 @@ src/
   main.js           Three.js scene, controls, combat and runtime loop
   camera-controls.js right-button orbit camera math and pitch limits
   world-map.js      shared playable world bounds and clamping
+  terrain.js        deterministic meadow heightfield and smooth terrain sampling
   gesture.js        one-stroke recognizer and spell templates
   performance.js    render quality presets and optional runtime diagnostics
   style.css         responsive browser shell and HUD
@@ -83,6 +84,7 @@ tests/
   camera-controls.test.js  camera orbit interaction math checks
   gesture.test.js          gesture classification checks
   world-map.test.js        expanded world-bound checks
+  terrain.test.js           height, slope and flat landmark checks
   performance.test.js      render quality preset checks
   glb-audit.test.js        standalone GLB audit tests
   blender_source_test.py   Blender builder/audit source contract checks
