@@ -3,9 +3,10 @@ import { buildLighting as buildArtLighting, buildArena as buildArtArena, buildWi
 import { segmentCircleIntersection, radialFalloff, closestPointOnSegment, vortexAcceleration, resolveCircleCollision } from './spell-physics.js';
 import { recognizeGesture, SPELLS } from './gesture.js';
 import { PerformanceMonitor, resolveQualityPreset } from './performance.js';
+import { clampWorldPosition } from './world-map.js';
 import './style.css';
 
-const W = 26, D = 15, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const rand = (a,b) => a + Math.random() * (b-a);
 const dist = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 
@@ -34,7 +35,7 @@ class CatWizard {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#83d1ed');
     this.scene.fog = new THREE.Fog('#b9e2e8',42,92);
-    this.camera = new THREE.PerspectiveCamera(48,1,.1,120);
+    this.camera = new THREE.PerspectiveCamera(48,1,.1,220);
     this.camera.position.set(0,20,20);
     this.cameraLook = new THREE.Vector3(0,0,-2);
     this.camera.lookAt(this.cameraLook);
@@ -207,7 +208,8 @@ class CatWizard {
     const r=this.canvas.getBoundingClientRect(),ndc=new THREE.Vector2(((p.x-r.left)/r.width)*2-1,-(((p.y-r.top)/r.height)*2-1));
     this.raycaster.setFromCamera(ndc,this.camera);const hit=new THREE.Vector3();
     if(!this.raycaster.ray.intersectPlane(this.groundPlane,hit))return new THREE.Vector3(this.player.position.x,.12,this.player.position.z);
-    hit.x=clamp(hit.x,-17.5,17.5);hit.z=clamp(hit.z,-13,13);hit.y=.12;return hit;
+    const target=clampWorldPosition(hit.x,hit.z,.35);
+    hit.x=target.x;hit.z=target.z;hit.y=.12;return hit;
   }
 
   drawStroke() {
@@ -517,8 +519,13 @@ class CatWizard {
     if (movement.lengthSq() > 1) movement.normalize();
 
     this.playerMove.lerp(movement.multiplyScalar(5.2), 1 - Math.exp(-dt * 12));
-    this.player.position.x = clamp(this.player.position.x + this.playerMove.x * dt, -16.7, 16.7);
-    this.player.position.z = clamp(this.player.position.z + this.playerMove.y * dt, -12.2, 12.2);
+    const nextPosition = clampWorldPosition(
+      this.player.position.x + this.playerMove.x * dt,
+      this.player.position.z + this.playerMove.y * dt,
+      .65
+    );
+    this.player.position.x = nextPosition.x;
+    this.player.position.z = nextPosition.z;
 
     for (const obstacle of this.obstacles) {
       if (obstacle.destroyed) continue;
@@ -537,8 +544,9 @@ class CatWizard {
       }
     }
 
-    this.player.position.x = clamp(this.player.position.x, -16.7, 16.7);
-    this.player.position.z = clamp(this.player.position.z, -12.2, 12.2);
+    const safePosition = clampWorldPosition(this.player.position.x, this.player.position.z, .65);
+    this.player.position.x = safePosition.x;
+    this.player.position.z = safePosition.z;
     if (this.catRoot) {
       const moving = this.playerMove.length() > .24;
       if (moving) this.catRoot.rotation.y = Math.atan2(this.playerMove.x, this.playerMove.y);
