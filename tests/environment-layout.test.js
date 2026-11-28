@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import {
   createCloudPuffLayout,
   createCrystalGroveLayout,
+  createCrystalMoteLayout,
   createDistantMountainLayout,
-  createPeripheralPineLayout
+  createPeripheralPineLayout,
+  createPondReedLayout,
+  createWoodlandFloorLayout
 } from '../src/environment-layout.js';
 import { WORLD_BOUNDS } from '../src/world-map.js';
 
@@ -63,5 +66,49 @@ test('crystal groves have stable, varied shards inside the expanded valley', () 
     assert.ok(crystal.z >= WORLD_BOUNDS.minZ && crystal.z <= WORLD_BOUNDS.maxZ);
     assert.ok(crystal.height > 1 && crystal.width > 0);
     assert.ok(Number.isFinite(crystal.lean));
+  }
+});
+
+
+test('woodland floor details are deterministic and distributed inside all four pine groves', () => {
+  const first = createWoodlandFloorLayout(2026);
+  assert.deepEqual(first, createWoodlandFloorLayout(2026));
+  assert.equal(first.ferns.length, 56);
+  assert.equal(first.fallenLogs.length, 8);
+  assert.equal(first.stumps.length, 8);
+
+  for (const detail of [...first.ferns, ...first.fallenLogs, ...first.stumps]) {
+    assert.ok(detail.x >= WORLD_BOUNDS.minX && detail.x <= WORLD_BOUNDS.maxX);
+    assert.ok(detail.z >= WORLD_BOUNDS.minZ && detail.z <= WORLD_BOUNDS.maxZ);
+    assert.ok(Number.isFinite(detail.rotationY));
+  }
+  assert.equal(new Set(first.ferns.map(fern => fern.clusterIndex)).size, 4);
+  assert.ok(first.ferns.every(fern => fern.scale > 0));
+  assert.ok(first.fallenLogs.every(log => log.length > log.radius * 4));
+});
+
+test('crystal motes provide stable, varied floating points around both crystal beds', () => {
+  const first = createCrystalMoteLayout(987);
+  assert.deepEqual(first, createCrystalMoteLayout(987));
+  assert.equal(first.length, 52);
+  assert.equal(new Set(first.map(mote => mote.clusterIndex)).size, 2);
+  assert.ok(new Set(first.map(mote => mote.tintIndex)).size > 1);
+  for (const mote of first) {
+    assert.ok(mote.x >= WORLD_BOUNDS.minX && mote.x <= WORLD_BOUNDS.maxX);
+    assert.ok(mote.z >= WORLD_BOUNDS.minZ && mote.z <= WORLD_BOUNDS.maxZ);
+    assert.ok(mote.height > 0 && mote.size > 0);
+    assert.equal(Number.isFinite(mote.phase), true);
+  }
+});
+
+test('pond reed positions are deterministic and form a ring around the moon pond', () => {
+  const first = createPondReedLayout(321);
+  assert.deepEqual(first, createPondReedLayout(321));
+  assert.equal(first.length, 12);
+  for (const reed of first) {
+    const ellipseDistance = Math.hypot((reed.x + 31) / 8.9, (reed.z + 8) / 6.4);
+    assert.ok(ellipseDistance > 0.88 && ellipseDistance < 1.15);
+    assert.ok(reed.height > 0.6 && reed.height < 1.1);
+    assert.ok(Number.isFinite(reed.lean));
   }
 });
