@@ -1,8 +1,8 @@
 export const WORLD_BOUNDS = Object.freeze({
-  minX: -48,
-  maxX: 48,
-  minZ: -38,
-  maxZ: 38
+  minX: -72,
+  maxX: 72,
+  minZ: -58,
+  maxZ: 58
 });
 
 export const WORLD_SIZE = Object.freeze({
